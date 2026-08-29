@@ -33,7 +33,7 @@ export default async function ContactPage() {
             />
             <p className="auth-switch">
               Vous pouvez aussi consulter la{" "}
-              <Link href="/tuto#faq">FAQ du tuto</Link>.
+              <Link href="/tuto/faq">FAQ du tuto</Link>.
             </p>
           </div>
         </div>

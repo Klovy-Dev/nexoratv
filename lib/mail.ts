@@ -18,6 +18,7 @@ interface SendArgs {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 }
 
 export async function sendEmail({
@@ -25,6 +26,7 @@ export async function sendEmail({
   subject,
   html,
   text,
+  replyTo,
 }: SendArgs): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM ?? "NexoraTV <onboarding@resend.dev>";
@@ -45,7 +47,14 @@ export async function sendEmail({
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from, to, subject, html, text }),
+    body: JSON.stringify({
+      from,
+      to,
+      subject,
+      html,
+      text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -88,7 +97,27 @@ export function resetEmailHtml(
   </div>`;
 }
 
-function escapeHtml(s: string): string {
+export function contactEmailHtml(
+  name: string,
+  email: string,
+  subject: string,
+  message: string,
+): string {
+  return `
+  <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#08090d;padding:32px;color:#e9eaf1">
+    <div style="max-width:520px;margin:0 auto;background:#141722;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px">
+      <p style="font-size:18px;font-weight:700;margin:0 0 20px">Nexora<span style="color:#ff2e9a">TV</span> — Contact</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#969db1">De</p>
+      <p style="margin:0 0 16px">${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#969db1">Objet</p>
+      <p style="margin:0 0 16px">${escapeHtml(subject)}</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#969db1">Message</p>
+      <p style="margin:0;white-space:pre-wrap">${escapeHtml(message)}</p>
+    </div>
+  </div>`;
+}
+
+export function escapeHtml(s: string): string {
   return s.replace(
     /[&<>"']/g,
     (c) =>
