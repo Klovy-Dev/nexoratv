@@ -64,6 +64,17 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_pwreset_token ON password_resets (token_hash)`;
+
+  await raw`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      rating     SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      body       TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_reviews_created ON reviews (created_at DESC)`;
 }
 
 async function ensureSchema(): Promise<void> {

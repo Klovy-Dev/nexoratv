@@ -63,8 +63,8 @@ export default function AppareilsPage() {
           <CompatList
             ok={[
               {
-                title: "Amazon Fire TV Stick",
-                note: "toutes générations : Lite, 4K, 4K Max, ainsi que Fire TV Cube — installez Ibogold via l'Appstore",
+                title: "Amazon Fire TV Stick (anciennes générations)",
+                note: "installez Ibogold via l'Appstore — voir Choisir son application",
               },
               {
                 title: "Boîtiers Android TV / Google TV",
@@ -74,8 +74,16 @@ export default function AppareilsPage() {
                 title: "Apple TV",
                 note: "via une application compatible sur l'App Store tvOS, choix plus limité que sur Android",
               },
+              {
+                title: "Box MAG, Formuler, Enigma2",
+                note: "compatibles via portail STB — contactez le support pour la configuration",
+              },
             ]}
             no={[
+              {
+                title: "Derniers Fire TV Stick Amazon",
+                note: "les générations les plus récentes ne sont pas prises en charge — préférez un modèle plus ancien",
+              },
               {
                 title: "Chromecast 1ʳᵉ / 2ᵉ génération",
                 note: "sans Google TV : aucune application installable, diffusion (« cast ») uniquement depuis un téléphone",
@@ -83,10 +91,6 @@ export default function AppareilsPage() {
               {
                 title: "Boîtiers Android très anciens",
                 note: "Android antérieur à 7 ou moins de 1,5 Go de RAM : lags et plantages fréquents",
-              },
-              {
-                title: "Box MAG, Formuler, Enigma2",
-                note: "fonctionnent par portail STB et non par identifiants Xtream Codes — non prises en charge par notre support",
               },
             ]}
           />

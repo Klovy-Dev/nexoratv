@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth-actions";
+import { initials } from "@/lib/validation";
 import type { User } from "@/lib/types";
 
 const LINKS = [
@@ -21,7 +22,6 @@ export default function NavBar({ user }: { user: User | null }) {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const close = () => setOpen(false);
-  const initial = user?.name?.trim()?.[0]?.toUpperCase() ?? "?";
 
   return (
     <>
@@ -43,20 +43,6 @@ export default function NavBar({ user }: { user: User | null }) {
                 </Link>
               </li>
             ))}
-            {user && (
-              <li>
-                <Link href="/profil" className={isActive("/profil") ? "active" : ""}>
-                  Mon profil
-                </Link>
-              </li>
-            )}
-            {user?.role === "admin" && (
-              <li>
-                <Link href="/admin" className={isActive("/admin") ? "active" : ""}>
-                  Admin
-                </Link>
-              </li>
-            )}
           </ul>
 
           <div className="nav-cta">
@@ -66,8 +52,16 @@ export default function NavBar({ user }: { user: User | null }) {
                   <span className="nav-user" title={user.email}>
                     {user.name}
                   </span>
+                  <Link href="/profil" className="btn btn-ghost btn-sm">
+                    Mon profil
+                  </Link>
+                  {user.role === "admin" && (
+                    <Link href="/admin" className="btn btn-ghost btn-sm">
+                      Admin
+                    </Link>
+                  )}
                   <form action={logoutAction} className="inline-form">
-                    <button type="submit" className="btn btn-ghost">
+                    <button type="submit" className="btn btn-ghost btn-sm">
                       Déconnexion
                     </button>
                   </form>
@@ -108,36 +102,26 @@ export default function NavBar({ user }: { user: User | null }) {
                 {l.label}
               </Link>
             ))}
-            {user && (
-              <Link
-                href="/profil"
-                className={isActive("/profil") ? "active" : ""}
-                onClick={close}
-              >
-                Mon profil
-              </Link>
-            )}
-            {user?.role === "admin" && (
-              <Link
-                href="/admin"
-                className={isActive("/admin") ? "active" : ""}
-                onClick={close}
-              >
-                Admin
-              </Link>
-            )}
           </nav>
 
           <div className="nav-drawer-account">
             {user ? (
               <>
                 <div className="nav-drawer-user">
-                  <span className="nav-drawer-avatar">{initial}</span>
+                  <span className="nav-drawer-avatar">{initials(user.name)}</span>
                   <div className="nav-drawer-user-info">
                     <strong>{user.name}</strong>
                     <span>{user.email}</span>
                   </div>
                 </div>
+                <Link href="/profil" className="btn btn-ghost btn-block" onClick={close}>
+                  Mon profil
+                </Link>
+                {user.role === "admin" && (
+                  <Link href="/admin" className="btn btn-ghost btn-block" onClick={close}>
+                    Admin
+                  </Link>
+                )}
                 <form action={logoutAction} className="inline-form">
                   <button type="submit" className="btn btn-danger btn-block" onClick={close}>
                     Déconnexion

@@ -24,7 +24,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "L'image se fige régulièrement, comment corriger ?",
-    a: "Testez votre débit, rapprochez l'appareil de la box ou utilisez un câble Ethernet. Dans l'application, changez de serveur puis relancez la chaîne.",
+    a: "Testez votre débit, rapprochez l'appareil de la box ou utilisez un câble Ethernet, puis relancez la chaîne.",
   },
   {
     q: "Puis-je utiliser mon compte sur plusieurs appareils ?",

@@ -39,9 +39,9 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="hero-stats">
-            <div><strong>12 000+</strong><span>chaînes &amp; VOD</span></div>
+            <div><strong>+20 000</strong><span>chaînes en direct</span></div>
+            <div><strong>100 000+</strong><span>films &amp; séries</span></div>
             <div><strong>4K</strong><span>jusqu&apos;à l&apos;Ultra HD</span></div>
-            <div><strong>99,9 %</strong><span>de disponibilité</span></div>
             <div><strong>24/7</strong><span>support client</span></div>
           </div>
         </div>

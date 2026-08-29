@@ -49,8 +49,7 @@ export default function ConnexionPage() {
             <li>Activez le rafraîchissement automatique de la liste dans les réglages.</li>
           </ul>
           <Callout type="success">
-            En cas de coupure, changez de serveur dans les réglages ou
-            contactez le support 24/7.
+            En cas de coupure, contactez le support 24/7.
           </Callout>
         </article>
 

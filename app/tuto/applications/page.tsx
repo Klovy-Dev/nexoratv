@@ -45,6 +45,11 @@ export default function ApplicationsPage() {
             Store ou, si elle n&apos;y figure pas, via son APK officiel.
             Ouvrez-la puis connectez-vous avec vos identifiants.
           </p>
+          <Callout type="warning">
+            Seules les <strong>anciennes générations</strong> de Fire TV Stick
+            sont prises en charge. Les tout derniers modèles Amazon ne
+            fonctionnent pas avec Ibogold.
+          </Callout>
           <Callout type="info">
             Application introuvable dans l&apos;Appstore de votre Fire Stick ?
             Installez <strong>Downloader</strong> : il permet d&apos;ajouter

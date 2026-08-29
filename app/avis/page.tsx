@@ -1,29 +1,29 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getCurrentUser } from "@/lib/auth";
+import { listReviews, reviewByUser, reviewStats } from "@/lib/data";
+import { formatDate, initials } from "@/lib/validation";
+import { deleteReviewAction } from "@/actions/review-actions";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import ReviewForm from "./ReviewForm";
 
 export const metadata: Metadata = { title: "Avis clients" };
+export const dynamic = "force-dynamic";
 
-const REVIEWS: [string, string, string, number, string][] = [
-  ["JL", "Julien L.", "Il y a 3 jours", 5, "Installation faite en 4 minutes sur ma Smart TV grâce au tuto. Aucune coupure depuis deux mois, même sur les gros matchs. Je recommande."],
-  ["SM", "Sofia M.", "Il y a 1 semaine", 5, "Le catalogue VOD est énorme et mis à jour très régulièrement. L'interface est claire, on trouve tout de suite ce qu'on cherche."],
-  ["KD", "Karim D.", "Il y a 2 semaines", 4, "Très bon service dans l'ensemble. Une petite latence au démarrage de certaines chaînes étrangères, mais le support m'a aidé à changer de serveur rapidement."],
-  ["EP", "Élodie P.", "Il y a 3 semaines", 5, "Ce que j'apprécie le plus : ça marche sur le téléphone, la tablette et la TV avec le même compte. Qualité 4K impeccable sur les documentaires."],
-  ["TN", "Thomas N.", "Il y a 1 mois", 5, "Support client vraiment réactif, réponse en moins de 10 minutes un dimanche soir. Ça change de mes expériences précédentes."],
-  ["AB", "Amina B.", "Il y a 1 mois", 4, "Rapport qualité-prix excellent. J'aurais aimé quelques chaînes régionales supplémentaires, mais l'essentiel y est largement."],
-  ["RC", "Raphaël C.", "Il y a 2 mois", 5, "Je suis passé de trois abonnements séparés à un seul avec NexoraTV. Simple, stable, et le zapping est instantané."],
-  ["LG", "Laura G.", "Il y a 2 mois", 5, "Débutante en streaming, j'avais peur de la config. Le guide pas à pas est parfait, tout est expliqué clairement."],
-  ["MF", "Marc F.", "Il y a 3 mois", 5, "Utilisé sur Fire Stick et box Android, zéro problème. La lecture reprend là où je m'étais arrêté sur mes séries."],
-];
+export default async function AvisPage() {
+  const user = await getCurrentUser();
+  const [reviews, stats, myReview] = await Promise.all([
+    listReviews(),
+    reviewStats(),
+    user ? reviewByUser(user.id) : Promise.resolve(null),
+  ]);
 
-const BARS: [string, number][] = [
-  ["5 ★", 78],
-  ["4 ★", 15],
-  ["3 ★", 4],
-  ["2 ★", 2],
-  ["1 ★", 1],
-];
+  const rounded = Math.round(stats.average);
+  const bars: [string, number][] = [5, 4, 3, 2, 1].map((n) => [
+    `${n} ★`,
+    stats.count > 0 ? Math.round((stats.distribution[n as 1 | 2 | 3 | 4 | 5] / stats.count) * 100) : 0,
+  ]);
 
-export default function AvisPage() {
   return (
     <>
       <section className="page-hero">
@@ -33,8 +33,8 @@ export default function AvisPage() {
             Les avis de <span className="gradient-text">notre communauté</span>
           </h1>
           <p className="lead" style={{ marginInline: "auto" }}>
-            Retours d&apos;expérience partagés par des utilisateurs abonnés. Note
-            moyenne calculée sur l&apos;ensemble des avis vérifiés.
+            Retours d&apos;expérience partagés par nos abonnés, directement
+            depuis leur compte.
           </p>
         </div>
       </section>
@@ -43,12 +43,19 @@ export default function AvisPage() {
         <div className="container">
           <div className="rating-summary reveal">
             <div className="rating-score">
-              <div className="num">4,7</div>
-              <div className="stars">★★★★★</div>
-              <div className="count">sur 1 284 avis</div>
+              <div className="num">
+                {stats.count > 0 ? stats.average.toFixed(1).replace(".", ",") : "—"}
+              </div>
+              <div className="stars">
+                {"★".repeat(rounded)}
+                {"☆".repeat(5 - rounded)}
+              </div>
+              <div className="count">
+                {stats.count > 0 ? `sur ${stats.count} avis` : "Aucun avis pour le moment"}
+              </div>
             </div>
             <div className="rating-bars">
-              {BARS.map(([label, pct]) => (
+              {bars.map(([label, pct]) => (
                 <div className="bar-row" key={label}>
                   <span>{label}</span>
                   <div className="bar-track">
@@ -60,24 +67,50 @@ export default function AvisPage() {
             </div>
           </div>
 
-          <div className="reviews-grid">
-            {REVIEWS.map(([initials, name, when, stars, text]) => (
-              <article className="review reveal" key={name}>
-                <div className="review-head">
-                  <div className="avatar">{initials}</div>
-                  <div>
-                    <div className="who">{name}</div>
-                    <div className="when">{when}</div>
+          {user ? (
+            <ReviewForm existing={myReview} />
+          ) : (
+            <div className="panel reveal" style={{ marginBottom: 40, textAlign: "center" }}>
+              <p className="muted" style={{ marginBottom: 14 }}>
+                Connectez-vous pour laisser votre avis.
+              </p>
+              <Link href="/connexion" className="btn btn-primary">
+                Se connecter
+              </Link>
+            </div>
+          )}
+
+          {reviews.length === 0 ? (
+            <div className="empty-state">
+              <p>Aucun avis pour le moment. Soyez le premier à partager le vôtre !</p>
+            </div>
+          ) : (
+            <div className="reviews-grid">
+              {reviews.map((r) => (
+                <article className="review reveal" key={r.id}>
+                  <div className="review-head">
+                    <div className="avatar">{initials(r.name)}</div>
+                    <div>
+                      <div className="who">{r.name}</div>
+                      <div className="when">{formatDate(r.created_at)}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="stars">
-                  {"★".repeat(stars)}
-                  {"☆".repeat(5 - stars)}
-                </div>
-                <p>{text}</p>
-              </article>
-            ))}
-          </div>
+                  <div className="stars">
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </div>
+                  <p>{r.body}</p>
+                  {user?.id === r.user_id && (
+                    <form action={deleteReviewAction} className="inline-form" style={{ marginTop: 12 }}>
+                      <ConfirmSubmit className="btn btn-ghost btn-sm" confirm="Supprimer votre avis ?">
+                        Supprimer
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
 
           <div className="cta-band reveal" style={{ marginTop: 56 }}>
             <h2>Envie de vous faire votre propre avis ?</h2>

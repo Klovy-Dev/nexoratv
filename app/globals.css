@@ -311,6 +311,13 @@ h3 { font-size: 1.2rem; }
 }
 .textarea { resize: vertical; min-height: 90px; }
 
+.star-input { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 2px; }
+.star-input input { position: absolute; opacity: 0; pointer-events: none; }
+.star-input label { font-size: 1.9rem; line-height: 1; color: var(--border); cursor: pointer; transition: color 0.15s; }
+.star-input input:checked ~ label,
+.star-input label:hover,
+.star-input label:hover ~ label { color: #ffc542; }
+
 .form-errors {
   background: rgba(255, 84, 112, 0.1);
   border: 1px solid rgba(255, 84, 112, 0.4);

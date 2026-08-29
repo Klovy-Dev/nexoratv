@@ -33,3 +33,18 @@ export type FormState = {
   fieldErrors?: string[];
   ok?: boolean;
 };
+
+export interface Review {
+  id: number;
+  user_id: number;
+  rating: number;
+  body: string;
+  created_at: string;
+  name: string;
+}
+
+export interface ReviewStats {
+  count: number;
+  average: number;
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+}

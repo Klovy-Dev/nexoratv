@@ -15,7 +15,7 @@ import {
   setRoleAction,
 } from "@/actions/admin-actions";
 import SubscriptionForm from "./SubscriptionForm";
-import ConfirmSubmit from "./ConfirmSubmit";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 
 export const metadata: Metadata = { title: "Administration" };
 export const dynamic = "force-dynamic";
