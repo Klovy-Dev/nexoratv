@@ -66,14 +66,10 @@ export async function registerAction(
     return { fieldErrors: ["Impossible de créer le compte avec ces informations."] };
   }
 
-  // Le tout premier compte devient administrateur s'il n'en existe aucun.
-  const admins = await sql`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`;
-  const role = admins.length === 0 ? "admin" : "client";
-
   const hash = await hashPassword(password);
   const inserted = (await sql`
     INSERT INTO users (name, email, password_hash, role)
-    VALUES (${name}, ${email}, ${hash}, ${role})
+    VALUES (${name}, ${email}, ${hash}, 'client')
     RETURNING id
   `) as unknown as { id: number }[];
 
