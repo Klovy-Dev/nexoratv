@@ -1,9 +1,28 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import Faq, { type FaqEntry } from "@/components/Faq";
+import Callout from "@/components/Callout";
+import { TutoSidebar, TutoToc, type DocGroup } from "@/components/TutoNav";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Tuto d'installation" };
+
+const GROUPS: DocGroup[] = [
+  {
+    title: "Démarrage",
+    items: [
+      { id: "etape-1", label: "Créer votre compte" },
+      { id: "etape-2", label: "Récupérer vos identifiants" },
+      { id: "etape-3", label: "Installer l'application" },
+      { id: "etape-4", label: "Se connecter" },
+      { id: "etape-5", label: "Premier lancement" },
+    ],
+  },
+  {
+    title: "Aide",
+    items: [{ id: "faq", label: "Questions fréquentes" }],
+  },
+];
 
 const FAQ: FaqEntry[] = [
   {
@@ -28,173 +47,149 @@ const FAQ: FaqEntry[] = [
   },
 ];
 
-export default function TutoPage() {
+function SectionTitle({ id, kicker, title }: { id: string; kicker: string; title: string }) {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Guide d&apos;installation</span>
-          <h1>
-            Installez NexoraTV{" "}
-            <span className="gradient-text">en quelques minutes</span>
-          </h1>
-          <p className="lead" style={{ marginInline: "auto" }}>
-            Suivez les étapes dans l&apos;ordre. Aucune compétence technique
-            n&apos;est nécessaire : chaque étape est expliquée simplement.
-          </p>
+      <span className="docs-kicker">{kicker}</span>
+      <h2>
+        {title}
+        <a href={`#${id}`} className="docs-anchor" aria-label="Lien vers cette section">
+          #
+        </a>
+      </h2>
+    </>
+  );
+}
+
+export default function TutoPage() {
+  return (
+    <section className="docs-shell">
+      <div className="container">
+        <div className="docs-breadcrumb">
+          <span>Documentation</span>
+          <span className="sep">/</span>
+          <span className="current">Guide d&apos;installation</span>
         </div>
-      </section>
 
-      <section style={{ paddingTop: 40 }}>
-        <div className="container">
-          <div className="tuto-layout">
-            <nav className="tuto-nav reveal">
-              <h4>Sommaire</h4>
-              <ol>
-                <li><a href="#etape-1">1. Créer votre compte</a></li>
-                <li><a href="#etape-2">2. Récupérer vos identifiants</a></li>
-                <li><a href="#etape-3">3. Installer l&apos;application</a></li>
-                <li><a href="#etape-4">4. Se connecter</a></li>
-                <li><a href="#etape-5">5. Premier lancement</a></li>
-                <li><a href="#faq">Questions fréquentes</a></li>
-              </ol>
-            </nav>
+        <div className="docs-layout">
+          <TutoSidebar groups={GROUPS} />
 
-            <div>
-              <article className="step reveal" id="etape-1">
-                <span className="step-num">1</span>
-                <h3>Créer votre compte</h3>
-                <p>
-                  Rendez-vous sur la page d&apos;inscription, renseignez votre
-                  nom, votre e-mail et un mot de passe sécurisé, puis validez.
-                </p>
-                <ul>
-                  <li>Utilisez une adresse e-mail que vous consultez régulièrement.</li>
-                  <li>
-                    Choisissez un mot de passe d&apos;au moins {PASSWORD_MIN_LENGTH}{" "}
-                    caractères, avec lettres et chiffres.
-                  </li>
-                </ul>
-                <div className="callout">
-                  <span>💡</span>
-                  <span>
-                    Une fois inscrit, un administrateur associe votre abonnement à
-                    votre compte. Vos identifiants apparaissent alors sur votre
-                    profil.
-                  </span>
-                </div>
-              </article>
+          <div className="docs-content">
+            <h1 className="docs-h1">Installez NexoraTV</h1>
+            <p className="docs-intro">
+              Suivez les étapes dans l&apos;ordre. Aucune compétence technique
+              n&apos;est nécessaire : chaque étape est expliquée simplement.
+            </p>
 
-              <article className="step reveal" id="etape-2">
-                <span className="step-num">2</span>
-                <h3>Récupérer vos identifiants</h3>
-                <p>
-                  Connectez-vous et ouvrez la page{" "}
-                  <Link href="/profil"><strong>Mon profil</strong></Link>. Vous y
-                  trouvez, pour chaque abonnement actif :
-                </p>
-                <ul>
-                  <li><strong>URL du serveur</strong> (ou « host »)</li>
-                  <li><strong>Nom d&apos;utilisateur</strong></li>
-                  <li><strong>Mot de passe</strong></li>
-                  <li><strong>Date d&apos;expiration</strong></li>
-                </ul>
-                <div className="callout">
-                  <span>🔒</span>
-                  <span>
-                    Ne partagez jamais ces informations. Un compte est prévu pour
-                    un foyer et un nombre limité d&apos;écrans simultanés.
-                  </span>
-                </div>
-              </article>
+            <article className="docs-section" id="etape-1">
+              <SectionTitle id="etape-1" kicker="Étape 1" title="Créer votre compte" />
+              <p>
+                Rendez-vous sur la page d&apos;inscription, renseignez votre
+                nom, votre e-mail et un mot de passe sécurisé, puis validez.
+              </p>
+              <ul>
+                <li>Utilisez une adresse e-mail que vous consultez régulièrement.</li>
+                <li>
+                  Choisissez un mot de passe d&apos;au moins {PASSWORD_MIN_LENGTH}{" "}
+                  caractères, avec lettres et chiffres.
+                </li>
+              </ul>
+              <Callout type="tip">
+                Une fois inscrit, un administrateur associe votre abonnement à
+                votre compte. Vos identifiants apparaissent alors sur votre
+                profil.
+              </Callout>
+            </article>
 
-              <article className="step reveal" id="etape-3">
-                <span className="step-num">3</span>
-                <h3>Installer l&apos;application</h3>
-                <p>Choisissez la méthode correspondant à votre appareil :</p>
-                <ul>
-                  <li><strong>Smart TV (Android TV / Google TV)</strong> : ouvrez le Play Store, installez un lecteur IPTV compatible.</li>
-                  <li><strong>Amazon Fire Stick</strong> : recherchez l&apos;application dans l&apos;Appstore et installez-la.</li>
-                  <li><strong>Android (téléphone / tablette)</strong> : téléchargez l&apos;application depuis le Play Store.</li>
-                  <li><strong>iPhone / iPad</strong> : installez un lecteur compatible depuis l&apos;App Store.</li>
-                  <li><strong>Ordinateur</strong> : utilisez un lecteur de bureau compatible.</li>
-                </ul>
-                <div className="callout">
-                  <span>📶</span>
-                  <span>Débit conseillé : 15 Mbps pour la HD, 25 Mbps pour la 4K.</span>
-                </div>
-              </article>
+            <article className="docs-section" id="etape-2">
+              <SectionTitle id="etape-2" kicker="Étape 2" title="Récupérer vos identifiants" />
+              <p>
+                Connectez-vous et ouvrez la page{" "}
+                <Link href="/profil"><strong>Mon profil</strong></Link>. Vous y
+                trouvez, pour chaque abonnement actif :
+              </p>
+              <ul>
+                <li><strong>URL du serveur</strong> (ou « host »)</li>
+                <li><strong>Nom d&apos;utilisateur</strong></li>
+                <li><strong>Mot de passe</strong></li>
+                <li><strong>Date d&apos;expiration</strong></li>
+              </ul>
+              <Callout type="danger">
+                Ne partagez jamais ces informations. Un compte est prévu pour
+                un foyer et un nombre limité d&apos;écrans simultanés.
+              </Callout>
+            </article>
 
-              <article className="step reveal" id="etape-4">
-                <span className="step-num">4</span>
-                <h3>Se connecter</h3>
-                <p>Ouvrez l&apos;application et ajoutez une nouvelle playlist :</p>
-                <ul>
-                  <li>Choisissez le mode <strong>« Xtream Codes »</strong> ou <strong>« identifiants »</strong>.</li>
-                  <li>Recopiez l&apos;URL du serveur, le nom d&apos;utilisateur et le mot de passe depuis votre profil (bouton « Copier »).</li>
-                  <li>Donnez un nom au profil (ex. « NexoraTV Salon ») puis validez.</li>
-                </ul>
-                <div className="callout">
-                  <span>⚠️</span>
-                  <span>
-                    Respectez les majuscules et minuscules. La plupart des erreurs
-                    de connexion viennent d&apos;un caractère mal recopié — d&apos;où
-                    l&apos;intérêt du bouton « Copier ».
-                  </span>
-                </div>
-              </article>
+            <article className="docs-section" id="etape-3">
+              <SectionTitle id="etape-3" kicker="Étape 3" title="Installer l'application" />
+              <p>Choisissez la méthode correspondant à votre appareil :</p>
+              <ul>
+                <li><strong>Smart TV (Android TV / Google TV)</strong> : ouvrez le Play Store, installez un lecteur IPTV compatible.</li>
+                <li><strong>Amazon Fire Stick</strong> : recherchez l&apos;application dans l&apos;Appstore et installez-la.</li>
+                <li><strong>Android (téléphone / tablette)</strong> : téléchargez l&apos;application depuis le Play Store.</li>
+                <li><strong>iPhone / iPad</strong> : installez un lecteur compatible depuis l&apos;App Store.</li>
+                <li><strong>Ordinateur</strong> : utilisez un lecteur de bureau compatible.</li>
+              </ul>
+              <Callout type="info">Débit conseillé : 15 Mbps pour la HD, 25 Mbps pour la 4K.</Callout>
+            </article>
 
-              <article className="step reveal" id="etape-5">
-                <span className="step-num">5</span>
-                <h3>Premier lancement</h3>
-                <p>
-                  L&apos;application charge la liste des chaînes et de la VOD. Ce
-                  premier chargement peut prendre jusqu&apos;à une minute.
-                </p>
-                <ul>
-                  <li>Parcourez les catégories : direct, films, séries.</li>
-                  <li>Ajoutez vos chaînes préférées aux favoris.</li>
-                  <li>Activez le rafraîchissement automatique de la liste dans les réglages.</li>
-                </ul>
-                <div className="callout">
-                  <span>✅</span>
-                  <span>
-                    En cas de coupure, changez de serveur dans les réglages ou
-                    contactez le support 24/7.
-                  </span>
-                </div>
-              </article>
+            <article className="docs-section" id="etape-4">
+              <SectionTitle id="etape-4" kicker="Étape 4" title="Se connecter" />
+              <p>Ouvrez l&apos;application et ajoutez une nouvelle playlist :</p>
+              <ul>
+                <li>Choisissez le mode <strong>« Xtream Codes »</strong> ou <strong>« identifiants »</strong>.</li>
+                <li>Recopiez l&apos;URL du serveur, le nom d&apos;utilisateur et le mot de passe depuis votre profil (bouton « Copier »).</li>
+                <li>Donnez un nom au profil (ex. « NexoraTV Salon ») puis validez.</li>
+              </ul>
+              <Callout type="warning">
+                Respectez les majuscules et minuscules. La plupart des erreurs
+                de connexion viennent d&apos;un caractère mal recopié — d&apos;où
+                l&apos;intérêt du bouton « Copier ».
+              </Callout>
+            </article>
 
-              <div id="faq" style={{ scrollMarginTop: 96, marginTop: 56 }}>
-                <div
-                  className="section-head reveal"
-                  style={{ textAlign: "left", marginBottom: 28 }}
-                >
-                  <span className="eyebrow">Besoin d&apos;aide ?</span>
-                  <h2>Questions fréquentes</h2>
-                </div>
-                <Faq items={FAQ} />
-              </div>
+            <article className="docs-section" id="etape-5">
+              <SectionTitle id="etape-5" kicker="Étape 5" title="Premier lancement" />
+              <p>
+                L&apos;application charge la liste des chaînes et de la VOD. Ce
+                premier chargement peut prendre jusqu&apos;à une minute.
+              </p>
+              <ul>
+                <li>Parcourez les catégories : direct, films, séries.</li>
+                <li>Ajoutez vos chaînes préférées aux favoris.</li>
+                <li>Activez le rafraîchissement automatique de la liste dans les réglages.</li>
+              </ul>
+              <Callout type="success">
+                En cas de coupure, changez de serveur dans les réglages ou
+                contactez le support 24/7.
+              </Callout>
+            </article>
 
-              <div className="cta-band reveal" style={{ marginTop: 56 }}>
-                <h2>Toujours bloqué ?</h2>
-                <p className="lead">
-                  Notre support est disponible 7j/7. Décrivez votre appareil et le
-                  message d&apos;erreur, on s&apos;occupe du reste.
-                </p>
-                <div className="hero-actions">
-                  <Link href="/contact" className="btn btn-primary">
-                    Contacter le support
-                  </Link>
-                  <Link href="/avis" className="btn btn-ghost">
-                    Lire les avis
-                  </Link>
-                </div>
+            <article className="docs-section" id="faq">
+              <SectionTitle id="faq" kicker="Aide" title="Questions fréquentes" />
+              <Faq items={FAQ} />
+            </article>
+
+            <div className="cta-band reveal" style={{ marginTop: 16 }}>
+              <h2>Toujours bloqué ?</h2>
+              <p className="lead">
+                Notre support est disponible 7j/7. Décrivez votre appareil et le
+                message d&apos;erreur, on s&apos;occupe du reste.
+              </p>
+              <div className="hero-actions">
+                <Link href="/contact" className="btn btn-primary">
+                  Contacter le support
+                </Link>
+                <Link href="/avis" className="btn btn-ghost">
+                  Lire les avis
+                </Link>
               </div>
             </div>
           </div>
+
+          <TutoToc groups={GROUPS} />
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
