@@ -120,13 +120,16 @@ h3 { font-size: 1.2rem; }
   background: rgba(8, 9, 13, 0.75);
   border-bottom: 1px solid var(--border);
 }
-.nav { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); transition: height 0.25s var(--ease); }
+.nav {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  column-gap: 24px; height: var(--header-h); transition: height 0.25s var(--ease);
+}
 
-.brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+.brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; justify-self: start; }
 .brand-logo { width: 36px; height: 36px; border-radius: 50%; }
 .brand-accent { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
-.nav-links { display: flex; align-items: center; gap: 30px; list-style: none; }
+.nav-links { display: flex; align-items: center; gap: 30px; list-style: none; justify-self: center; }
 .nav-links a {
   font-size: 0.94rem;
   color: var(--text-muted);
@@ -143,7 +146,7 @@ h3 { font-size: 1.2rem; }
   background: var(--accent-grad);
 }
 
-.nav-cta { display: flex; align-items: center; gap: 14px; }
+.nav-cta { display: flex; align-items: center; gap: 14px; justify-self: end; }
 .nav-auth { display: flex; align-items: center; gap: 14px; }
 .nav-user { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
 

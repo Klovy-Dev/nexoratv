@@ -27,8 +27,6 @@ Trois variables d'environnement sont nécessaires (plus deux facultatives) :
 | `DATABASE_URL`   | Chaîne de connexion PostgreSQL (utilisez la version « pooled »). |
 | `AUTH_SECRET`    | Secret de signature des sessions (JWT).                          |
 | `ENCRYPTION_KEY` | Clé AES-256 (64 caractères hexadécimaux) pour chiffrer les identifiants d'abonnement. |
-| `ADMIN_EMAIL`    | *(facultatif)* e-mail du compte admin initial. Défaut : `admin@nexoratv.local`. |
-| `ADMIN_PASSWORD` | *(facultatif)* mot de passe du compte admin initial. Défaut : `ChangeMoi!2026`. |
 | `RESEND_API_KEY` | *(facultatif)* clé API [Resend](https://resend.com) pour l'e-mail de réinitialisation de mot de passe. Sans elle, le lien est écrit dans les logs. |
 | `MAIL_FROM`      | *(facultatif)* expéditeur des e-mails, ex. `NexoraTV <no-reply@votre-domaine.fr>`. |
 | `APP_URL`        | *(facultatif)* URL publique du site, pour les liens dans les e-mails. |
@@ -53,8 +51,9 @@ npm install
 npm run dev
 ```
 
-Ouvrez <http://localhost:3000>. Le schéma de base de données et le compte
-administrateur sont créés automatiquement au premier chargement d'une page.
+Ouvrez <http://localhost:3000>. Le schéma de base de données est créé
+automatiquement au premier chargement d'une page. Aucun compte administrateur
+n'est créé automatiquement — voir « Devenir administrateur » ci-dessous.
 
 ---
 
@@ -77,14 +76,22 @@ git push -u origin main
 2. Framework détecté : **Next.js** (rien à changer).
 3. Avant de déployer, ajoutez les variables d'environnement
    (**Settings → Environment Variables**) : `DATABASE_URL`, `AUTH_SECRET`,
-   `ENCRYPTION_KEY`, et éventuellement `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+   `ENCRYPTION_KEY`.
 4. **Deploy**.
 
-### Étape 3 — première connexion
+### Étape 3 — devenir administrateur
 
-Rendez-vous sur `https://votre-projet.vercel.app/connexion` et connectez-vous
-avec `ADMIN_EMAIL` / `ADMIN_PASSWORD`. **Changez immédiatement le mot de passe**
-depuis *Mon profil*.
+Aucun compte admin n'est créé automatiquement (par sécurité). Pour promouvoir
+un compte :
+
+1. Créez un compte normal via `/inscription`.
+2. Ouvrez la base de données (Neon → **SQL Editor**, ou tout client
+   PostgreSQL) et exécutez :
+   ```sql
+   UPDATE users SET role = 'admin' WHERE email = 'votre@e-mail.fr';
+   ```
+3. Reconnectez-vous : `/admin` est maintenant accessible depuis le menu de
+   compte.
 
 > 💡 Base de données : dans Vercel, l'onglet **Storage → Create Database →
 > Postgres (Neon)** crée la base et injecte `DATABASE_URL` automatiquement dans

@@ -1,6 +1,5 @@
 import "server-only";
 import postgres from "postgres";
-import bcrypt from "bcryptjs";
 
 /**
  * Accès à la base PostgreSQL (postgres.js).
@@ -125,21 +124,6 @@ async function ensureSchema(): Promise<void> {
   await raw`CREATE INDEX IF NOT EXISTS idx_subs_user ON subscriptions (user_id)`;
 
   await ensureMigrations(raw);
-
-  // Compte administrateur initial.
-  const admins = await raw`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`;
-  if (admins.length === 0) {
-    const email = (process.env.ADMIN_EMAIL ?? "admin@nexoratv.local")
-      .trim()
-      .toLowerCase();
-    const password = process.env.ADMIN_PASSWORD ?? "ChangeMoi!2026";
-    const hash = await bcrypt.hash(password, 12);
-    await raw`
-      INSERT INTO users (name, email, password_hash, role)
-      VALUES ('Administrateur', ${email}, ${hash}, 'admin')
-      ON CONFLICT (email) DO NOTHING
-    `;
-  }
 }
 
 /**
