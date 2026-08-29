@@ -16,8 +16,8 @@ export default function TeleviseursPage() {
         <h1 className="docs-h1">Téléviseurs compatibles</h1>
         <p className="docs-intro">
           Certains téléviseurs installent l&apos;application IPTV directement,
-          d&apos;autres nécessitent une méthode différente — voire un boîtier
-          externe. Vérifiez votre modèle ci-dessous.
+          d&apos;autres nécessitent un boîtier externe. Vérifiez votre modèle
+          ci-dessous.
         </p>
 
         <article className="docs-section" id="compatibilite">
@@ -26,7 +26,7 @@ export default function TeleviseursPage() {
             ok={[
               {
                 title: "Android TV / Google TV",
-                note: "Sony, TCL, Hisense, Philips, Sharp… installez l'application directement depuis le Play Store",
+                note: "Sony, TCL, Hisense, Philips, Sharp… installez IPTV Smarters directement depuis le Play Store",
               },
               {
                 title: "Téléviseurs Amazon Fire TV",
@@ -35,23 +35,24 @@ export default function TeleviseursPage() {
             ]}
             no={[
               {
-                title: "Samsung (Tizen) & LG (webOS)",
-                note: "pas de Play Store — utilisables via Smart IPTV ou un boîtier externe (voir ci-dessous)",
+                title: "Samsung (Tizen)",
+                note: "le fabricant bloque toutes les applications IPTV, sans exception — un boîtier externe est obligatoire",
+              },
+              {
+                title: "LG (webOS)",
+                note: "aucune de nos applications n'est disponible sur son magasin — un boîtier externe est nécessaire",
               },
               {
                 title: "Téléviseurs « non smart »",
                 note: "aucun magasin d'applications : un boîtier externe est indispensable",
               },
-              {
-                title: "Modèles antérieurs à 2016",
-                note: "mémoire souvent insuffisante, application lente ou instable",
-              },
             ]}
           />
           <Callout type="tip">
-            Le moyen le plus simple de rendre <strong>n&apos;importe quel
-            téléviseur</strong> compatible reste de brancher un boîtier
-            Android TV ou un Fire TV Stick sur un port HDMI libre — consultez{" "}
+            Sur Samsung, LG ou tout téléviseur non pris en charge, branchez un{" "}
+            <strong>Amazon Fire Stick</strong> ou une <strong>box
+            Android</strong> avec <strong>Ibogold</strong> sur le port HDMI :
+            ça fonctionne quel que soit le téléviseur. Détails sur{" "}
             <a href="/tuto/boitiers">Box &amp; Fire Stick compatibles</a>.
           </Callout>
         </article>

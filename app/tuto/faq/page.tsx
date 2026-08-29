@@ -15,8 +15,8 @@ const FAQ: FaqEntry[] = [
     a: "Après l'inscription, un administrateur doit associer votre abonnement à votre compte. Si rien n'apparaît après votre paiement, contactez le support via la page Contact.",
   },
   {
-    q: "Mon téléviseur Samsung ou LG n'a pas de Play Store, comment faire ?",
-    a: "Utilisez l'application Smart IPTV (activation par adresse MAC), ou branchez un boîtier Fire TV Stick / Android TV en HDMI pour une expérience plus simple. Détails sur la page « Choisir son application ».",
+    q: "Mon téléviseur est un Samsung ou un LG, comment faire ?",
+    a: "Sur Samsung, le fabricant bloque toutes les applications IPTV : aucune n'est installable. Sur LG, aucune de nos applications n'est disponible non plus. Dans les deux cas, branchez un Amazon Fire Stick ou une box Android avec Ibogold sur le port HDMI de votre téléviseur — ça fonctionne quel que soit le modèle. Détails sur la page « Choisir son application ».",
   },
   {
     q: "L'image se fige régulièrement, comment corriger ?",

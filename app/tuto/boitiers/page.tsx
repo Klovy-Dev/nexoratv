@@ -26,11 +26,11 @@ export default function BoitiersPage() {
             ok={[
               {
                 title: "Amazon Fire TV Stick",
-                note: "toutes générations : Lite, 4K, 4K Max, ainsi que Fire TV Cube",
+                note: "toutes générations : Lite, 4K, 4K Max, ainsi que Fire TV Cube — installez Ibogold via l'Appstore",
               },
               {
                 title: "Boîtiers Android TV / Google TV",
-                note: "Nvidia Shield, Xiaomi Mi Box, Chromecast avec Google TV, TCL/Onn…",
+                note: "Nvidia Shield, Xiaomi Mi Box, Chromecast avec Google TV, TCL/Onn… installez Ibogold",
               },
               {
                 title: "Apple TV",
