@@ -183,6 +183,7 @@ async function AdminUserDetail({
                 expires_at: editing.expires_at ?? "",
                 status: editing.status,
                 note: editing.note,
+                screens: editing.screens,
               }
             : null
         }
@@ -198,7 +199,7 @@ async function AdminUserDetail({
               <thead>
                 <tr>
                   <th>Libellé</th><th>Serveur</th><th>Utilisateur</th>
-                  <th>Mot de passe</th><th>Expire</th><th>Statut</th><th />
+                  <th>Mot de passe</th><th>Écrans</th><th>Expire</th><th>Statut</th><th />
                 </tr>
               </thead>
               <tbody>
@@ -210,6 +211,7 @@ async function AdminUserDetail({
                     </td>
                     <td>{s.username || "—"}</td>
                     <td><code>{s.password || "—"}</code></td>
+                    <td>{s.screens ?? "—"}</td>
                     <td>{formatDate(s.expires_at)}</td>
                     <td>
                       {s.status === "suspended" ? (

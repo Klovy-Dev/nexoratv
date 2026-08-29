@@ -28,6 +28,7 @@ export async function saveSubscriptionAction(
   const expiresAt = str(formData.get("expires_at"));
   const status = formData.get("status") === "suspended" ? "suspended" : "active";
   const note = str(formData.get("note"));
+  const screensRaw = str(formData.get("screens"));
 
   const errors: string[] = [];
   const target = (await sql`SELECT 1 FROM users WHERE id = ${userId}`) as unknown as unknown[];
@@ -37,6 +38,13 @@ export async function saveSubscriptionAction(
   }
   if (expiresAt && !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) {
     errors.push("Date d'expiration invalide (AAAA-MM-JJ).");
+  }
+  let screens: number | null = null;
+  if (screensRaw) {
+    screens = Number(screensRaw);
+    if (!Number.isInteger(screens) || screens < 1 || screens > 5) {
+      errors.push("Le nombre d'écrans doit être compris entre 1 et 5.");
+    }
   }
   if (errors.length > 0) return { fieldErrors: errors };
 
@@ -56,16 +64,17 @@ export async function saveSubscriptionAction(
       UPDATE subscriptions SET
         user_id = ${userId}, label = ${label}, server_url = ${serverUrl},
         username = ${username}, password_enc = ${passwordEnc},
-        expires_at = ${expiry}, status = ${status}, note = ${note}
+        expires_at = ${expiry}, status = ${status}, note = ${note},
+        screens = ${screens}
       WHERE id = ${subId}
     `;
   } else {
     await sql`
       INSERT INTO subscriptions
-        (user_id, label, server_url, username, password_enc, expires_at, status, note)
+        (user_id, label, server_url, username, password_enc, expires_at, status, note, screens)
       VALUES
         (${userId}, ${label}, ${serverUrl}, ${username}, ${encryptSecret(password)},
-         ${expiry}, ${status}, ${note})
+         ${expiry}, ${status}, ${note}, ${screens})
     `;
   }
 

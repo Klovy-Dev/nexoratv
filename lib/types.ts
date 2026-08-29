@@ -18,6 +18,7 @@ export interface Subscription {
   expires_at: string | null;
   status: "active" | "suspended";
   note: string;
+  screens: number | null;
   created_at: string;
 }
 

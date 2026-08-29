@@ -74,6 +74,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_reviews_created ON reviews (created_at DESC)`;
+
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS screens SMALLINT`;
 }
 
 async function ensureSchema(): Promise<void> {
@@ -107,6 +109,7 @@ async function ensureSchema(): Promise<void> {
       expires_at   DATE,
       status       TEXT NOT NULL DEFAULT 'active',
       note         TEXT NOT NULL DEFAULT '',
+      screens      SMALLINT,
       created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;

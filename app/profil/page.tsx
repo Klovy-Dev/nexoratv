@@ -103,6 +103,15 @@ export default async function ProfilPage({
                       <span className="k">Mot de passe</span>
                       <SecretValue value={sub.password} />
                     </div>
+                    {sub.screens && (
+                      <div className="cred-row">
+                        <span className="k">Écrans simultanés</span>
+                        <span className="v" style={{ fontFamily: "inherit" }}>
+                          {sub.screens}
+                        </span>
+                        <span />
+                      </div>
+                    )}
                     {sub.note && (
                       <div className="cred-row">
                         <span className="k">Note</span>

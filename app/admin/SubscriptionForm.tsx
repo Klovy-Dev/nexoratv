@@ -16,6 +16,7 @@ interface Editing {
   expires_at: string;
   status: "active" | "suspended";
   note: string;
+  screens: number | null;
 }
 
 const initial: FormState = {};
@@ -109,6 +110,19 @@ export default function SubscriptionForm({
               id="expires_at"
               name="expires_at"
               defaultValue={editing?.expires_at ?? ""}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="screens">Écrans simultanés (optionnel)</label>
+            <input
+              className="input"
+              type="number"
+              id="screens"
+              name="screens"
+              min={1}
+              max={5}
+              placeholder="Non précisé"
+              defaultValue={editing?.screens ?? ""}
             />
           </div>
         </div>
