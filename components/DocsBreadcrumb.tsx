@@ -5,6 +5,8 @@ import { TUTO_NAV } from "@/lib/tuto-nav";
 
 export default function DocsBreadcrumb() {
   const pathname = usePathname();
+  if (pathname === "/tuto") return null;
+
   let group = "";
   let page = "";
 

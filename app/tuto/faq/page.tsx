@@ -15,8 +15,12 @@ const FAQ: FaqEntry[] = [
     a: "Après l'inscription, un administrateur doit associer votre abonnement à votre compte. Si rien n'apparaît après votre paiement, contactez le support via la page Contact.",
   },
   {
-    q: "Mon téléviseur est un Samsung ou un LG, comment faire ?",
-    a: "Sur Samsung, le fabricant bloque toutes les applications IPTV : aucune n'est installable. Sur LG, aucune de nos applications n'est disponible non plus. Dans les deux cas, branchez un Amazon Fire Stick ou une box Android avec Ibogold sur le port HDMI de votre téléviseur — ça fonctionne quel que soit le modèle. Détails sur la page « Choisir son application ».",
+    q: "Mon téléviseur est un Samsung, comment faire ?",
+    a: "Samsung bloque toutes les applications IPTV, sans exception. Branchez un Amazon Fire Stick ou une box Android avec Ibogold sur le port HDMI de votre téléviseur — ça fonctionne quel que soit le modèle. Détails sur la page « Choisir son application ».",
+  },
+  {
+    q: "Mon téléviseur est un LG, comment faire ?",
+    a: "Installez l'application Smart TV depuis le LG Content Store : l'activation se fait par adresse MAC plutôt qu'avec vos identifiants habituels. Vous pouvez aussi brancher un boîtier externe (Fire Stick / box Android avec Ibogold) pour une connexion classique. Détails sur la page « Choisir son application ».",
   },
   {
     q: "L'image se fige régulièrement, comment corriger ?",

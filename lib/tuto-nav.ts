@@ -11,7 +11,7 @@ export interface DocGroup {
 export const TUTO_NAV: DocGroup[] = [
   {
     title: "Démarrage",
-    pages: [{ slug: "/tuto", label: "Créer votre compte" }],
+    pages: [{ slug: "/tuto/demarrage", label: "Créer votre compte" }],
   },
   {
     title: "Installation",
@@ -19,10 +19,7 @@ export const TUTO_NAV: DocGroup[] = [
   },
   {
     title: "Compatibilité",
-    pages: [
-      { slug: "/tuto/televiseurs", label: "Téléviseurs" },
-      { slug: "/tuto/boitiers", label: "Box & Fire Stick" },
-    ],
+    pages: [{ slug: "/tuto/appareils", label: "Appareils compatibles" }],
   },
   {
     title: "Utilisation",

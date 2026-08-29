@@ -34,6 +34,12 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      { source: "/tuto/televiseurs", destination: "/tuto/appareils", permanent: true },
+      { source: "/tuto/boitiers", destination: "/tuto/appareils", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

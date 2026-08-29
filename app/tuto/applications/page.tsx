@@ -10,7 +10,8 @@ const SECTIONS = [
   { id: "telephone", label: "Téléphone (Android & iOS)" },
   { id: "box-firestick", label: "Box Android & Fire Stick" },
   { id: "android-tv", label: "Android TV / Google TV" },
-  { id: "samsung-lg", label: "Samsung & LG" },
+  { id: "samsung", label: "Samsung" },
+  { id: "lg", label: "LG" },
   { id: "ordinateur", label: "Ordinateur" },
 ];
 
@@ -62,25 +63,36 @@ export default function ApplicationsPage() {
           </p>
         </article>
 
-        <article className="docs-section" id="samsung-lg">
-          <SectionTitle id="samsung-lg" kicker="Smart TV" title="Samsung & LG" />
+        <article className="docs-section" id="samsung">
+          <SectionTitle id="samsung" kicker="Smart TV" title="Samsung" />
           <Callout type="danger">
-            Sur les téléviseurs <strong>Samsung</strong>, le fabricant bloque
-            toutes les applications IPTV : aucune installation n&apos;est
-            possible, quelle que soit l&apos;application.
+            Le fabricant bloque toutes les applications IPTV sur ses
+            téléviseurs : aucune installation n&apos;est possible, quelle que
+            soit l&apos;application.
           </Callout>
           <p>
-            Sur <strong>LG (webOS)</strong>, aucune de nos applications
-            n&apos;est disponible non plus.
-          </p>
-          <p>
-            Dans les deux cas, la solution consiste à brancher un boîtier
-            externe sur le port HDMI de votre téléviseur : un{" "}
-            <strong>Amazon Fire Stick</strong> ou une <strong>box
+            Seule solution : brancher un boîtier externe sur le port HDMI —
+            un <strong>Amazon Fire Stick</strong> ou une <strong>box
             Android</strong> avec <strong>Ibogold</strong> installé
-            fonctionnent parfaitement, même sur un Samsung ou un LG. Voir{" "}
-            <a href="/tuto/boitiers">Box &amp; Fire Stick compatibles</a>.
+            fonctionnent parfaitement. Voir{" "}
+            <a href="/tuto/appareils">Appareils compatibles</a>.
           </p>
+        </article>
+
+        <article className="docs-section" id="lg">
+          <SectionTitle id="lg" kicker="Smart TV" title="LG (webOS)" />
+          <p>
+            Installez l&apos;application <strong>Smart TV</strong> depuis le
+            LG Content Store, puis suivez la procédure d&apos;activation
+            indiquée dans l&apos;application : elle se fait par adresse MAC,
+            différemment de la connexion habituelle par identifiants.
+          </p>
+          <Callout type="tip">
+            Besoin d&apos;aide pour l&apos;activation ? Contactez le support.
+            Vous pouvez aussi brancher un boîtier externe (Fire Stick / box
+            Android avec Ibogold) pour retrouver une connexion classique par
+            identifiants.
+          </Callout>
         </article>
 
         <article className="docs-section" id="ordinateur">
