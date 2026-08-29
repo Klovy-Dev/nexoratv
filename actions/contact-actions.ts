@@ -4,7 +4,10 @@ import { isEmail, str } from "@/lib/validation";
 import { sendEmail, contactEmailHtml } from "@/lib/mail";
 import type { FormState } from "@/lib/types";
 
-const CONTACT_TO = "nexoraa.hd@gmail.com";
+// Resend refuse d'envoyer vers une autre adresse tant qu'aucun domaine
+// n'est vérifié (compte "testing" limité à l'adresse du compte Resend
+// lui-même). Repasser sur nexoraa.hd@gmail.com une fois un domaine vérifié.
+const CONTACT_TO = "klovy.off@gmail.com";
 
 export async function contactAction(
   _prev: FormState,
