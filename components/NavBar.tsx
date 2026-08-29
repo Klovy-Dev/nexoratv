@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth-actions";
@@ -16,12 +16,25 @@ const LINKS = [
 
 export default function NavBar({ user }: { user: User | null }) {
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const close = () => setOpen(false);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (!accountRef.current?.contains(e.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [accountOpen]);
+
+  useEffect(() => setAccountOpen(false), [pathname]);
 
   return (
     <>
@@ -48,24 +61,38 @@ export default function NavBar({ user }: { user: User | null }) {
           <div className="nav-cta">
             <div className="nav-auth">
               {user ? (
-                <>
-                  <span className="nav-user" title={user.email}>
-                    {user.name}
-                  </span>
-                  <Link href="/profil" className="btn btn-ghost btn-sm">
-                    Mon profil
-                  </Link>
-                  {user.role === "admin" && (
-                    <Link href="/admin" className="btn btn-ghost btn-sm">
-                      Admin
+                <div className={`nav-account${accountOpen ? " open" : ""}`} ref={accountRef}>
+                  <button
+                    type="button"
+                    className="nav-account-trigger"
+                    aria-expanded={accountOpen}
+                    onClick={() => setAccountOpen((v) => !v)}
+                  >
+                    <span className="nav-account-avatar">{initials(user.name)}</span>
+                    <span>{user.name}</span>
+                    <span className="nav-account-chevron" aria-hidden="true">▾</span>
+                  </button>
+
+                  <div className="nav-account-menu">
+                    <div className="nav-account-menu-header">
+                      <strong>{user.name}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                    <Link href="/profil" onClick={() => setAccountOpen(false)}>
+                      Mon profil
                     </Link>
-                  )}
-                  <form action={logoutAction} className="inline-form">
-                    <button type="submit" className="btn btn-ghost btn-sm">
-                      Déconnexion
-                    </button>
-                  </form>
-                </>
+                    {user.role === "admin" && (
+                      <Link href="/admin" onClick={() => setAccountOpen(false)}>
+                        Admin
+                      </Link>
+                    )}
+                    <form action={logoutAction} className="inline-form">
+                      <button type="submit" className="danger">
+                        Déconnexion
+                      </button>
+                    </form>
+                  </div>
+                </div>
               ) : (
                 <>
                   <Link href="/connexion" className="btn btn-ghost">
