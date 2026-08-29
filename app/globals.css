@@ -548,6 +548,29 @@ table.data tbody tr:hover { background: var(--surface); }
 .callout-success { border-left-color: var(--success); }
 .callout-success .callout-label { color: var(--success); }
 
+.compat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+.compat-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; background: var(--surface-2); }
+.compat-card h4 { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+.compat-card.ok { border-color: rgba(35, 193, 125, 0.35); }
+.compat-card.ok h4 { color: var(--success); }
+.compat-card.no { border-color: rgba(255, 84, 112, 0.35); }
+.compat-card.no h4 { color: var(--danger); }
+.compat-card ul { list-style: none; display: grid; gap: 12px; }
+.compat-card li { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+.compat-card li strong { color: var(--text); display: block; font-size: 0.92rem; margin-bottom: 2px; }
+.compat-card li .note { font-size: 0.85rem; }
+
+.docs-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+.docs-pager-link {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 16px 18px; display: grid; gap: 4px;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.docs-pager-link:hover { background: var(--surface-2); border-color: var(--accent); transform: translateY(-2px); }
+.docs-pager-link.next { text-align: right; }
+.docs-pager-dir { font-size: 0.75rem; color: var(--text-muted); }
+.docs-pager-title { font-weight: 600; }
+
 /* ---------- FAQ ---------- */
 .faq { display: grid; gap: 12px; max-width: 780px; margin-inline: auto; }
 .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
@@ -597,6 +620,8 @@ table.data tbody tr:hover { background: var(--surface); }
   .docs-nav-group a { border-left: 0; border: 1px solid var(--border); }
   .docs-nav-group a.active { border-color: var(--pink); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
+  .compat-grid, .docs-pager { grid-template-columns: 1fr; }
+  .docs-pager-link.next { text-align: left; }
 }
 
 @media (max-width: 720px) {
