@@ -29,6 +29,9 @@ Trois variables d'environnement sont nécessaires (plus deux facultatives) :
 | `ENCRYPTION_KEY` | Clé AES-256 (64 caractères hexadécimaux) pour chiffrer les identifiants d'abonnement. |
 | `ADMIN_EMAIL`    | *(facultatif)* e-mail du compte admin initial. Défaut : `admin@nexoratv.local`. |
 | `ADMIN_PASSWORD` | *(facultatif)* mot de passe du compte admin initial. Défaut : `ChangeMoi!2026`. |
+| `RESEND_API_KEY` | *(facultatif)* clé API [Resend](https://resend.com) pour l'e-mail de réinitialisation de mot de passe. Sans elle, le lien est écrit dans les logs. |
+| `MAIL_FROM`      | *(facultatif)* expéditeur des e-mails, ex. `NexoraTV <no-reply@votre-domaine.fr>`. |
+| `APP_URL`        | *(facultatif)* URL publique du site, pour les liens dans les e-mails. |
 
 Le fichier `.env.local` fourni contient déjà un `AUTH_SECRET` et un
 `ENCRYPTION_KEY` générés. **Il ne reste qu'à renseigner `DATABASE_URL`.**
@@ -99,6 +102,8 @@ depuis *Mon profil*.
 | Contact | `/contact` | public |
 | Connexion | `/connexion` | public |
 | Inscription | `/inscription` | public |
+| Mot de passe oublié | `/mot-de-passe-oublie` | public |
+| Réinitialisation | `/reinitialiser-mot-de-passe` | public (lien e-mail) |
 | Mon profil | `/profil` | connecté |
 | Administration | `/admin` | admin |
 | Mentions légales | `/mentions-legales` | public |
@@ -143,9 +148,11 @@ automatiquement administrateur s'il n'en existe aucun.
 
 1. Changer le mot de passe admin (voir §4, étape 3).
 2. Compléter les pages légales (champs `[entre crochets]`).
-3. Brancher un envoi d'e-mail réel pour le formulaire de contact
-   (`actions/contact-actions.ts` — actuellement écrit dans les logs).
-   Recommandé : [Resend](https://resend.com).
+3. Configurer [Resend](https://resend.com) (`RESEND_API_KEY`, `MAIL_FROM`,
+   domaine vérifié) : la réinitialisation de mot de passe passe par `lib/mail.ts`.
+   Sans clé, le lien de réinitialisation est écrit dans les logs.
+   Le formulaire de contact (`actions/contact-actions.ts`) reste à brancher
+   sur le même helper.
 4. Vérifier que `DATABASE_URL` pointe bien vers la connexion **pooled**.
 5. Sauvegardes de la base (Neon propose des snapshots automatiques).
 

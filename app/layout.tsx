@@ -3,7 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import SiteChrome from "@/components/SiteChrome";
 import RevealInit from "@/components/RevealInit";
+import RouteProgress from "@/components/RouteProgress";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,9 +39,10 @@ export default function RootLayout({
         <noscript>
           <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
         </noscript>
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <RouteProgress />
+        <SiteChrome header={<SiteHeader />} footer={<SiteFooter />}>
+          {children}
+        </SiteChrome>
         <RevealInit />
       </body>
     </html>

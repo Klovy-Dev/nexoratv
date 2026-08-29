@@ -21,6 +21,25 @@ export function passwordProblems(pw: string): string[] {
   return problems;
 }
 
+export interface PasswordScore {
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+}
+
+/** Estimation grossière de la robustesse, pour le retour visuel. */
+export function passwordStrength(pw: string): PasswordScore {
+  let points = 0;
+  if (pw.length >= PASSWORD_MIN_LENGTH) points++;
+  if (pw.length >= 12) points++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) points++;
+  if (/\d/.test(pw)) points++;
+  if (/[^A-Za-z0-9]/.test(pw)) points++;
+
+  const score = Math.max(0, Math.min(4, points - 1)) as 0 | 1 | 2 | 3 | 4;
+  const label = ["Très faible", "Faible", "Moyen", "Bon", "Excellent"][score];
+  return { score, label };
+}
+
 export function str(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
 }

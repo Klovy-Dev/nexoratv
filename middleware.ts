@@ -23,9 +23,11 @@ export async function middleware(req: NextRequest) {
   }
 
   if (!valid) {
+    const dest = pathname + req.nextUrl.search;
     const url = req.nextUrl.clone();
     url.pathname = "/connexion";
     url.search = "";
+    url.searchParams.set("next", dest);
     return NextResponse.redirect(url);
   }
 

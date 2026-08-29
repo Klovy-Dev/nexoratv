@@ -51,11 +51,29 @@ function connection(): SqlTag {
 
 let schemaReady: Promise<void> | null = null;
 
+/** DDL idempotente pour les fonctionnalités ajoutées après coup. */
+async function ensureMigrations(raw: SqlTag): Promise<void> {
+  await raw`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at    TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_pwreset_token ON password_resets (token_hash)`;
+}
+
 async function ensureSchema(): Promise<void> {
   const raw = connection();
 
   const check = await raw`SELECT to_regclass('public.subscriptions') AS t`;
-  if (check[0]?.t) return; // schéma déjà en place
+  if (check[0]?.t) {
+    await ensureMigrations(raw);
+    return; // schéma de base déjà en place
+  }
 
   await raw`
     CREATE TABLE IF NOT EXISTS users (
@@ -94,6 +112,8 @@ async function ensureSchema(): Promise<void> {
 
   await raw`CREATE INDEX IF NOT EXISTS idx_attempts ON login_attempts (email, ip, attempted_at)`;
   await raw`CREATE INDEX IF NOT EXISTS idx_subs_user ON subscriptions (user_id)`;
+
+  await ensureMigrations(raw);
 
   // Compte administrateur initial.
   const admins = await raw`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`;

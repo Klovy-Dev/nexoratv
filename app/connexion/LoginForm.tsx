@@ -10,13 +10,14 @@ import type { FormState } from "@/lib/types";
 
 const initial: FormState = {};
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next?: string }) {
   const [state, action] = useActionState(loginAction, initial);
 
   return (
     <>
       <FormErrors state={state} />
       <form action={action} noValidate>
+        {next && <input type="hidden" name="next" value={next} />}
         <div className="form-group">
           <label htmlFor="email">Adresse e-mail</label>
           <input
@@ -26,10 +27,16 @@ export default function LoginForm() {
             name="email"
             required
             autoComplete="email"
+            autoFocus
           />
         </div>
         <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
+          <div className="label-row">
+            <label htmlFor="password">Mot de passe</label>
+            <Link href="/mot-de-passe-oublie" className="label-link">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <PasswordInput
             id="password"
             name="password"

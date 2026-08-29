@@ -28,6 +28,7 @@ export default function RegisterForm() {
             required
             autoComplete="name"
             maxLength={80}
+            autoFocus
           />
         </div>
 
@@ -52,6 +53,7 @@ export default function RegisterForm() {
             required
             autoComplete="new-password"
             minLength={PASSWORD_MIN_LENGTH}
+            showStrength
           />
           <p className="hint">
             Au moins {PASSWORD_MIN_LENGTH} caractères, avec au minimum une lettre

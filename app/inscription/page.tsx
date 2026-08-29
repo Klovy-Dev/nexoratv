@@ -9,17 +9,13 @@ export default async function InscriptionPage() {
   if (await getCurrentUser()) redirect("/profil");
 
   return (
-    <div className="auth-wrap">
-      <div className="container">
-        <div className="auth-card reveal">
-          <h1>Créer un compte</h1>
-          <p className="sub">
-            Rejoignez NexoraTV et retrouvez vos identifiants d&apos;abonnement au
-            même endroit.
-          </p>
-          <RegisterForm />
-        </div>
-      </div>
+    <div className="auth-card reveal">
+      <h1>Créer un compte</h1>
+      <p className="sub">
+        Rejoignez NexoraTV et retrouvez vos identifiants d&apos;abonnement au
+        même endroit.
+      </p>
+      <RegisterForm />
     </div>
   );
 }

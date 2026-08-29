@@ -13,8 +13,14 @@ export default function SubmitButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className={className} disabled={pending}>
-      {pending ? (pendingLabel ?? "Veuillez patienter…") : children}
+    <button
+      type="submit"
+      className={className}
+      disabled={pending}
+      aria-busy={pending}
+    >
+      {pending && <span className="spinner" aria-hidden="true" />}
+      <span>{pending ? (pendingLabel ?? "Veuillez patienter…") : children}</span>
     </button>
   );
 }
