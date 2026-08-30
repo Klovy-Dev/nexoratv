@@ -169,6 +169,8 @@ function OfferCard({
         <OrderForm
           offer={{
             id: offer.id,
+            title: offer.title,
+            duration_label: offer.duration_label,
             kind: offer.kind,
             price_cents: offer.price_cents,
             included_screens: offer.included_screens,

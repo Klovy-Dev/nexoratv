@@ -1158,6 +1158,65 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .offer-total strong { font-size: 1.2rem; }
 
+/* ---- Fenêtre modale (commande) ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+  background: rgba(4, 5, 8, 0.72);
+  backdrop-filter: blur(4px);
+  animation: modal-fade 0.18s var(--ease);
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  animation: modal-rise 0.22s var(--ease);
+}
+.modal-title { font-size: 1.25rem; margin-bottom: 4px; padding-right: 28px; }
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.modal-close:hover { color: var(--text); background: var(--danger); }
+
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay, .modal { animation: none; }
+}
+@media (max-width: 480px) {
+  .modal { padding: 22px 18px; }
+  .modal-overlay { padding: 12px; }
+}
+
 @media (max-width: 720px) {
   .go-log li { grid-template-columns: 1fr; gap: 2px; }
   .sub-admin-top { flex-direction: column; }
