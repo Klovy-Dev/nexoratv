@@ -135,7 +135,12 @@ export default async function OffersAdminPage({
                               )}
                             </td>
                             <td>{formatPrice(o.price_cents)}</td>
-                            <td>{o.max_connections ?? "—"}</td>
+                            <td>
+                              {o.included_screens}
+                              {o.allow_screens
+                                ? ` → ${o.max_screens} (+${formatPrice(o.extra_screen_cents)})`
+                                : ""}
+                            </td>
                             <td>
                               <span
                                 className={`badge ${o.active ? "badge-active" : "badge-suspended"}`}

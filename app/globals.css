@@ -1080,6 +1080,7 @@ table.data tbody tr:hover { background: var(--surface); }
 .offer-price {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 6px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
@@ -1108,6 +1109,30 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .offer-order { display: grid; gap: 12px; margin-top: auto; }
 .offer-order .form-group { margin-bottom: 0; }
+.offer-from {
+  display: block;
+  width: 100%;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.offer-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.offer-total span {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.offer-total strong { font-size: 1.2rem; }
 
 @media (max-width: 720px) {
   .go-log li { grid-template-columns: 1fr; gap: 2px; }

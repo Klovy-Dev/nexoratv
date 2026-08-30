@@ -209,7 +209,10 @@ revendeur, `mass_refund` optionnel).
 ### Self-service client
 
 - **`/admin/offres`** : l'admin emballe un forfait GoldenOTT sous un nom
-  commercial + un prix en euros (table `iptv_offers`).
+  commercial + un prix en euros (table `iptv_offers`). Pour les lignes M3U, on
+  peut autoriser le client à **choisir son nombre d'écrans** (1 → 5) avec un
+  supplément par écran (défaut +3 €) ; le prix se met à jour en direct sur
+  `/commander` et le total est figé dans la commande.
 - **`/commander`** : le client choisit une offre → une **commande** est créée
   (`iptv_orders`, statut `pending`). *Le paiement s'insère ici plus tard.*
 - **`/admin/commandes`** : l'admin **valide** → provisioning GoldenOTT →

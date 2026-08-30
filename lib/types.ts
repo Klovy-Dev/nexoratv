@@ -58,11 +58,33 @@ export interface Offer {
   tagline: string;
   duration_label: string;
   price_cents: number;
+  /** écrans compris dans le prix de base (généralement 1) */
+  included_screens: number;
+  /** le client peut ajouter des écrans sur la page Commander */
+  allow_screens: boolean;
+  /** supplément par écran au-delà des écrans inclus, en centimes */
+  extra_screen_cents: number;
+  /** plafond d'écrans sélectionnables */
+  max_screens: number;
+  /** @deprecated remplacé par included_screens — conservé pour compat DB */
   max_connections: number | null;
   is_adult: boolean;
   active: boolean;
   sort: number;
   created_at: string;
+}
+
+/** Calcule le prix total d'une offre pour un nombre d'écrans donné. */
+export function offerPriceCents(
+  offer: Pick<
+    Offer,
+    "price_cents" | "included_screens" | "extra_screen_cents" | "allow_screens"
+  >,
+  screens: number,
+): number {
+  if (!offer.allow_screens) return offer.price_cents;
+  const extra = Math.max(0, screens - (offer.included_screens || 1));
+  return offer.price_cents + extra * offer.extra_screen_cents;
 }
 
 export type OrderStatus = "pending" | "fulfilled" | "rejected" | "cancelled";

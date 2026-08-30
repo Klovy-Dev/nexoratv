@@ -142,6 +142,7 @@ function OfferCard({
       </div>
 
       <div className="offer-price">
+        {offer.allow_screens && <span className="offer-from">à partir de</span>}
         <strong>{formatPrice(offer.price_cents)}</strong>
         {offer.duration_label && <span>/ {offer.duration_label}</span>}
       </div>
@@ -150,9 +151,11 @@ function OfferCard({
         <li>{KIND_FR[offer.kind]}</li>
         {offer.duration_label && <li>Durée : {offer.duration_label}</li>}
         <li>
-          {offer.max_connections
-            ? `${offer.max_connections} écran${offer.max_connections > 1 ? "s" : ""} simultané${offer.max_connections > 1 ? "s" : ""}`
-            : "1 écran"}
+          {offer.included_screens} écran{offer.included_screens > 1 ? "s" : ""}{" "}
+          inclus{offer.included_screens > 1 ? "" : ""}
+          {offer.allow_screens
+            ? ` · jusqu'à ${offer.max_screens} (+${formatPrice(offer.extra_screen_cents)}/écran)`
+            : ""}
         </li>
         <li>{offer.is_adult ? "Bouquets adultes inclus" : "Sans contenu adulte"}</li>
       </ul>
@@ -162,7 +165,17 @@ function OfferCard({
           Commande déjà en attente pour cette offre.
         </p>
       ) : canOrder ? (
-        <OrderForm offerId={offer.id} kind={offer.kind} />
+        <OrderForm
+          offer={{
+            id: offer.id,
+            kind: offer.kind,
+            price_cents: offer.price_cents,
+            included_screens: offer.included_screens,
+            allow_screens: offer.allow_screens,
+            extra_screen_cents: offer.extra_screen_cents,
+            max_screens: offer.max_screens,
+          }}
+        />
       ) : (
         <Link href="/connexion?next=/commander" className="btn btn-primary btn-block">
           Se connecter pour commander

@@ -29,6 +29,10 @@ export default function OfferForm({
   const [packageId, setPackageId] = useState<number>(
     editing?.goldenott_package_id ?? packages[0]?.id ?? 0,
   );
+  const [kind, setKind] = useState<ProviderKind>(editing?.kind ?? "line");
+  const [allowScreens, setAllowScreens] = useState<boolean>(
+    editing?.allow_screens ?? false,
+  );
   const pkg = packages.find((p) => p.id === packageId) ?? null;
   const key = editing ? `edit-${editing.id}` : "new";
 
@@ -47,7 +51,8 @@ export default function OfferForm({
               id="of-kind"
               name="kind"
               className="select"
-              defaultValue={editing?.kind ?? "line"}
+              value={kind}
+              onChange={(e) => setKind(e.target.value as ProviderKind)}
             >
               {(Object.keys(KIND_LABELS) as ProviderKind[]).map((k) => (
                 <option key={k} value={k}>
@@ -115,7 +120,7 @@ export default function OfferForm({
 
         <div className="grid-2">
           <div className="form-group">
-            <label htmlFor="of-price">Prix client (€)</label>
+            <label htmlFor="of-price">Prix client de base (€)</label>
             <input
               id="of-price"
               name="price"
@@ -126,21 +131,73 @@ export default function OfferForm({
               }
               placeholder="59,90"
             />
+            <p className="hint">Tarif pour le nombre d&apos;écrans inclus.</p>
           </div>
           <div className="form-group">
-            <label htmlFor="of-max">Connexions simultanées</label>
+            <label htmlFor="of-included">Écrans inclus</label>
             <input
-              id="of-max"
-              name="max_connections"
+              id="of-included"
+              name="included_screens"
               type="number"
               className="input"
               min={1}
-              max={pkg?.maxConnections ?? 5}
-              defaultValue={editing?.max_connections ?? ""}
-              placeholder="1"
+              max={5}
+              defaultValue={editing?.included_screens ?? 1}
             />
           </div>
         </div>
+
+        {kind === "line" && (
+          <div
+            className="stack"
+            style={{
+              background: "var(--bg-soft)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm)",
+              padding: 16,
+              marginBottom: 18,
+            }}
+          >
+            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="checkbox"
+                name="allow_screens"
+                checked={allowScreens}
+                onChange={(e) => setAllowScreens(e.target.checked)}
+              />
+              Le client choisit son nombre d&apos;écrans sur la page Commander
+            </label>
+            {allowScreens && (
+              <div className="grid-2">
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="of-extra">Supplément par écran en plus (€)</label>
+                  <input
+                    id="of-extra"
+                    name="extra_screen_price"
+                    className="input"
+                    inputMode="decimal"
+                    defaultValue={
+                      editing ? (editing.extra_screen_cents / 100).toFixed(2) : "3"
+                    }
+                    placeholder="3"
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="of-maxscreens">Écrans maximum</label>
+                  <input
+                    id="of-maxscreens"
+                    name="max_screens"
+                    type="number"
+                    className="input"
+                    min={1}
+                    max={5}
+                    defaultValue={editing?.max_screens ?? 5}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid-2">
           <div className="form-group">

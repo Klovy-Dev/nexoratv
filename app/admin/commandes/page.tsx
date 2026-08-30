@@ -107,8 +107,11 @@ function OrderCard({
         <div>
           <strong>{order.title}</strong>
           <div className="muted" style={{ fontSize: "0.82rem" }}>
-            {KIND_FR[order.kind]} · {formatPrice(order.price_cents)} ·{" "}
-            {order.renew_sub_id ? "renouvellement" : "nouvel abonnement"} ·
+            {KIND_FR[order.kind]} · {formatPrice(order.price_cents)}
+            {order.kind === "line" && order.max_connections
+              ? ` · ${order.max_connections} écran${order.max_connections > 1 ? "s" : ""}`
+              : ""}{" "}
+            · {order.renew_sub_id ? "renouvellement" : "nouvel abonnement"} ·
             commandé le {formatDate(order.created_at)}
           </div>
         </div>

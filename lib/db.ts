@@ -110,6 +110,11 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
       created_at             TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  // Choix du nombre d'écrans par le client, avec supplément par écran.
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS included_screens SMALLINT NOT NULL DEFAULT 1`;
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS allow_screens BOOLEAN NOT NULL DEFAULT false`;
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents INTEGER NOT NULL DEFAULT 300`;
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS max_screens SMALLINT NOT NULL DEFAULT 5`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.

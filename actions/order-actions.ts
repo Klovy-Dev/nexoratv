@@ -12,7 +12,7 @@ import {
   provisionSubscription,
 } from "@/lib/goldenott-provision";
 import { isMac, normalizeMac, str } from "@/lib/validation";
-import type { FormState } from "@/lib/types";
+import { offerPriceCents, type FormState } from "@/lib/types";
 
 function errMessages(err: unknown): string[] {
   if (err instanceof GoldenottError) return err.allMessages;
@@ -46,6 +46,17 @@ export async function createOrderAction(
     mac = normalizeMac(mac);
   }
 
+  // Nombre d'écrans choisi (lignes M3U uniquement).
+  const included = offer.included_screens || 1;
+  let screens = included;
+  if (offer.kind === "line" && offer.allow_screens) {
+    screens = Number(formData.get("screens")) || included;
+    if (screens < included || screens > Math.min(5, offer.max_screens || 5)) {
+      return { fieldErrors: ["Nombre d'écrans invalide."] };
+    }
+  }
+  const priceCents = offerPriceCents(offer, screens);
+
   // Une seule commande en attente par offre et par client.
   const existing = (await sql`
     SELECT 1 FROM iptv_orders
@@ -60,9 +71,9 @@ export async function createOrderAction(
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
        max_connections, is_adult, mac, customer_note)
     VALUES
-      (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${offer.price_cents},
+      (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${offer.max_connections}, ${offer.is_adult},
+       ${screens}, ${offer.is_adult},
        ${offer.kind === "mag" ? mac : null}, ${customerNote})
   `;
 
@@ -105,7 +116,7 @@ export async function createRenewalOrderAction(
       (${user.id}, ${offer.id}, ${offer.kind},
        ${`Renouvellement — ${sub.label}`}, ${offer.price_cents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${offer.max_connections}, ${offer.is_adult}, ${subId},
+       ${sub.screens ?? offer.included_screens}, ${offer.is_adult}, ${subId},
        ${str(formData.get("customer_note")).slice(0, 500)})
   `;
 

@@ -34,19 +34,22 @@ export async function saveOfferAction(
   const tagline = str(formData.get("tagline"));
   const durationLabel = str(formData.get("duration_label"));
   const priceCents = priceToCents(str(formData.get("price")));
-  const maxRaw = str(formData.get("max_connections"));
-  const maxConnections = maxRaw ? Number(maxRaw) : null;
   const isAdult = formData.get("is_adult") === "on";
   const active = formData.get("active") === "on";
   const sort = Number(formData.get("sort")) || 0;
+
+  const includedScreens = Math.min(5, Math.max(1, Number(formData.get("included_screens")) || 1));
+  const allowScreens = formData.get("allow_screens") === "on" && kind === "line";
+  const maxScreens = Math.min(
+    5,
+    Math.max(includedScreens, Number(formData.get("max_screens")) || 5),
+  );
+  const extraScreenCents = priceToCents(str(formData.get("extra_screen_price"))) ?? 300;
 
   const errors: string[] = [];
   if (!packageId) errors.push("Sélectionnez un forfait GoldenOTT.");
   if (!title) errors.push("Le titre commercial est requis.");
   if (priceCents === null) errors.push("Prix invalide.");
-  if (maxConnections !== null && (maxConnections < 1 || maxConnections > 5)) {
-    errors.push("Connexions simultanées : entre 1 et 5.");
-  }
   if (errors.length > 0) return { fieldErrors: errors };
 
   if (offerId) {
@@ -55,7 +58,9 @@ export async function saveOfferAction(
         kind = ${kind}, goldenott_package_id = ${packageId},
         goldenott_template_id = ${templateId}, title = ${title},
         tagline = ${tagline}, duration_label = ${durationLabel},
-        price_cents = ${priceCents}, max_connections = ${maxConnections},
+        price_cents = ${priceCents}, max_connections = ${includedScreens},
+        included_screens = ${includedScreens}, allow_screens = ${allowScreens},
+        extra_screen_cents = ${extraScreenCents}, max_screens = ${maxScreens},
         is_adult = ${isAdult}, active = ${active}, sort = ${sort}
       WHERE id = ${offerId}
     `;
@@ -63,10 +68,12 @@ export async function saveOfferAction(
     await sql`
       INSERT INTO iptv_offers
         (kind, goldenott_package_id, goldenott_template_id, title, tagline,
-         duration_label, price_cents, max_connections, is_adult, active, sort)
+         duration_label, price_cents, max_connections, included_screens,
+         allow_screens, extra_screen_cents, max_screens, is_adult, active, sort)
       VALUES
         (${kind}, ${packageId}, ${templateId}, ${title}, ${tagline},
-         ${durationLabel}, ${priceCents}, ${maxConnections}, ${isAdult},
+         ${durationLabel}, ${priceCents}, ${includedScreens}, ${includedScreens},
+         ${allowScreens}, ${extraScreenCents}, ${maxScreens}, ${isAdult},
          ${active}, ${sort})
     `;
   }
