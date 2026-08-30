@@ -233,7 +233,7 @@ export async function listPackages(): Promise<GoldenottPackage[]> {
         current_page: number;
         last_page: number;
       };
-    }>(`/v1/packages?per_page=100&page=${page}&sort_by=official_credits&sort_order=asc`, {
+    }>(`/v1/packages?per_page=100&page=${page}&sort_by=package_name&sort_order=asc`, {
       method: "GET",
     });
 
@@ -256,7 +256,10 @@ export async function listPackages(): Promise<GoldenottPackage[]> {
     if (!pk || pk.current_page >= pk.last_page) break;
     page++;
   }
-  return out;
+
+  // Tri par coût croissant (essais gratuits d'abord), fait côté client car
+  // l'API n'accepte que sort_by=package_name.
+  return out.sort((a, b) => (a.credits ?? 0) - (b.credits ?? 0));
 }
 
 /* ------------------------------------------------------------------ */
