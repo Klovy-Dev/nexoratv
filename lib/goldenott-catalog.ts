@@ -3,8 +3,10 @@ import { cache } from "react";
 import {
   getProfile,
   goldenottConfigured,
+  listDomains,
   listPackages,
   listTemplates,
+  type GoldenottDomain,
   type GoldenottPackage,
   type GoldenottTemplate,
 } from "@/lib/goldenott";
@@ -24,6 +26,7 @@ export interface GoldenottCatalog {
   username: string | null;
   packages: GoldenottPackage[];
   templates: GoldenottTemplate[];
+  domains: GoldenottDomain[];
 }
 
 export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> => {
@@ -35,14 +38,16 @@ export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> =>
       username: null,
       packages: [],
       templates: [],
+      domains: [],
     };
   }
 
   try {
-    const [profile, packages, templates] = await Promise.all([
+    const [profile, packages, templates, domains] = await Promise.all([
       getProfile(),
       listPackages(),
       listTemplates(),
+      listDomains(),
     ]);
     return {
       configured: true,
@@ -51,6 +56,7 @@ export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> =>
       username: profile.username,
       packages,
       templates,
+      domains,
     };
   } catch (err) {
     return {
@@ -60,6 +66,7 @@ export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> =>
       username: null,
       packages: [],
       templates: [],
+      domains: [],
     };
   }
 });

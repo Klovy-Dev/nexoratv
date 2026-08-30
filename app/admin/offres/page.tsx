@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/validation";
 import { deleteOfferAction, toggleOfferAction } from "@/actions/offer-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import OfferForm from "./OfferForm";
-import type { PkgOption, TplOption } from "../SubscriptionForm";
+import type { DomainOption, PkgOption, TplOption } from "../SubscriptionForm";
 
 export const metadata: Metadata = { title: "Offres — Administration" };
 export const dynamic = "force-dynamic";
@@ -47,6 +47,13 @@ export default async function OffersAdminPage({
     id: t.id,
     name: t.name,
     scope: t.scope,
+  }));
+  const domains: DomainOption[] = catalog.domains.map((d) => ({
+    id: d.id,
+    domain: d.domain,
+    forBypass: d.forBypass,
+    forTv: d.forTv,
+    isDefault: d.isDefault,
   }));
 
   return (
@@ -95,6 +102,7 @@ export default async function OffersAdminPage({
               editing={editing}
               packages={packages}
               templates={templates}
+              domains={domains}
             />
 
             <div className="panel">

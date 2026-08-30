@@ -46,6 +46,9 @@ export async function provisionSubscriptionAction(
   const packageLabel = str(formData.get("package_label")) || null;
   const templateRaw = str(formData.get("template_id"));
   const templateId = templateRaw ? Number(templateRaw) : null;
+  const domainRaw = str(formData.get("dns_domain_id"));
+  const dnsDomainId = domainRaw ? Number(domainRaw) : null;
+  const dnsDomainLabel = str(formData.get("dns_domain_label")) || null;
   const label = str(formData.get("label")) || "Abonnement IPTV";
   const note = str(formData.get("note"));
   const isAdult = formData.get("is_adult") === "on";
@@ -89,6 +92,8 @@ export async function provisionSubscriptionAction(
       packageId,
       packageLabel,
       templateId,
+      dnsDomainId,
+      dnsDomainLabel,
       isAdult,
       label,
       note,

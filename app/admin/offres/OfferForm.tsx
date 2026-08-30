@@ -6,7 +6,7 @@ import { saveOfferAction } from "@/actions/offer-actions";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import type { FormState, Offer, ProviderKind } from "@/lib/types";
-import type { PkgOption, TplOption } from "../SubscriptionForm";
+import type { DomainOption, PkgOption, TplOption } from "../SubscriptionForm";
 
 const initial: FormState = {};
 
@@ -20,10 +20,12 @@ export default function OfferForm({
   editing,
   packages,
   templates,
+  domains,
 }: {
   editing: Offer | null;
   packages: PkgOption[];
   templates: TplOption[];
+  domains: DomainOption[];
 }) {
   const [state, action] = useActionState(saveOfferAction, initial);
   const [packageId, setPackageId] = useState<number>(
@@ -263,15 +265,36 @@ export default function OfferForm({
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="of-sort">Ordre d&apos;affichage</label>
-            <input
-              id="of-sort"
-              name="sort"
-              type="number"
-              className="input"
-              defaultValue={editing?.sort ?? 0}
-            />
+            <label htmlFor="of-domain">Domaine DNS (optionnel)</label>
+            <select
+              id="of-domain"
+              name="dns_domain_id"
+              className="select"
+              defaultValue={editing?.dns_domain_id ?? ""}
+              disabled={kind === "code"}
+            >
+              <option value="">Domaine par défaut du compte</option>
+              {domains.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.domain}
+                  {d.isDefault ? " · par défaut" : ""}
+                  {d.forBypass ? " · bypass" : ""}
+                  {d.forTv ? " · TV" : ""}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
+
+        <div className="form-group" style={{ maxWidth: 220 }}>
+          <label htmlFor="of-sort">Ordre d&apos;affichage</label>
+          <input
+            id="of-sort"
+            name="sort"
+            type="number"
+            className="input"
+            defaultValue={editing?.sort ?? 0}
+          />
         </div>
 
         <div className="stack" style={{ margin: "6px 0 18px" }}>

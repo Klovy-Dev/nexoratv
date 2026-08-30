@@ -34,12 +34,29 @@ export interface TplOption {
   name: string;
   scope: string;
 }
+export interface DomainOption {
+  id: number;
+  domain: string;
+  forBypass: boolean;
+  forTv: boolean;
+  isDefault: boolean;
+}
 
 export interface GoldenottFormData {
   packages: PkgOption[];
   templates: TplOption[];
+  domains: DomainOption[];
   credit: number | null;
   error: string | null;
+}
+
+function domainLabel(d: DomainOption): string {
+  const tags = [
+    d.isDefault ? "par défaut" : null,
+    d.forBypass ? "bypass" : null,
+    d.forTv ? "TV" : null,
+  ].filter(Boolean);
+  return tags.length ? `${d.domain} (${tags.join(", ")})` : d.domain;
 }
 
 const initial: FormState = {};
@@ -120,6 +137,7 @@ function GoldenottForm({
   const [packageId, setPackageId] = useState<number>(
     data.packages.find((p) => !p.isTrial)?.id ?? data.packages[0]?.id ?? 0,
   );
+  const [domainId, setDomainId] = useState<string>("");
   const [username, setUsername] = useState("");
 
   const pkg = data.packages.find((p) => p.id === packageId) ?? null;
@@ -204,6 +222,33 @@ function GoldenottForm({
             </select>
           </div>
         </div>
+
+        {kind !== "code" && data.domains.length > 0 && (
+          <div className="form-group">
+            <label htmlFor="go-domain">Domaine DNS</label>
+            <select
+              id="go-domain"
+              name="dns_domain_id"
+              className="select"
+              value={domainId}
+              onChange={(e) => setDomainId(e.target.value)}
+            >
+              <option value="">Domaine par défaut du compte</option>
+              {data.domains.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {domainLabel(d)}
+                </option>
+              ))}
+            </select>
+            <input
+              type="hidden"
+              name="dns_domain_label"
+              value={
+                data.domains.find((d) => String(d.id) === domainId)?.domain ?? ""
+              }
+            />
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="go-label">Libellé affiché au client</label>

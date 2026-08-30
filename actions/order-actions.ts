@@ -70,11 +70,11 @@ export async function createOrderAction(
   await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       max_connections, is_adult, mac, customer_note)
+       dns_domain_id, max_connections, is_adult, mac, customer_note)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${screens}, ${offer.is_adult},
+       ${offer.dns_domain_id}, ${screens}, ${offer.is_adult},
        ${offer.kind === "mag" ? mac : null}, ${customerNote})
   `;
 
@@ -112,12 +112,13 @@ export async function createRenewalOrderAction(
   await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       max_connections, is_adult, renew_sub_id, customer_note)
+       dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind},
        ${`Renouvellement — ${sub.label}`}, ${offer.price_cents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${sub.screens ?? offer.included_screens}, ${offer.is_adult}, ${subId},
+       ${offer.dns_domain_id}, ${sub.screens ?? offer.included_screens},
+       ${offer.is_adult}, ${subId},
        ${str(formData.get("customer_note")).slice(0, 500)})
   `;
 
@@ -194,6 +195,7 @@ export async function approveOrderAction(
       packageId: order.package_id,
       packageLabel: order.title,
       templateId: order.template_id,
+      dnsDomainId: order.dns_domain_id,
       isAdult: order.is_adult,
       label,
       note: order.customer_note,

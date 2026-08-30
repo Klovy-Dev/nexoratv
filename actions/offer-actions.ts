@@ -30,6 +30,8 @@ export async function saveOfferAction(
   const packageId = Number(formData.get("goldenott_package_id")) || 0;
   const templateRaw = str(formData.get("goldenott_template_id"));
   const templateId = templateRaw ? Number(templateRaw) : null;
+  const domainRaw = str(formData.get("dns_domain_id"));
+  const dnsDomainId = domainRaw ? Number(domainRaw) : null;
   const title = str(formData.get("title"));
   const tagline = str(formData.get("tagline"));
   const durationLabel = str(formData.get("duration_label"));
@@ -57,7 +59,8 @@ export async function saveOfferAction(
     await sql`
       UPDATE iptv_offers SET
         kind = ${kind}, goldenott_package_id = ${packageId},
-        goldenott_template_id = ${templateId}, title = ${title},
+        goldenott_template_id = ${templateId}, dns_domain_id = ${dnsDomainId},
+        title = ${title},
         tagline = ${tagline}, duration_label = ${durationLabel}, badge = ${badge},
         price_cents = ${priceCents}, max_connections = ${includedScreens},
         included_screens = ${includedScreens}, allow_screens = ${allowScreens},
@@ -68,11 +71,12 @@ export async function saveOfferAction(
   } else {
     await sql`
       INSERT INTO iptv_offers
-        (kind, goldenott_package_id, goldenott_template_id, title, tagline,
-         duration_label, badge, price_cents, max_connections, included_screens,
-         allow_screens, extra_screen_cents, max_screens, is_adult, active, sort)
+        (kind, goldenott_package_id, goldenott_template_id, dns_domain_id, title,
+         tagline, duration_label, badge, price_cents, max_connections,
+         included_screens, allow_screens, extra_screen_cents, max_screens,
+         is_adult, active, sort)
       VALUES
-        (${kind}, ${packageId}, ${templateId}, ${title}, ${tagline},
+        (${kind}, ${packageId}, ${templateId}, ${dnsDomainId}, ${title}, ${tagline},
          ${durationLabel}, ${badge}, ${priceCents}, ${includedScreens}, ${includedScreens},
          ${allowScreens}, ${extraScreenCents}, ${maxScreens}, ${isAdult},
          ${active}, ${sort})

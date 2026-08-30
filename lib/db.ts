@@ -90,6 +90,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS mac TEXT`;
   await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS qr_url TEXT`;
   await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS dns_domain_id INTEGER`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS dns_domain TEXT`;
 
   // Offres publiques : un forfait GoldenOTT « emballé » pour la vente
   // (nom commercial, prix en euros, durée) que le client peut commander.
@@ -117,6 +119,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS max_screens SMALLINT NOT NULL DEFAULT 5`;
   // Bandeau mis en avant sur la page Commander (ex. « Best Seller »). Vide = pas de bandeau.
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS badge TEXT NOT NULL DEFAULT ''`;
+  // Domaine DNS GoldenOTT à assigner (NULL = domaine par défaut du compte).
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS dns_domain_id INTEGER`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.
@@ -144,6 +148,7 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_orders_status ON iptv_orders (status, created_at DESC)`;
   await raw`CREATE INDEX IF NOT EXISTS idx_orders_user ON iptv_orders (user_id)`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS dns_domain_id INTEGER`;
 
   // Journal d'audit : chaque appel sensible vers GoldenOTT (création,
   // prolongation, remboursement, sync) y est tracé, succès comme échec.

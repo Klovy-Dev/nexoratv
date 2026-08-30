@@ -192,6 +192,57 @@ export async function listTemplates(): Promise<GoldenottTemplate[]> {
 /*  Packages (forfaits)                                                */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  Domaines DNS                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface GoldenottDomain {
+  id: number;
+  domain: string;
+  forBypass: boolean;
+  forTv: boolean;
+  isDefault: boolean;
+  global: boolean;
+  heritable: boolean;
+}
+
+function mapDomain(d: Record<string, unknown>): GoldenottDomain {
+  return {
+    id: Number(d.id),
+    domain: String(d.domain ?? ""),
+    forBypass: bool(d.for_bypass),
+    forTv: bool(d.for_tv),
+    isDefault: bool(d.is_default),
+    global: bool(d.global),
+    heritable: bool(d.heritable),
+  };
+}
+
+/**
+ * Tous les domaines accessibles. L'API renvoie par défaut les domaines
+ * « normaux » ; les domaines bypass ne sortent qu'avec ?bypass=true — on
+ * fait donc les deux appels et on fusionne.
+ */
+export async function listDomains(): Promise<GoldenottDomain[]> {
+  const [normal, bypass] = await Promise.all([
+    call<{ data: Record<string, unknown>[] }>("/v1/account/domains", {
+      method: "GET",
+    }),
+    call<{ data: Record<string, unknown>[] }>("/v1/account/domains?bypass=true", {
+      method: "GET",
+    }).catch(() => ({ data: [] as Record<string, unknown>[] })),
+  ]);
+
+  const byId = new Map<number, GoldenottDomain>();
+  for (const d of [...(normal.data ?? []), ...(bypass.data ?? [])]) {
+    const dom = mapDomain(d);
+    if (dom.id) byId.set(dom.id, dom);
+  }
+  return [...byId.values()].sort(
+    (a, b) => Number(b.isDefault) - Number(a.isDefault) || a.domain.localeCompare(b.domain),
+  );
+}
+
 export interface GoldenottPackage {
   id: number;
   name: string;
@@ -269,6 +320,8 @@ export async function listPackages(): Promise<GoldenottPackage[]> {
 export interface CreateInput {
   packageId: number;
   templateId?: number | null;
+  /** domaine DNS à assigner (lignes M3U et boîtiers MAG uniquement) */
+  dnsDomainId?: number | null;
   isAdult?: boolean;
   notes?: string | null;
   /** line uniquement */
@@ -333,8 +386,10 @@ export async function createSubscription(
     body.username = input.username;
     body.password = input.password;
     if (input.maxConnections) body.max_connections = input.maxConnections;
+    if (input.dnsDomainId) body.dns_domain_id = input.dnsDomainId;
   } else if (kind === "mag") {
     body.mac = input.mac;
+    if (input.dnsDomainId) body.dns_domain_id = input.dnsDomainId;
   }
 
   const r = await call<{

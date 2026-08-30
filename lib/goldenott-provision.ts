@@ -81,6 +81,8 @@ export interface ProvisionOptions {
   packageId: number;
   packageLabel?: string | null;
   templateId?: number | null;
+  dnsDomainId?: number | null;
+  dnsDomainLabel?: string | null;
   isAdult?: boolean;
   label: string;
   note?: string;
@@ -108,6 +110,7 @@ export async function provisionSubscription(
     created = await createSubscription(opts.kind, {
       packageId: opts.packageId,
       templateId: opts.templateId ?? null,
+      dnsDomainId: opts.dnsDomainId ?? null,
       isAdult: opts.isAdult,
       notes: opts.note || `NexoraTV — client #${opts.userId}`,
       username: opts.username,
@@ -149,14 +152,16 @@ export async function provisionSubscription(
     INSERT INTO subscriptions
       (user_id, label, server_url, username, password_enc, expires_at, status,
        note, screens, provider, provider_kind, provider_ref, package_id,
-       package_label, provider_status, mac, qr_url, synced_at)
+       package_label, provider_status, mac, qr_url, dns_domain_id, dns_domain,
+       synced_at)
     VALUES
       (${opts.userId}, ${opts.label}, ${serverUrl}, ${displayUser},
        ${encryptSecret(displayPass)}, ${created.expiresAt}, 'active',
        ${opts.note ?? ""}, ${created.maxConnections ?? opts.maxConnections ?? null},
        'goldenott', ${opts.kind}, ${String(created.id)}, ${opts.packageId},
        ${opts.packageLabel ?? null}, ${providerStatus}, ${created.mac ?? null},
-       ${created.qrUrl}, now())
+       ${created.qrUrl}, ${opts.dnsDomainId ?? null}, ${opts.dnsDomainLabel ?? null},
+       now())
     RETURNING id
   `) as unknown as { id: number }[];
 

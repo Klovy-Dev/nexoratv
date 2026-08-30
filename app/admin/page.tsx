@@ -20,6 +20,7 @@ import {
 } from "@/actions/admin-actions";
 import { syncUserSubscriptionsAction } from "@/actions/goldenott-actions";
 import SubscriptionForm, {
+  type DomainOption,
   type GoldenottFormData,
   type PkgOption,
   type TplOption,
@@ -118,6 +119,18 @@ function toTplOptions(
   templates: Awaited<ReturnType<typeof loadGoldenottCatalog>>["templates"],
 ): TplOption[] {
   return templates.map((t) => ({ id: t.id, name: t.name, scope: t.scope }));
+}
+
+function toDomainOptions(
+  domains: Awaited<ReturnType<typeof loadGoldenottCatalog>>["domains"],
+): DomainOption[] {
+  return domains.map((d) => ({
+    id: d.id,
+    domain: d.domain,
+    forBypass: d.forBypass,
+    forTv: d.forTv,
+    isDefault: d.isDefault,
+  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -271,6 +284,7 @@ async function AdminUserDetail({
     ? {
         packages: pkgOptions,
         templates: toTplOptions(catalog.templates),
+        domains: toDomainOptions(catalog.domains),
         credit: catalog.credit,
         error: catalog.error,
       }
@@ -382,6 +396,9 @@ async function AdminUserDetail({
 
                   <div className="sub-admin-grid">
                     <Field label="Serveur">{s.server_url || "—"}</Field>
+                    {s.provider === "goldenott" && (
+                      <Field label="Domaine">{s.dns_domain || "défaut"}</Field>
+                    )}
                     <Field label={s.provider_kind === "mag" ? "MAC" : s.provider_kind === "code" ? "Code" : "Utilisateur"}>
                       {s.provider_kind === "mag"
                         ? s.mac || "—"

@@ -38,6 +38,9 @@ export interface Subscription {
   /** lien QR de mise à jour des bouquets */
   qr_url: string | null;
   synced_at: string | null;
+  /** domaine DNS GoldenOTT assigné (id + libellé) */
+  dns_domain_id: number | null;
+  dns_domain: string | null;
 }
 
 /** Abonnement prêt pour l'affichage : mot de passe déchiffré + état calculé. */
@@ -54,6 +57,7 @@ export interface Offer {
   kind: ProviderKind;
   goldenott_package_id: number;
   goldenott_template_id: number | null;
+  dns_domain_id: number | null;
   title: string;
   tagline: string;
   duration_label: string;
@@ -100,6 +104,7 @@ export interface Order {
   price_cents: number;
   package_id: number;
   template_id: number | null;
+  dns_domain_id: number | null;
   max_connections: number | null;
   is_adult: boolean;
   mac: string | null;
