@@ -115,6 +115,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS allow_screens BOOLEAN NOT NULL DEFAULT false`;
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents INTEGER NOT NULL DEFAULT 300`;
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS max_screens SMALLINT NOT NULL DEFAULT 5`;
+  // Bandeau mis en avant sur la page Commander (ex. « Best Seller »). Vide = pas de bandeau.
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS badge TEXT NOT NULL DEFAULT ''`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.

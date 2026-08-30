@@ -33,6 +33,7 @@ export async function saveOfferAction(
   const title = str(formData.get("title"));
   const tagline = str(formData.get("tagline"));
   const durationLabel = str(formData.get("duration_label"));
+  const badge = str(formData.get("badge")).slice(0, 24);
   const priceCents = priceToCents(str(formData.get("price")));
   const isAdult = formData.get("is_adult") === "on";
   const active = formData.get("active") === "on";
@@ -57,7 +58,7 @@ export async function saveOfferAction(
       UPDATE iptv_offers SET
         kind = ${kind}, goldenott_package_id = ${packageId},
         goldenott_template_id = ${templateId}, title = ${title},
-        tagline = ${tagline}, duration_label = ${durationLabel},
+        tagline = ${tagline}, duration_label = ${durationLabel}, badge = ${badge},
         price_cents = ${priceCents}, max_connections = ${includedScreens},
         included_screens = ${includedScreens}, allow_screens = ${allowScreens},
         extra_screen_cents = ${extraScreenCents}, max_screens = ${maxScreens},
@@ -68,11 +69,11 @@ export async function saveOfferAction(
     await sql`
       INSERT INTO iptv_offers
         (kind, goldenott_package_id, goldenott_template_id, title, tagline,
-         duration_label, price_cents, max_connections, included_screens,
+         duration_label, badge, price_cents, max_connections, included_screens,
          allow_screens, extra_screen_cents, max_screens, is_adult, active, sort)
       VALUES
         (${kind}, ${packageId}, ${templateId}, ${title}, ${tagline},
-         ${durationLabel}, ${priceCents}, ${includedScreens}, ${includedScreens},
+         ${durationLabel}, ${badge}, ${priceCents}, ${includedScreens}, ${includedScreens},
          ${allowScreens}, ${extraScreenCents}, ${maxScreens}, ${isAdult},
          ${active}, ${sort})
     `;

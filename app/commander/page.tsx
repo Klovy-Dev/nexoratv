@@ -135,7 +135,8 @@ function OfferCard({
   alreadyPending: boolean;
 }) {
   return (
-    <div className="offer-card">
+    <div className={`offer-card${offer.badge ? " offer-card--featured" : ""}`}>
+      {offer.badge && <span className="offer-ribbon">{offer.badge}</span>}
       <div className="offer-card-head">
         <h3>{offer.title}</h3>
         {offer.tagline && <p className="offer-tagline">{offer.tagline}</p>}

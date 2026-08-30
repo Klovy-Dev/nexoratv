@@ -119,6 +119,14 @@ export default async function OffersAdminPage({
                           <tr key={o.id}>
                             <td>
                               <strong>{o.title}</strong>
+                              {o.badge && (
+                                <span
+                                  className="badge badge-go"
+                                  style={{ marginLeft: 8 }}
+                                >
+                                  {o.badge}
+                                </span>
+                              )}
                               {o.tagline && (
                                 <div className="muted" style={{ fontSize: "0.8rem" }}>
                                   {o.tagline}

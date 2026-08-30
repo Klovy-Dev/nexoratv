@@ -66,6 +66,8 @@ export interface Offer {
   extra_screen_cents: number;
   /** plafond d'écrans sélectionnables */
   max_screens: number;
+  /** bandeau mis en avant sur /commander (ex. « Best Seller ») ; vide = aucun */
+  badge: string;
   /** @deprecated remplacé par included_screens — conservé pour compat DB */
   max_connections: number | null;
   is_adult: boolean;

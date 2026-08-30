@@ -106,16 +106,33 @@ export default function OfferForm({
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="of-tagline">Accroche (optionnel)</label>
-          <input
-            id="of-tagline"
-            name="tagline"
-            className="input"
-            defaultValue={editing?.tagline ?? ""}
-            placeholder="Le meilleur rapport qualité/prix"
-            maxLength={120}
-          />
+        <div className="grid-2">
+          <div className="form-group">
+            <label htmlFor="of-tagline">Accroche (optionnel)</label>
+            <input
+              id="of-tagline"
+              name="tagline"
+              className="input"
+              defaultValue={editing?.tagline ?? ""}
+              placeholder="Le meilleur rapport qualité/prix"
+              maxLength={120}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="of-badge">Bandeau « mis en avant » (optionnel)</label>
+            <input
+              id="of-badge"
+              name="badge"
+              className="input"
+              defaultValue={editing?.badge ?? ""}
+              placeholder="Best Seller"
+              maxLength={24}
+            />
+            <p className="hint">
+              Si rempli, un encadré coloré entoure l&apos;offre sur la page
+              Commander.
+            </p>
+          </div>
         </div>
 
         <div className="grid-2">
