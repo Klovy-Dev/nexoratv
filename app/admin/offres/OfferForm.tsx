@@ -27,7 +27,10 @@ export default function OfferForm({
 }) {
   const [state, action] = useActionState(saveOfferAction, initial);
   const [packageId, setPackageId] = useState<number>(
-    editing?.goldenott_package_id ?? packages[0]?.id ?? 0,
+    editing?.goldenott_package_id ??
+      packages.find((p) => !p.isTrial)?.id ??
+      packages[0]?.id ??
+      0,
   );
   const [kind, setKind] = useState<ProviderKind>(editing?.kind ?? "line");
   const [allowScreens, setAllowScreens] = useState<boolean>(
@@ -70,14 +73,40 @@ export default function OfferForm({
               value={packageId}
               onChange={(e) => setPackageId(Number(e.target.value))}
             >
-              {packages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.durationLabel ? ` · ${p.durationLabel}` : ""}
-                  {p.credits != null ? ` · ${p.credits} cr.` : ""}
-                </option>
-              ))}
+              <optgroup label="Forfaits payants">
+                {packages
+                  .filter((p) => !p.isTrial)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.durationLabel ? ` · ${p.durationLabel}` : ""}
+                      {p.credits != null ? ` · ${p.credits} cr.` : ""}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Essais (0 crédit, courte durée)">
+                {packages
+                  .filter((p) => p.isTrial)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      ESSAI — {p.name}
+                      {p.durationLabel ? ` · ${p.durationLabel}` : ""}
+                    </option>
+                  ))}
+              </optgroup>
             </select>
+            {pkg?.isTrial ? (
+              <p className="hint" style={{ color: "var(--warning)" }}>
+                ⚠️ Forfait d&apos;essai : ne consomme aucun crédit et n&apos;est
+                valable que {pkg.durationLabel ?? "quelques heures"}. À
+                réserver aux offres découverte.
+              </p>
+            ) : (
+              <p className="hint">
+                Coûte {pkg?.credits ?? "?"} crédit
+                {(pkg?.credits ?? 0) > 1 ? "s" : ""} par souscription.
+              </p>
+            )}
           </div>
         </div>
 

@@ -117,7 +117,9 @@ function GoldenottForm({
 }) {
   const [state, action] = useActionState(provisionSubscriptionAction, initial);
   const [kind, setKind] = useState<ProviderKind>("line");
-  const [packageId, setPackageId] = useState<number>(data.packages[0]?.id ?? 0);
+  const [packageId, setPackageId] = useState<number>(
+    data.packages.find((p) => !p.isTrial)?.id ?? data.packages[0]?.id ?? 0,
+  );
   const [username, setUsername] = useState("");
 
   const pkg = data.packages.find((p) => p.id === packageId) ?? null;
@@ -135,6 +137,12 @@ function GoldenottForm({
               · ce forfait en coûte <strong>{pkg.credits}</strong>
             </>
           )}
+        </p>
+      )}
+      {pkg?.isTrial && (
+        <p className="form-note" style={{ color: "var(--warning)" }}>
+          ⚠️ Forfait d&apos;essai : 0 crédit, valable{" "}
+          {pkg.durationLabel ?? "quelques heures"} seulement.
         </p>
       )}
 
