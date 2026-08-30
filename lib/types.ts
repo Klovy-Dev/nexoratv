@@ -8,6 +8,9 @@ export interface User {
   created_at: string;
 }
 
+export type SubProvider = "manual" | "goldenott";
+export type ProviderKind = "line" | "mag" | "code";
+
 export interface Subscription {
   id: number;
   user_id: number;
@@ -20,6 +23,21 @@ export interface Subscription {
   note: string;
   screens: number | null;
   created_at: string;
+  /* --- Intégration GoldenOTT --- */
+  provider: SubProvider;
+  provider_kind: ProviderKind | null;
+  /** identifiant de l'abonnement côté GoldenOTT */
+  provider_ref: string | null;
+  /** dernier package GoldenOTT utilisé (souscription / prolongation) */
+  package_id: number | null;
+  package_label: string | null;
+  /** dernier statut connu côté GoldenOTT (Active / Expired / Banned…) */
+  provider_status: string | null;
+  /** adresse MAC (abonnements MAG) */
+  mac: string | null;
+  /** lien QR de mise à jour des bouquets */
+  qr_url: string | null;
+  synced_at: string | null;
 }
 
 /** Abonnement prêt pour l'affichage : mot de passe déchiffré + état calculé. */
@@ -27,6 +45,53 @@ export interface SubscriptionView
   extends Omit<Subscription, "password_enc"> {
   password: string;
   expired: boolean;
+}
+
+/* ---------- Offres & commandes (self-service) ---------- */
+
+export interface Offer {
+  id: number;
+  kind: ProviderKind;
+  goldenott_package_id: number;
+  goldenott_template_id: number | null;
+  title: string;
+  tagline: string;
+  duration_label: string;
+  price_cents: number;
+  max_connections: number | null;
+  is_adult: boolean;
+  active: boolean;
+  sort: number;
+  created_at: string;
+}
+
+export type OrderStatus = "pending" | "fulfilled" | "rejected" | "cancelled";
+
+export interface Order {
+  id: number;
+  user_id: number;
+  offer_id: number | null;
+  kind: ProviderKind;
+  title: string;
+  price_cents: number;
+  package_id: number;
+  template_id: number | null;
+  max_connections: number | null;
+  is_adult: boolean;
+  mac: string | null;
+  renew_sub_id: number | null;
+  status: OrderStatus;
+  subscription_id: number | null;
+  customer_note: string;
+  admin_note: string;
+  created_at: string;
+  decided_at: string | null;
+}
+
+/** Commande enrichie du nom / e-mail du client (vue admin). */
+export interface OrderView extends Order {
+  user_name: string;
+  user_email: string;
 }
 
 export type FormState = {

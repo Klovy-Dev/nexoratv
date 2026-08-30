@@ -76,6 +76,84 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`CREATE INDEX IF NOT EXISTS idx_reviews_created ON reviews (created_at DESC)`;
 
   await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS screens SMALLINT`;
+
+  /* ---------- Intégration GoldenOTT ---------- */
+
+  // Colonnes ajoutées à `subscriptions` pour relier un abonnement local à
+  // son équivalent distant sur le panel GoldenOTT.
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT 'manual'`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS provider_kind TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS provider_ref TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS package_id INTEGER`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS package_label TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS provider_status TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS mac TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS qr_url TEXT`;
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`;
+
+  // Offres publiques : un forfait GoldenOTT « emballé » pour la vente
+  // (nom commercial, prix en euros, durée) que le client peut commander.
+  await raw`
+    CREATE TABLE IF NOT EXISTS iptv_offers (
+      id                     SERIAL PRIMARY KEY,
+      kind                   TEXT NOT NULL DEFAULT 'line',
+      goldenott_package_id   INTEGER NOT NULL,
+      goldenott_template_id  INTEGER,
+      title                  TEXT NOT NULL,
+      tagline                TEXT NOT NULL DEFAULT '',
+      duration_label         TEXT NOT NULL DEFAULT '',
+      price_cents            INTEGER NOT NULL DEFAULT 0,
+      max_connections        SMALLINT,
+      is_adult               BOOLEAN NOT NULL DEFAULT false,
+      active                 BOOLEAN NOT NULL DEFAULT true,
+      sort                   INTEGER NOT NULL DEFAULT 0,
+      created_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+
+  // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
+  // L'admin les valide → provisioning GoldenOTT → rattachement au compte.
+  await raw`
+    CREATE TABLE IF NOT EXISTS iptv_orders (
+      id              SERIAL PRIMARY KEY,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      offer_id        INTEGER REFERENCES iptv_offers(id) ON DELETE SET NULL,
+      kind            TEXT NOT NULL DEFAULT 'line',
+      title           TEXT NOT NULL DEFAULT 'Abonnement',
+      price_cents     INTEGER NOT NULL DEFAULT 0,
+      package_id      INTEGER NOT NULL,
+      template_id     INTEGER,
+      max_connections SMALLINT,
+      is_adult        BOOLEAN NOT NULL DEFAULT false,
+      mac             TEXT,
+      renew_sub_id    INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+      status          TEXT NOT NULL DEFAULT 'pending',
+      subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+      customer_note   TEXT NOT NULL DEFAULT '',
+      admin_note      TEXT NOT NULL DEFAULT '',
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      decided_at      TIMESTAMPTZ
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_orders_status ON iptv_orders (status, created_at DESC)`;
+  await raw`CREATE INDEX IF NOT EXISTS idx_orders_user ON iptv_orders (user_id)`;
+
+  // Journal d'audit : chaque appel sensible vers GoldenOTT (création,
+  // prolongation, remboursement, sync) y est tracé, succès comme échec.
+  await raw`
+    CREATE TABLE IF NOT EXISTS goldenott_events (
+      id              SERIAL PRIMARY KEY,
+      actor           TEXT NOT NULL DEFAULT 'system',
+      action          TEXT NOT NULL,
+      kind            TEXT,
+      provider_ref    TEXT,
+      subscription_id INTEGER,
+      ok              BOOLEAN NOT NULL DEFAULT true,
+      message         TEXT NOT NULL DEFAULT '',
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_gevents_created ON goldenott_events (created_at DESC)`;
 }
 
 async function ensureSchema(): Promise<void> {

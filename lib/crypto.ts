@@ -19,6 +19,20 @@ function key(): Buffer {
   return buf;
 }
 
+/**
+ * Identifiant / mot de passe aléatoire pour une ligne M3U.
+ * Alphabet sans caractères ambigus (0/O, 1/l/I).
+ */
+export function randomCredential(length = 12): string {
+  const alphabet = "abcdefghijkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.randomBytes(length);
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
 export function encryptSecret(plain: string): string {
   if (!plain) return "";
   const iv = crypto.randomBytes(12);

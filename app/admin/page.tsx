@@ -4,21 +4,40 @@ import { requireAdmin } from "@/lib/auth";
 import {
   adminStats,
   allUsers,
+  pendingOrdersCount,
+  recentGoldenottEvents,
   subscriptionsForUser,
   subscriptionById,
   userById,
 } from "@/lib/data";
+import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import { KIND_LABEL } from "@/lib/goldenott";
 import { formatDate } from "@/lib/validation";
 import {
   deleteSubscriptionAction,
   deleteUserAction,
   setRoleAction,
 } from "@/actions/admin-actions";
-import SubscriptionForm from "./SubscriptionForm";
+import { syncUserSubscriptionsAction } from "@/actions/goldenott-actions";
+import SubscriptionForm, {
+  type GoldenottFormData,
+  type PkgOption,
+  type TplOption,
+} from "./SubscriptionForm";
+import ProviderActions from "./ProviderActions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import CopyButton from "@/components/CopyButton";
 
 export const metadata: Metadata = { title: "Administration" };
 export const dynamic = "force-dynamic";
+
+const FLASH: Record<string, string> = {
+  "1": "Modifications enregistrées.",
+  provision: "Abonnement créé sur GoldenOTT et rattaché au client.",
+  extend: "Abonnement prolongé sur GoldenOTT.",
+  refund: "Remboursement effectué, abonnement suspendu.",
+  sync: "Synchronisation terminée.",
+};
 
 export default async function AdminPage({
   searchParams,
@@ -27,9 +46,12 @@ export default async function AdminPage({
 }) {
   const me = await requireAdmin();
   const params = await searchParams;
-  const userParam = typeof params.user === "string" ? params.user : "";
-  const editParam = typeof params.edit === "string" ? params.edit : "";
-  const okParam = typeof params.ok === "string" ? params.ok : "";
+  const pick = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : "");
+  const userParam = pick("user");
+  const editParam = pick("edit");
+  const okParam = pick("ok");
+  const errParam = pick("err");
+  const creditParam = pick("credit");
   const targetId = userParam ? Number(userParam) : 0;
   const target = targetId ? await userById(targetId) : null;
 
@@ -40,6 +62,8 @@ export default async function AdminPage({
           <Link href="/admin" className={!target ? "active" : ""}>
             Tous les clients
           </Link>
+          <Link href="/admin/commandes">Commandes</Link>
+          <Link href="/admin/offres">Offres</Link>
           {target && (
             <span className="admin-tabs-current active" style={{ padding: "9px 18px" }}>
               {target.name}
@@ -49,7 +73,13 @@ export default async function AdminPage({
 
         {okParam && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
-            Modifications enregistrées.
+            {FLASH[okParam] ?? "Opération effectuée."}
+            {creditParam && ` Crédit revendeur restant : ${creditParam}.`}
+          </div>
+        )}
+        {errParam && (
+          <div className="flash flash-error" style={{ marginBottom: 20 }}>
+            {errParam}
           </div>
         )}
 
@@ -67,8 +97,41 @@ export default async function AdminPage({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Helpers GoldenOTT partagés                                         */
+/* ------------------------------------------------------------------ */
+
+function toPkgOptions(
+  packages: Awaited<ReturnType<typeof loadGoldenottCatalog>>["packages"],
+): PkgOption[] {
+  return packages.map((p) => ({
+    id: p.id,
+    name: p.name,
+    credits: p.credits,
+    durationLabel: p.durationLabel,
+    maxConnections: p.maxConnections,
+    isTrial: p.isTrial,
+  }));
+}
+
+function toTplOptions(
+  templates: Awaited<ReturnType<typeof loadGoldenottCatalog>>["templates"],
+): TplOption[] {
+  return templates.map((t) => ({ id: t.id, name: t.name, scope: t.scope }));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Vue d'ensemble                                                     */
+/* ------------------------------------------------------------------ */
+
 async function AdminOverview() {
-  const [stats, users] = await Promise.all([adminStats(), allUsers()]);
+  const [stats, users, catalog, pending, events] = await Promise.all([
+    adminStats(),
+    allUsers(),
+    loadGoldenottCatalog(),
+    pendingOrdersCount(),
+    recentGoldenottEvents(8),
+  ]);
 
   return (
     <>
@@ -78,6 +141,68 @@ async function AdminOverview() {
         <div className="stat"><strong>{stats.total_subs}</strong><span>abonnements</span></div>
         <div className="stat"><strong>{stats.active_subs}</strong><span>abonnements actifs</span></div>
       </div>
+
+      {catalog.configured && (
+        <div className="panel">
+          <h2>Intégration GoldenOTT</h2>
+          {catalog.error ? (
+            <p className="flash flash-error">
+              Connexion impossible : {catalog.error}
+            </p>
+          ) : (
+            <div className="go-status">
+              <div className="go-status-item">
+                <span>Compte revendeur</span>
+                <strong>{catalog.username}</strong>
+              </div>
+              <div className="go-status-item">
+                <span>Crédit disponible</span>
+                <strong
+                  className={
+                    (catalog.credit ?? 0) < 1 ? "go-credit-low" : "go-credit-ok"
+                  }
+                >
+                  {catalog.credit?.toFixed(2)} crédits
+                </strong>
+              </div>
+              <div className="go-status-item">
+                <span>Forfaits accessibles</span>
+                <strong>{catalog.packages.length}</strong>
+              </div>
+              <div className="go-status-item">
+                <span>Commandes en attente</span>
+                <strong className={pending > 0 ? "go-credit-low" : ""}>
+                  {pending}
+                </strong>
+              </div>
+            </div>
+          )}
+          <div className="table-actions" style={{ marginTop: 18 }}>
+            <Link href="/admin/commandes" className="btn btn-ghost btn-sm">
+              Voir les commandes{pending > 0 ? ` (${pending})` : ""}
+            </Link>
+            <Link href="/admin/offres" className="btn btn-ghost btn-sm">
+              Gérer les offres
+            </Link>
+          </div>
+
+          {events.length > 0 && (
+            <div className="go-log">
+              <h3>Dernières opérations</h3>
+              <ul>
+                {events.map((e) => (
+                  <li key={e.id} className={e.ok ? "" : "ko"}>
+                    <span className="go-log-when">{formatDate(e.created_at)}</span>
+                    <span className="go-log-act">{e.action}</span>
+                    <span className="go-log-msg">{e.message || (e.ok ? "OK" : "échec")}</span>
+                    <span className="go-log-actor">{e.actor}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="panel">
         <h2>Clients inscrits</h2>
@@ -116,6 +241,10 @@ async function AdminOverview() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Détail d'un client                                                 */
+/* ------------------------------------------------------------------ */
+
 async function AdminUserDetail({
   target,
   meId,
@@ -125,14 +254,29 @@ async function AdminUserDetail({
   meId: number;
   editId: number | null;
 }) {
-  const subs = await subscriptionsForUser(target.id);
+  const [subs, catalog] = await Promise.all([
+    subscriptionsForUser(target.id),
+    loadGoldenottCatalog(),
+  ]);
   const editing =
     editId != null
-      ? (await subscriptionById(editId).then((s) =>
+      ? await subscriptionById(editId).then((s) =>
           s && s.user_id === target.id ? s : null,
-        ))
+        )
       : null;
   const isSelf = target.id === meId;
+
+  const pkgOptions = toPkgOptions(catalog.packages);
+  const goldenott: GoldenottFormData | null = catalog.configured
+    ? {
+        packages: pkgOptions,
+        templates: toTplOptions(catalog.templates),
+        credit: catalog.credit,
+        error: catalog.error,
+      }
+    : null;
+
+  const hasGoldenottSub = subs.some((s) => s.provider === "goldenott");
 
   return (
     <>
@@ -173,6 +317,7 @@ async function AdminUserDetail({
 
       <SubscriptionForm
         userId={target.id}
+        goldenott={goldenott}
         editing={
           editing
             ? {
@@ -190,63 +335,119 @@ async function AdminUserDetail({
       />
 
       <div className="panel">
-        <h2>Abonnements de ce client ({subs.length})</h2>
+        <div className="form-mode-head">
+          <h2>Abonnements de ce client ({subs.length})</h2>
+          {hasGoldenottSub && (
+            <form action={syncUserSubscriptionsAction} className="inline-form">
+              <input type="hidden" name="user_id" value={target.id} />
+              <button className="btn btn-ghost btn-sm">↻ Tout synchroniser</button>
+            </form>
+          )}
+        </div>
+
         {subs.length === 0 ? (
           <p className="muted">Aucun abonnement pour le moment.</p>
         ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Libellé</th><th>Serveur</th><th>Utilisateur</th>
-                  <th>Mot de passe</th><th>Écrans</th><th>Expire</th><th>Statut</th><th />
-                </tr>
-              </thead>
-              <tbody>
-                {subs.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.label}</td>
-                    <td style={{ maxWidth: 200, wordBreak: "break-all" }}>
-                      {s.server_url || "—"}
-                    </td>
-                    <td>{s.username || "—"}</td>
-                    <td><code>{s.password || "—"}</code></td>
-                    <td>{s.screens ?? "—"}</td>
-                    <td>{formatDate(s.expires_at)}</td>
-                    <td>
-                      {s.status === "suspended" ? (
-                        <span className="badge badge-suspended">Suspendu</span>
-                      ) : s.expired ? (
-                        <span className="badge badge-expired">Expiré</span>
-                      ) : (
-                        <span className="badge badge-active">Actif</span>
+          <div className="sub-admin-list">
+            {subs.map((s) => {
+              const statusBadge =
+                s.status === "suspended" ? (
+                  <span className="badge badge-suspended">Suspendu</span>
+                ) : s.expired ? (
+                  <span className="badge badge-expired">Expiré</span>
+                ) : (
+                  <span className="badge badge-active">Actif</span>
+                );
+
+              return (
+                <div className="sub-admin-card" key={s.id}>
+                  <div className="sub-admin-top">
+                    <div>
+                      <strong>{s.label}</strong>
+                      <div className="muted" style={{ fontSize: "0.82rem" }}>
+                        {s.provider === "goldenott" ? (
+                          <>
+                            <span className="badge badge-go">GoldenOTT</span>{" "}
+                            {s.provider_kind && KIND_LABEL[s.provider_kind]}
+                            {s.provider_ref && ` · #${s.provider_ref}`}
+                            {s.provider_status && ` · ${s.provider_status}`}
+                          </>
+                        ) : (
+                          <span className="badge">Manuel</span>
+                        )}
+                      </div>
+                    </div>
+                    {statusBadge}
+                  </div>
+
+                  <div className="sub-admin-grid">
+                    <Field label="Serveur">{s.server_url || "—"}</Field>
+                    <Field label={s.provider_kind === "mag" ? "MAC" : s.provider_kind === "code" ? "Code" : "Utilisateur"}>
+                      {s.provider_kind === "mag"
+                        ? s.mac || "—"
+                        : s.username || "—"}
+                      {(s.username || s.mac) && (
+                        <CopyButton value={s.mac || s.username} />
                       )}
-                    </td>
-                    <td className="table-actions">
-                      <Link
-                        className="btn btn-ghost btn-sm"
-                        href={`/admin?user=${target.id}&edit=${s.id}`}
+                    </Field>
+                    {s.provider_kind !== "mag" && s.provider_kind !== "code" && (
+                      <Field label="Mot de passe">
+                        <code>{s.password || "—"}</code>
+                        {s.password && <CopyButton value={s.password} />}
+                      </Field>
+                    )}
+                    <Field label="Écrans">{s.screens ?? "—"}</Field>
+                    <Field label="Expire">{formatDate(s.expires_at)}</Field>
+                    {s.synced_at && (
+                      <Field label="Sync">{formatDate(s.synced_at)}</Field>
+                    )}
+                  </div>
+
+                  {s.provider === "goldenott" && !catalog.error && (
+                    <ProviderActions
+                      subId={s.id}
+                      userId={target.id}
+                      packages={pkgOptions}
+                    />
+                  )}
+
+                  <div className="table-actions" style={{ marginTop: 12 }}>
+                    <Link
+                      className="btn btn-ghost btn-sm"
+                      href={`/admin?user=${target.id}&edit=${s.id}`}
+                    >
+                      Modifier (local)
+                    </Link>
+                    <form action={deleteSubscriptionAction} className="inline-form">
+                      <input type="hidden" name="sub_id" value={s.id} />
+                      <input type="hidden" name="user_id" value={target.id} />
+                      <ConfirmSubmit
+                        className="btn btn-danger btn-sm"
+                        confirm={
+                          s.provider === "goldenott"
+                            ? "Retirer cette fiche de NexoraTV ? (l'abonnement reste actif sur GoldenOTT — utilisez « Rembourser » pour l'annuler côté panel)"
+                            : "Supprimer cet abonnement ?"
+                        }
                       >
-                        Modifier
-                      </Link>
-                      <form action={deleteSubscriptionAction} className="inline-form">
-                        <input type="hidden" name="sub_id" value={s.id} />
-                        <input type="hidden" name="user_id" value={target.id} />
-                        <ConfirmSubmit
-                          className="btn btn-danger btn-sm"
-                          confirm="Supprimer cet abonnement ?"
-                        >
-                          Suppr.
-                        </ConfirmSubmit>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        Retirer
+                      </ConfirmSubmit>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
     </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="sub-admin-field">
+      <span className="k">{label}</span>
+      <span className="v">{children}</span>
+    </div>
   );
 }

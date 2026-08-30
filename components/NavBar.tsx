@@ -9,6 +9,7 @@ import type { User } from "@/lib/types";
 
 const LINKS = [
   { href: "/", label: "Accueil" },
+  { href: "/commander", label: "Commander" },
   { href: "/avis", label: "Avis" },
   { href: "/tuto", label: "Tuto" },
   { href: "/contact", label: "Contact" },

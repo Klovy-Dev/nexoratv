@@ -60,6 +60,31 @@ export function isExpired(iso: string | null): boolean {
   return d < today;
 }
 
+/** Prix en centimes → « 12,90 € ». */
+export function formatPrice(cents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format((cents || 0) / 100);
+}
+
+/** Adresse MAC valide (XX:XX:XX:XX:XX:XX, séparateurs : ou -). */
+export function isMac(value: string): boolean {
+  return /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(value.trim());
+}
+
+/** Normalise une MAC en majuscules séparées par « : ». */
+export function normalizeMac(value: string): string {
+  return value.trim().toUpperCase().replace(/-/g, ":");
+}
+
+/** Suggestion d'identifiant (côté navigateur uniquement, non sécurisé). */
+export function randomHandle(prefix = "nexora"): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 8)}${Math.floor(
+    Math.random() * 90 + 10,
+  )}`;
+}
+
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "N";
