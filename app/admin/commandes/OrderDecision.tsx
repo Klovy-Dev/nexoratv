@@ -75,7 +75,7 @@ export default function OrderDecision({
                     <input
                       name="username"
                       className="input"
-                      placeholder="vide = auto"
+                      placeholder="vide = auto · 7–12 lettres/chiffres"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       autoComplete="off"
@@ -86,7 +86,7 @@ export default function OrderDecision({
                     <input
                       name="password"
                       className="input"
-                      placeholder="vide = auto"
+                      placeholder="vide = auto · sinon 7 car. MAJ+chiffres"
                       autoComplete="off"
                     />
                   </div>

@@ -78,11 +78,17 @@ export function normalizeMac(value: string): string {
   return value.trim().toUpperCase().replace(/-/g, ":");
 }
 
-/** Suggestion d'identifiant (côté navigateur uniquement, non sécurisé). */
-export function randomHandle(prefix = "nexora"): string {
-  return `${prefix}_${Math.random().toString(36).slice(2, 8)}${Math.floor(
-    Math.random() * 90 + 10,
-  )}`;
+/**
+ * Suggestion d'identifiant de ligne (côté navigateur, non sécurisé).
+ * Respecte le format GoldenOTT : 7 à 12 caractères, majuscules + chiffres.
+ */
+export function randomHandle(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 10; i++) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
 }
 
 export function initials(name: string): string {

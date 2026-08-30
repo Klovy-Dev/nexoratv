@@ -5,13 +5,14 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { subscriptionById } from "@/lib/data";
-import { randomCredential } from "@/lib/crypto";
 import { GoldenottError, type GoldenottKind } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
+  prepareLineCredentials,
   provisionSubscription,
   refundSubscriptionLocal,
   syncSubscriptionLocal,
+  validateLineCredentials,
 } from "@/lib/goldenott-provision";
 import { isMac, normalizeMac, str } from "@/lib/validation";
 import type { FormState } from "@/lib/types";
@@ -50,9 +51,10 @@ export async function provisionSubscriptionAction(
   const isAdult = formData.get("is_adult") === "on";
   const screensRaw = str(formData.get("screens"));
 
-  let username = str(formData.get("username"));
-  const password = String(formData.get("password") ?? "").trim();
+  const rawUsername = str(formData.get("username"));
+  const rawPassword = String(formData.get("password") ?? "");
   let mac = str(formData.get("mac"));
+  const creds = prepareLineCredentials(rawUsername, rawPassword);
 
   const errors: string[] = [];
 
@@ -69,10 +71,7 @@ export async function provisionSubscriptionAction(
   }
 
   if (kind === "line") {
-    if (!username) username = `nexora${randomCredential(7).toLowerCase()}`;
-    if (!/^[A-Za-z0-9._-]{3,64}$/.test(username)) {
-      errors.push("Identifiant invalide (3 à 64 caractères : lettres, chiffres, . _ -).");
-    }
+    errors.push(...validateLineCredentials(creds.username, creds.password));
   }
   if (kind === "mag") {
     if (!mac) errors.push("L'adresse MAC du boîtier est requise.");
@@ -94,8 +93,8 @@ export async function provisionSubscriptionAction(
       label,
       note,
       actor: me.email,
-      username: kind === "line" ? username : undefined,
-      password: kind === "line" ? password || randomCredential(12) : undefined,
+      username: kind === "line" ? creds.username : undefined,
+      password: kind === "line" ? creds.password : undefined,
       maxConnections,
       mac: kind === "mag" ? mac : undefined,
     });

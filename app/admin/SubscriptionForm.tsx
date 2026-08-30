@@ -225,17 +225,20 @@ function GoldenottForm({
                 id="go-username"
                 name="username"
                 className="input"
-                placeholder="laisser vide = généré automatiquement"
+                placeholder="vide = généré (7–12 lettres/chiffres)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="off"
               />
+              <p className="hint">7 à 12 caractères, lettres et chiffres uniquement.</p>
             </div>
             <div className="form-group">
-              <label htmlFor="go-password">
-                Mot de passe (vide = généré)
-              </label>
+              <label htmlFor="go-password">Mot de passe</label>
               <PasswordInput id="go-password" name="password" autoComplete="off" />
+              <p className="hint">
+                Vide = généré. Sinon : exactement 7 caractères, majuscules et
+                chiffres.
+              </p>
             </div>
           </div>
         )}

@@ -300,7 +300,9 @@ export interface CreatedSubscription {
 
 function toDate(value: unknown): string | null {
   if (!value || typeof value !== "string") return null;
-  return value.slice(0, 10);
+  // Les essais non activés renvoient "Waiting" au lieu d'une date.
+  const m = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
 }
 
 /** L'API renvoie parfois les nombres sous forme de chaîne ("4.60"). */

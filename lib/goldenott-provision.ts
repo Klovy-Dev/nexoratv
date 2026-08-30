@@ -1,6 +1,6 @@
 import "server-only";
 import { sql } from "@/lib/db";
-import { encryptSecret } from "@/lib/crypto";
+import { encryptSecret, randomCode } from "@/lib/crypto";
 import { logGoldenottEvent } from "@/lib/data";
 import {
   createSubscription,
@@ -17,6 +17,39 @@ import type { SubscriptionView } from "@/lib/types";
  * Toutes les opérations qui touchent à la fois l'API distante ET la base
  * locale passent par ici, et journalisent leur résultat.
  */
+
+/* ------------------------------------------------------------------ */
+/*  Identifiants de ligne M3U — contraintes imposées par GoldenOTT     */
+/*    identifiant : 7 à 12 caractères, lettres + chiffres              */
+/*    mot de passe : EXACTEMENT 7 caractères, MAJUSCULES + chiffres    */
+/* ------------------------------------------------------------------ */
+
+export function prepareLineCredentials(
+  rawUsername: string,
+  rawPassword: string,
+): { username: string; password: string } {
+  const username = (rawUsername.trim() || randomCode(10)).replace(/[^A-Za-z0-9]/g, "");
+  const password = (rawPassword.trim() || randomCode(7)).toUpperCase();
+  return { username, password };
+}
+
+export function validateLineCredentials(
+  username: string,
+  password: string,
+): string[] {
+  const errors: string[] = [];
+  if (!/^[A-Za-z0-9]{7,12}$/.test(username)) {
+    errors.push(
+      "Identifiant : 7 à 12 caractères, lettres et chiffres uniquement (ni espace ni caractère spécial).",
+    );
+  }
+  if (!/^[A-Z0-9]{7}$/.test(password)) {
+    errors.push(
+      "Mot de passe : exactement 7 caractères, en MAJUSCULES et chiffres. Laisse le champ vide pour en générer un valide.",
+    );
+  }
+  return errors;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Traduction du statut distant → statut local                        */

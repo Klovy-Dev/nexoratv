@@ -5,11 +5,12 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { offerById, orderById, subscriptionById } from "@/lib/data";
-import { randomCredential } from "@/lib/crypto";
 import { GoldenottError } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
+  prepareLineCredentials,
   provisionSubscription,
+  validateLineCredentials,
 } from "@/lib/goldenott-provision";
 import { isMac, normalizeMac, str } from "@/lib/validation";
 import { offerPriceCents, type FormState } from "@/lib/types";
@@ -177,14 +178,13 @@ export async function approveOrderAction(
 
   /* ----- Nouvel abonnement ----- */
   const label = str(formData.get("label")) || order.title;
-  let username = str(formData.get("username"));
-  const password = String(formData.get("password") ?? "").trim();
-
-  if (order.kind === "line" && !username) {
-    username = `nexora${randomCredential(7).toLowerCase()}`;
-  }
-  if (order.kind === "line" && !/^[A-Za-z0-9._-]{3,64}$/.test(username)) {
-    return { fieldErrors: ["Identifiant invalide (3 à 64 caractères)."] };
+  const creds = prepareLineCredentials(
+    str(formData.get("username")),
+    String(formData.get("password") ?? ""),
+  );
+  if (order.kind === "line") {
+    const credErrors = validateLineCredentials(creds.username, creds.password);
+    if (credErrors.length > 0) return { fieldErrors: credErrors };
   }
 
   try {
@@ -198,9 +198,8 @@ export async function approveOrderAction(
       label,
       note: order.customer_note,
       actor: me.email,
-      username: order.kind === "line" ? username : undefined,
-      password:
-        order.kind === "line" ? password || randomCredential(12) : undefined,
+      username: order.kind === "line" ? creds.username : undefined,
+      password: order.kind === "line" ? creds.password : undefined,
       maxConnections: order.max_connections,
       mac: order.kind === "mag" ? order.mac ?? undefined : undefined,
       orderId,

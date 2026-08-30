@@ -20,11 +20,12 @@ function key(): Buffer {
 }
 
 /**
- * Identifiant / mot de passe aléatoire pour une ligne M3U.
- * Alphabet sans caractères ambigus (0/O, 1/l/I).
+ * Code aléatoire en MAJUSCULES + chiffres, sans caractères ambigus
+ * (I, O, 0, 1). Format imposé par GoldenOTT pour les identifiants de ligne
+ * (identifiant : 7-12 car. ; mot de passe : exactement 7 car.).
  */
-export function randomCredential(length = 12): string {
-  const alphabet = "abcdefghijkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789";
+export function randomCode(length = 8): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = crypto.randomBytes(length);
   let out = "";
   for (let i = 0; i < length; i++) {
