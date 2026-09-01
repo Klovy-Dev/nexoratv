@@ -1131,8 +1131,7 @@ table.data tbody tr:hover { background: var(--surface); }
   color: var(--success);
   font-weight: 700;
 }
-.offer-order { display: grid; gap: 12px; margin-top: auto; }
-.offer-order .form-group { margin-bottom: 0; }
+.offer-cta { margin-top: auto; }
 .offer-from {
   display: block;
   width: 100%;
@@ -1220,4 +1219,7 @@ table.data tbody tr:hover { background: var(--surface); }
 @media (max-width: 720px) {
   .go-log li { grid-template-columns: 1fr; gap: 2px; }
   .sub-admin-top { flex-direction: column; }
+  .form-mode-head { flex-direction: column; align-items: flex-start; }
+  .form-mode-head .seg { display: flex; width: 100%; }
+  .form-mode-head .seg button { flex: 1; padding-inline: 8px; }
 }

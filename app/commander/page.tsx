@@ -161,29 +161,34 @@ function OfferCard({
         <li>{offer.is_adult ? "Bouquets adultes inclus" : "Sans contenu adulte"}</li>
       </ul>
 
-      {alreadyPending ? (
-        <p className="flash flash-info" style={{ margin: 0 }}>
-          Commande déjà en attente pour cette offre.
-        </p>
-      ) : canOrder ? (
-        <OrderForm
-          offer={{
-            id: offer.id,
-            title: offer.title,
-            duration_label: offer.duration_label,
-            kind: offer.kind,
-            price_cents: offer.price_cents,
-            included_screens: offer.included_screens,
-            allow_screens: offer.allow_screens,
-            extra_screen_cents: offer.extra_screen_cents,
-            max_screens: offer.max_screens,
-          }}
-        />
-      ) : (
-        <Link href="/connexion?next=/commander" className="btn btn-primary btn-block">
-          Se connecter pour commander
-        </Link>
-      )}
+      <div className="offer-cta">
+        {alreadyPending ? (
+          <p className="flash flash-info" style={{ margin: 0 }}>
+            Commande déjà en attente pour cette offre.
+          </p>
+        ) : canOrder ? (
+          <OrderForm
+            offer={{
+              id: offer.id,
+              title: offer.title,
+              duration_label: offer.duration_label,
+              kind: offer.kind,
+              price_cents: offer.price_cents,
+              included_screens: offer.included_screens,
+              allow_screens: offer.allow_screens,
+              extra_screen_cents: offer.extra_screen_cents,
+              max_screens: offer.max_screens,
+            }}
+          />
+        ) : (
+          <Link
+            href="/connexion?next=/commander"
+            className="btn btn-primary btn-block"
+          >
+            Se connecter pour commander
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
