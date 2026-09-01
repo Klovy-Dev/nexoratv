@@ -13,6 +13,11 @@ import {
   validateLineCredentials,
 } from "@/lib/goldenott-provision";
 import { isMac, normalizeMac, str } from "@/lib/validation";
+import {
+  sendOrderAcceptedEmail,
+  sendOrderPlacedEmails,
+  sendOrderRejectedEmail,
+} from "@/lib/order-mail";
 import { offerPriceCents, type FormState } from "@/lib/types";
 
 function errMessages(err: unknown): string[] {
@@ -87,6 +92,16 @@ export async function createOrderAction(
        ${offer.kind === "mag" ? mac : null}, ${customerNote})
   `;
 
+  await sendOrderPlacedEmails({
+    customerName: user.name,
+    customerEmail: user.email,
+    title: offer.title,
+    priceCents,
+    kind: offer.kind,
+    screens: offer.kind === "line" ? screens : null,
+    isRenewal: false,
+  });
+
   revalidatePath("/profil");
   revalidatePath("/admin/commandes");
   redirect("/profil?commande=1");
@@ -130,6 +145,16 @@ export async function createRenewalOrderAction(
        ${offer.is_adult}, ${subId},
        ${str(formData.get("customer_note")).slice(0, 500)})
   `;
+
+  await sendOrderPlacedEmails({
+    customerName: user.name,
+    customerEmail: user.email,
+    title: `Renouvellement — ${sub.label}`,
+    priceCents: offer.price_cents,
+    kind: offer.kind,
+    screens: sub.screens,
+    isRenewal: true,
+  });
 
   revalidatePath("/profil");
   revalidatePath("/admin/commandes");
@@ -181,6 +206,16 @@ export async function approveOrderAction(
           admin_note = ${str(formData.get("admin_note"))}, decided_at = now()
       WHERE id = ${orderId}
     `;
+    await sendOrderAcceptedEmail({
+      customerName: order.user_name,
+      customerEmail: order.user_email,
+      title: order.title,
+      priceCents: order.price_cents,
+      kind: order.kind,
+      screens: order.max_connections,
+      isRenewal: true,
+      subscriptionLabel: sub.label,
+    });
     revalidatePath("/admin/commandes");
     revalidatePath("/admin");
     redirect("/admin/commandes?ok=1");
@@ -226,6 +261,17 @@ export async function approveOrderAction(
     `;
   }
 
+  await sendOrderAcceptedEmail({
+    customerName: order.user_name,
+    customerEmail: order.user_email,
+    title: order.title,
+    priceCents: order.price_cents,
+    kind: order.kind,
+    screens: order.max_connections,
+    isRenewal: false,
+    subscriptionLabel: label,
+  });
+
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
   redirect("/admin/commandes?ok=1");
@@ -235,11 +281,28 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
   await requireAdmin();
   const orderId = Number(formData.get("order_id")) || 0;
   const adminNote = str(formData.get("admin_note")).slice(0, 500);
-  await sql`
+
+  const order = await orderById(orderId);
+  const rows = (await sql`
     UPDATE iptv_orders
     SET status = 'rejected', admin_note = ${adminNote}, decided_at = now()
     WHERE id = ${orderId} AND status = 'pending'
-  `;
+    RETURNING id
+  `) as unknown as { id: number }[];
+
+  if (rows.length > 0 && order) {
+    await sendOrderRejectedEmail({
+      customerName: order.user_name,
+      customerEmail: order.user_email,
+      title: order.title,
+      priceCents: order.price_cents,
+      kind: order.kind,
+      screens: order.max_connections,
+      isRenewal: Boolean(order.renew_sub_id),
+      reason: adminNote,
+    });
+  }
+
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
   redirect("/admin/commandes?ok=1");

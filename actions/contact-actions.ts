@@ -2,12 +2,10 @@
 
 import { isEmail, str } from "@/lib/validation";
 import { sendEmail, contactEmailHtml } from "@/lib/mail";
+import { notifyEmail } from "@/lib/data";
 import type { FormState } from "@/lib/types";
 
-// Resend refuse d'envoyer vers une autre adresse tant qu'aucun domaine
-// n'est vérifié (compte "testing" limité à l'adresse du compte Resend
-// lui-même). Repasser sur nexoraa.hd@gmail.com une fois un domaine vérifié.
-const CONTACT_TO = "klovy.off@gmail.com";
+const CONTACT_FALLBACK = "klovy.off@gmail.com";
 
 export async function contactAction(
   _prev: FormState,
@@ -28,9 +26,10 @@ export async function contactAction(
 
   if (errors.length > 0) return { fieldErrors: errors };
 
+  const to = (await notifyEmail()) ?? CONTACT_FALLBACK;
   try {
     await sendEmail({
-      to: CONTACT_TO,
+      to,
       subject: `[Contact NexoraTV] ${subject}`,
       html: contactEmailHtml(name, email, subject, message),
       text: `De : ${name} <${email}>\nObjet : ${subject}\n\n${message}`,
@@ -40,9 +39,7 @@ export async function contactAction(
     console.error("[contact] échec de l'envoi", err);
     return {
       error:
-        "Votre message n'a pas pu être envoyé. Réessayez ou écrivez-nous directement à " +
-        CONTACT_TO +
-        ".",
+        "Votre message n'a pas pu être envoyé. Réessayez plus tard ou passez par la page Contact.",
     };
   }
 

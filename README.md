@@ -217,6 +217,11 @@ revendeur, `mass_refund` optionnel).
   (`iptv_orders`, statut `pending`). *Le paiement s'insère ici plus tard.*
 - **`/admin/commandes`** : l'admin **valide** → provisioning GoldenOTT →
   abonnement rattaché, commande `fulfilled`. Ou **refuse** avec un motif.
+- **E-mails automatiques** (`lib/order-mail.ts`, via Resend) : à la commande
+  → confirmation au client + notification à l'équipe (`ORDER_NOTIFY_EMAIL`
+  ou l'e-mail du 1er admin) ; à la validation → « abonnement actif » au
+  client ; au refus → e-mail avec le motif. Nécessite `RESEND_API_KEY` +
+  `MAIL_FROM` sur un domaine vérifié.
 - Sur `/profil`, le client peut demander le **renouvellement** d'un abonnement
   existant (→ commande de type renouvellement → l'admin valide → `extend`).
 

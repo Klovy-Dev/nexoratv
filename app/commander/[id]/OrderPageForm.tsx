@@ -101,10 +101,6 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
       <SubmitButton className="btn btn-primary btn-block" pendingLabel="Envoi…">
         Confirmer la commande
       </SubmitButton>
-      <p className="hint" style={{ textAlign: "center", marginTop: 12 }}>
-        Aucun paiement immédiat. Notre équipe valide votre commande puis active
-        l&apos;abonnement dans votre espace client.
-      </p>
     </form>
   );
 }

@@ -11,8 +11,8 @@ import type { ProviderKind } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const KIND_FR: Record<ProviderKind, string> = {
-  line: "Ligne M3U (identifiant + mot de passe)",
-  mag: "Boîtier MAG (adresse MAC)",
+  line: "Ligne M3U",
+  mag: "Boîtier MAG",
   code: "Code d'activation",
 };
 
@@ -46,17 +46,68 @@ export default async function OrderStepPage({
 
   return (
     <section className="order-step">
-      <div className="container" style={{ maxWidth: 760 }}>
+      <div className="container" style={{ maxWidth: 940 }}>
         <Link href="/commander" className="order-back">
           ← Toutes les offres
         </Link>
 
-        <h1 className="order-step-title">{offer.title}</h1>
-        {offer.tagline && <p className="lead">{offer.tagline}</p>}
+        <ol className="order-steps" aria-label="Étapes de la commande">
+          <li className="done">Choix de la formule</li>
+          <li className="current">Votre commande</li>
+          <li>Activation par l&apos;équipe</li>
+        </ol>
 
         <div className="order-layout">
+          <div className="order-main">
+            <header className="order-head">
+              {offer.badge && <span className="offer-ribbon-static">{offer.badge}</span>}
+              <h1>{offer.title}</h1>
+              {offer.tagline && <p className="lead">{offer.tagline}</p>}
+            </header>
+
+            {pending ? (
+              <div className="empty-state" style={{ textAlign: "left" }}>
+                <p>Vous avez déjà une commande en attente pour cette offre.</p>
+                <p style={{ marginTop: 10 }}>
+                  <Link href="/profil" style={{ color: "var(--text)" }}>
+                    Suivre ma commande →
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <OrderPageForm
+                offer={{
+                  id: offer.id,
+                  kind: offer.kind,
+                  price_cents: offer.price_cents,
+                  included_screens: offer.included_screens,
+                  allow_screens: offer.allow_screens,
+                  extra_screen_cents: offer.extra_screen_cents,
+                  max_screens: offer.max_screens,
+                }}
+              />
+            )}
+
+            <ul className="order-reassure">
+              <li>
+                <span aria-hidden="true">💳</span> Aucun paiement immédiat
+              </li>
+              <li>
+                <span aria-hidden="true">⚡</span> Activation rapide après validation
+              </li>
+              <li>
+                <span aria-hidden="true">💬</span> Support si besoin d&apos;aide
+              </li>
+            </ul>
+          </div>
+
           <aside className="order-recap">
-            <h2>Récapitulatif</h2>
+            <span className="order-recap-kicker">Récapitulatif</span>
+            <div className="order-recap-price">
+              {offer.allow_screens && <small>à partir de</small>}
+              <strong>{formatPrice(offer.price_cents)}</strong>
+              {offer.duration_label && <em>/ {offer.duration_label}</em>}
+            </div>
             <dl>
               <div>
                 <dt>Formule</dt>
@@ -74,50 +125,16 @@ export default async function OrderStepPage({
               </div>
               {offer.allow_screens && (
                 <div>
-                  <dt>Écran supplémentaire</dt>
-                  <dd>
-                    +{formatPrice(offer.extra_screen_cents)} (jusqu&apos;à{" "}
-                    {offer.max_screens})
-                  </dd>
+                  <dt>Écran en plus</dt>
+                  <dd>+{formatPrice(offer.extra_screen_cents)}</dd>
                 </div>
               )}
               <div>
                 <dt>Contenu adulte</dt>
                 <dd>{offer.is_adult ? "Inclus" : "Non inclus"}</dd>
               </div>
-              <div className="order-recap-price">
-                <dt>Prix de base</dt>
-                <dd>{formatPrice(offer.price_cents)}</dd>
-              </div>
             </dl>
           </aside>
-
-          <div className="order-main">
-            {pending ? (
-              <div className="empty-state" style={{ textAlign: "left" }}>
-                <p>
-                  Vous avez déjà une commande en attente pour cette offre.
-                </p>
-                <p style={{ marginTop: 10 }}>
-                  <Link href="/profil" style={{ color: "var(--text)" }}>
-                    Suivre ma commande
-                  </Link>
-                </p>
-              </div>
-            ) : (
-              <OrderPageForm
-                offer={{
-                  id: offer.id,
-                  kind: offer.kind,
-                  price_cents: offer.price_cents,
-                  included_screens: offer.included_screens,
-                  allow_screens: offer.allow_screens,
-                  extra_screen_cents: offer.extra_screen_cents,
-                  max_screens: offer.max_screens,
-                }}
-              />
-            )}
-          </div>
         </div>
       </div>
     </section>

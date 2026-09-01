@@ -70,6 +70,19 @@ export async function allUsers(): Promise<UserRow[]> {
   `) as unknown as UserRow[];
 }
 
+/**
+ * Adresse de notification de l'équipe : `ORDER_NOTIFY_EMAIL` si défini,
+ * sinon l'e-mail du plus ancien compte administrateur.
+ */
+export async function notifyEmail(): Promise<string | null> {
+  const override = process.env.ORDER_NOTIFY_EMAIL?.trim();
+  if (override) return override;
+  const rows = (await sql`
+    SELECT email FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1
+  `) as unknown as { email: string }[];
+  return rows[0]?.email ?? null;
+}
+
 export async function userById(id: number): Promise<User | null> {
   const rows = (await sql`
     SELECT id, name, email, role, created_at FROM users WHERE id = ${id}

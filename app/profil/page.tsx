@@ -3,7 +3,13 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { ordersForUser, listOffers, subscriptionsForUser } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
-import { formatDate, formatPrice, initials } from "@/lib/validation";
+import {
+  daysUntil,
+  expiryLabel,
+  formatDate,
+  formatPrice,
+  initials,
+} from "@/lib/validation";
 import CopyButton from "@/components/CopyButton";
 import SecretValue from "@/components/SecretValue";
 import NameForm from "./NameForm";
@@ -22,12 +28,16 @@ const KIND_CRED_LABEL: Record<ProviderKind, string> = {
   code: "Code d'activation",
 };
 
-const ORDER_STATUS: Record<string, [string, string]> = {
-  pending: ["badge-suspended", "En attente de validation"],
-  fulfilled: ["badge-active", "Activée"],
-  rejected: ["badge-expired", "Refusée"],
-  cancelled: ["badge", "Annulée"],
+const ORDER_STATUS: Record<string, { cls: string; label: string; dot: string }> = {
+  pending: { cls: "badge-suspended", label: "En attente de validation", dot: "warning" },
+  fulfilled: { cls: "badge-active", label: "Activée", dot: "success" },
+  rejected: { cls: "badge-expired", label: "Refusée", dot: "danger" },
+  cancelled: { cls: "badge", label: "Annulée", dot: "muted" },
 };
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="profile-section-title">{children}</h2>;
+}
 
 export default async function ProfilPage({
   searchParams,
@@ -50,7 +60,7 @@ export default async function ProfilPage({
       .filter((o) => o.status === "pending" && o.renew_sub_id != null)
       .map((o) => o.renew_sub_id as number),
   );
-  const activeOrders = orders.filter(
+  const visibleOrders = orders.filter(
     (o) => o.status === "pending" || o.status === "rejected",
   );
 
@@ -74,8 +84,8 @@ export default async function ProfilPage({
         )}
         {commande && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
-            Votre commande a bien été enregistrée. Vous serez notifié dès son
-            activation.
+            Votre commande a bien été enregistrée. Un e-mail de confirmation vous
+            a été envoyé ; vous serez prévenu dès son activation.
           </div>
         )}
 
@@ -104,42 +114,40 @@ export default async function ProfilPage({
           </div>
         </div>
 
-        {activeOrders.length > 0 && (
+        {visibleOrders.length > 0 && (
           <>
-            <h2 style={{ fontSize: "1.4rem", margin: "36px 0 18px" }}>
-              Mes commandes
-            </h2>
-            <div className="stack">
-              {activeOrders.map((o: Order) => {
-                const [cls, label] = ORDER_STATUS[o.status] ?? ["badge", o.status];
+            <SectionTitle>Mes commandes</SectionTitle>
+            <div className="order-track">
+              {visibleOrders.map((o: Order) => {
+                const s = ORDER_STATUS[o.status] ?? ORDER_STATUS.cancelled;
                 return (
-                  <div className="sub-card" key={o.id} style={{ padding: 20 }}>
-                    <div className="sub-card-head" style={{ marginBottom: 8 }}>
-                      <div>
-                        <h3 style={{ fontSize: "1rem" }}>{o.title}</h3>
-                        <div className="muted" style={{ fontSize: "0.82rem" }}>
-                          {formatPrice(o.price_cents)} · commandé le{" "}
-                          {formatDate(o.created_at)}
-                        </div>
-                      </div>
-                      <span className={`badge ${cls}`}>{label}</span>
+                  <div className={`order-track-card dot-${s.dot}`} key={o.id}>
+                    <div className="order-track-main">
+                      <strong>{o.title}</strong>
+                      <span className="muted">
+                        {formatPrice(o.price_cents)} · commandé le{" "}
+                        {formatDate(o.created_at)}
+                      </span>
+                      {o.status === "rejected" && o.admin_note && (
+                        <span className="order-track-reason">
+                          Motif : {o.admin_note}
+                        </span>
+                      )}
                     </div>
-                    {o.admin_note && o.status === "rejected" && (
-                      <p className="muted" style={{ fontSize: "0.88rem" }}>
-                        Motif : {o.admin_note}
-                      </p>
-                    )}
-                    {o.status === "pending" && (
-                      <form action={cancelOrderAction} className="inline-form">
-                        <input type="hidden" name="order_id" value={o.id} />
-                        <ConfirmSubmit
-                          className="btn btn-ghost btn-sm"
-                          confirm="Annuler cette commande ?"
-                        >
-                          Annuler
-                        </ConfirmSubmit>
-                      </form>
-                    )}
+                    <div className="order-track-side">
+                      <span className={`badge ${s.cls}`}>{s.label}</span>
+                      {o.status === "pending" && (
+                        <form action={cancelOrderAction} className="inline-form">
+                          <input type="hidden" name="order_id" value={o.id} />
+                          <ConfirmSubmit
+                            className="btn btn-ghost btn-sm"
+                            confirm="Annuler cette commande ?"
+                          >
+                            Annuler
+                          </ConfirmSubmit>
+                        </form>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -147,9 +155,7 @@ export default async function ProfilPage({
           </>
         )}
 
-        <h2 style={{ fontSize: "1.4rem", margin: "36px 0 18px" }}>
-          Mes identifiants d&apos;abonnement
-        </h2>
+        <SectionTitle>Mes abonnements</SectionTitle>
 
         {subs.length === 0 ? (
           <div className="empty-state">
@@ -176,14 +182,32 @@ export default async function ProfilPage({
                     : ["badge-active", "Actif"];
               const kind = sub.provider_kind ?? "line";
               const credValue = kind === "mag" ? sub.mac ?? "" : sub.username;
+              const left = daysUntil(sub.expires_at);
+              const soon = left !== null && left >= 0 && left <= 7;
 
               return (
                 <div className="sub-card reveal" key={sub.id}>
                   <div className="sub-card-head">
                     <div>
                       <h3>{sub.label}</h3>
-                      <div className="muted" style={{ fontSize: "0.85rem" }}>
-                        Expire le {formatDate(sub.expires_at)}
+                      <div
+                        className="muted"
+                        style={{ fontSize: "0.85rem", marginTop: 2 }}
+                      >
+                        {sub.expires_at ? (
+                          <>
+                            Échéance {formatDate(sub.expires_at)}
+                            {expiryLabel(sub.expires_at) && (
+                              <span
+                                className={`expiry-chip${soon ? " soon" : ""}${sub.expired ? " over" : ""}`}
+                              >
+                                {expiryLabel(sub.expires_at)}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          "Sans date d'expiration"
+                        )}
                       </div>
                     </div>
                     <span className={`badge ${cls}`}>{text}</span>
@@ -227,7 +251,7 @@ export default async function ProfilPage({
                             rel="noreferrer"
                             style={{ color: "var(--blue)" }}
                           >
-                            Personnaliser mes chaînes
+                            Personnaliser mes chaînes ↗
                           </a>
                         </span>
                         <span />
@@ -261,9 +285,7 @@ export default async function ProfilPage({
           </>
         )}
 
-        <h2 style={{ fontSize: "1.4rem", margin: "44px 0 18px" }}>
-          Paramètres du compte
-        </h2>
+        <SectionTitle>Paramètres du compte</SectionTitle>
 
         <div className="grid-2">
           <NameForm currentName={user.name} email={user.email} />

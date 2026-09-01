@@ -51,6 +51,28 @@ export function formatDate(iso: string | null): string {
   return d.toLocaleDateString("fr-FR");
 }
 
+/** Nombre de jours entiers d'ici la date (négatif si passée), null si invalide. */
+export function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86_400_000);
+}
+
+/** Libellé court d'échéance : « expire dans 12 jours », « expiré depuis 3 jours ». */
+export function expiryLabel(iso: string | null): string | null {
+  const n = daysUntil(iso);
+  if (n === null) return null;
+  if (n > 1) return `expire dans ${n} jours`;
+  if (n === 1) return "expire demain";
+  if (n === 0) return "expire aujourd'hui";
+  if (n === -1) return "expiré hier";
+  return `expiré depuis ${-n} jours`;
+}
+
 export function isExpired(iso: string | null): boolean {
   if (!iso) return false;
   const d = new Date(iso);
