@@ -78,9 +78,14 @@ interface ApiEnvelope {
   [key: string]: unknown;
 }
 
+/** GoldenOTT est le tag de cache commun : `revalidateTag("goldenott")` après mutation. */
+export const GOLDENOTT_TAG = "goldenott";
+
 async function call<T = ApiEnvelope>(
   path: string,
   init: RequestInit & { method: string },
+  /** secondes de mise en cache pour les lectures (catalogue). 0/undefined = pas de cache. */
+  revalidate?: number,
 ): Promise<T> {
   const apiKey = process.env.GOLDENOTT_API_KEY;
   if (!apiKey) {
@@ -99,7 +104,9 @@ async function call<T = ApiEnvelope>(
         ...(init.body ? { "Content-Type": "application/json" } : {}),
         ...init.headers,
       },
-      cache: "no-store",
+      ...(revalidate
+        ? { next: { revalidate, tags: [GOLDENOTT_TAG] } }
+        : { cache: "no-store" as const }),
       signal: AbortSignal.timeout(20_000),
     });
   } catch (err) {
@@ -153,7 +160,7 @@ export async function getProfile(): Promise<GoldenottProfile> {
       role: string;
       last_login: string | null;
     };
-  }>("/v1/account/profile", { method: "GET" });
+  }>("/v1/account/profile", { method: "GET" }, 30);
 
   return {
     username: r.data.username,
@@ -178,7 +185,7 @@ export async function listTemplates(): Promise<GoldenottTemplate[]> {
       parent_templates?: Omit<GoldenottTemplate, "scope">[];
       own?: Omit<GoldenottTemplate, "scope">[];
     };
-  }>("/v1/account/templates", { method: "GET" });
+  }>("/v1/account/templates", { method: "GET" }, 600);
 
   const d = r.data ?? {};
   return [
@@ -225,12 +232,16 @@ function mapDomain(d: Record<string, unknown>): GoldenottDomain {
  */
 export async function listDomains(): Promise<GoldenottDomain[]> {
   const [normal, bypass] = await Promise.all([
-    call<{ data: Record<string, unknown>[] }>("/v1/account/domains", {
-      method: "GET",
-    }),
-    call<{ data: Record<string, unknown>[] }>("/v1/account/domains?bypass=true", {
-      method: "GET",
-    }).catch(() => ({ data: [] as Record<string, unknown>[] })),
+    call<{ data: Record<string, unknown>[] }>(
+      "/v1/account/domains",
+      { method: "GET" },
+      600,
+    ),
+    call<{ data: Record<string, unknown>[] }>(
+      "/v1/account/domains?bypass=true",
+      { method: "GET" },
+      600,
+    ).catch(() => ({ data: [] as Record<string, unknown>[] })),
   ]);
 
   const byId = new Map<number, GoldenottDomain>();
@@ -284,9 +295,11 @@ export async function listPackages(): Promise<GoldenottPackage[]> {
         current_page: number;
         last_page: number;
       };
-    }>(`/v1/packages?per_page=100&page=${page}&sort_by=package_name&sort_order=asc`, {
-      method: "GET",
-    });
+    }>(
+      `/v1/packages?per_page=100&page=${page}&sort_by=package_name&sort_order=asc`,
+      { method: "GET" },
+      600,
+    );
 
     const pk = r.packages;
     for (const p of pk?.data ?? []) {

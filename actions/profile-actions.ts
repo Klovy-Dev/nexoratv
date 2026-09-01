@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
-import { hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import {
+  hashPassword,
+  refreshSession,
+  requireUser,
+  verifyPassword,
+} from "@/lib/auth";
 import { passwordProblems, str } from "@/lib/validation";
 import type { FormState } from "@/lib/types";
 
@@ -18,6 +23,8 @@ export async function updateNameAction(
   }
 
   await sql`UPDATE users SET name = ${name} WHERE id = ${user.id}`;
+  // Réémet le cookie pour que l'en-tête reflète le nouveau nom sans requête DB.
+  await refreshSession(user.id);
   revalidatePath("/profil");
   return { ok: true };
 }

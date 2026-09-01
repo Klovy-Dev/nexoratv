@@ -58,6 +58,15 @@ export async function createOrderAction(
   }
   const priceCents = offerPriceCents(offer, screens);
 
+  // Anti-abus : pas plus de 8 commandes sur la dernière heure.
+  const recent = (await sql`
+    SELECT COUNT(*)::int AS n FROM iptv_orders
+    WHERE user_id = ${user.id} AND created_at > now() - interval '1 hour'
+  `) as unknown as { n: number }[];
+  if ((recent[0]?.n ?? 0) >= 8) {
+    return { fieldErrors: ["Trop de commandes récentes. Réessayez plus tard."] };
+  }
+
   // Une seule commande en attente par offre et par client.
   const existing = (await sql`
     SELECT 1 FROM iptv_orders

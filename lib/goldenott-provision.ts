@@ -1,4 +1,5 @@
 import "server-only";
+import { revalidateTag } from "next/cache";
 import { sql } from "@/lib/db";
 import { encryptSecret, randomCode } from "@/lib/crypto";
 import { logGoldenottEvent } from "@/lib/data";
@@ -6,6 +7,7 @@ import {
   createSubscription,
   extendSubscription,
   getSubscription,
+  GOLDENOTT_TAG,
   refundSubscription,
   type CreatedSubscription,
   type GoldenottKind,
@@ -187,6 +189,7 @@ export async function provisionSubscription(
     }`,
   });
 
+  revalidateTag(GOLDENOTT_TAG); // le crédit revendeur a changé
   return { subscriptionId, created };
 }
 
@@ -246,6 +249,7 @@ export async function extendSubscriptionLocal(
     }`,
   });
 
+  revalidateTag(GOLDENOTT_TAG);
   return { expiresAt: result.expiresAt, remainingCredit: result.remainingCredit };
 }
 
@@ -297,6 +301,7 @@ export async function refundSubscriptionLocal(
     message: `${result.message} · reste ${result.remainingCredit ?? "?"}`,
   });
 
+  revalidateTag(GOLDENOTT_TAG);
   return result;
 }
 

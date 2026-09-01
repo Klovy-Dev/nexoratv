@@ -29,10 +29,11 @@ function hashToken(token: string): string {
 
 /** Redirection interne sûre (évite les redirections ouvertes). */
 function safePath(value: string): string | null {
-  if (!value.startsWith("/") || value.startsWith("//")) return null;
-  if (value.startsWith("/connexion") || value.startsWith("/inscription")) {
-    return null;
-  }
+  // Doit commencer par « / » suivi d'un caractère de chemin normal :
+  // exclut « // », « /\ », « /%2f… », les URL absolues et les retours ligne.
+  if (!/^\/[A-Za-z0-9._~/?#[\]@!$&'()*+,;=%-]*$/.test(value)) return null;
+  if (value.startsWith("//") || value.includes("\\")) return null;
+  if (/^\/(connexion|inscription|api)\b/.test(value)) return null;
   return value;
 }
 
@@ -70,10 +71,16 @@ export async function registerAction(
   const inserted = (await sql`
     INSERT INTO users (name, email, password_hash, role)
     VALUES (${name}, ${email}, ${hash}, 'client')
-    RETURNING id
-  `) as unknown as { id: number }[];
+    RETURNING id, name, email, role, created_at
+  `) as unknown as {
+    id: number;
+    name: string;
+    email: string;
+    role: "client" | "admin";
+    created_at: string;
+  }[];
 
-  await createSession(inserted[0].id);
+  await createSession(inserted[0]);
   redirect("/profil?bienvenue=1");
 }
 
@@ -103,8 +110,16 @@ export async function loginAction(
   }
 
   const rows = (await sql`
-    SELECT id, password_hash FROM users WHERE email = ${email}
-  `) as unknown as { id: number; password_hash: string }[];
+    SELECT id, name, email, password_hash, role, created_at
+    FROM users WHERE email = ${email}
+  `) as unknown as {
+    id: number;
+    name: string;
+    email: string;
+    password_hash: string;
+    role: "client" | "admin";
+    created_at: string;
+  }[];
 
   const user = rows[0];
   const valid = user ? await verifyPassword(password, user.password_hash) : false;
@@ -117,12 +132,15 @@ export async function loginAction(
   }
 
   await sql`DELETE FROM login_attempts WHERE email = ${email} AND ip = ${ip}`;
-  await createSession(user.id);
+  await createSession({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    created_at: user.created_at,
+  });
 
-  const roleRows = (await sql`SELECT role FROM users WHERE id = ${user.id}`) as unknown as {
-    role: string;
-  }[];
-  redirect(next ?? (roleRows[0]?.role === "admin" ? "/admin" : "/profil"));
+  redirect(next ?? (user.role === "admin" ? "/admin" : "/profil"));
 }
 
 /* ------------------------------------------------------------------ */

@@ -50,8 +50,31 @@ function connection(): SqlTag {
 
 let schemaReady: Promise<void> | null = null;
 
+/**
+ * Version courante du schéma. À incrémenter dès qu'on ajoute une migration
+ * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
+ * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
+ */
+const SCHEMA_VERSION = 4;
+
+async function readSchemaVersion(raw: SqlTag): Promise<number> {
+  try {
+    const r = await raw`SELECT value FROM app_meta WHERE key = 'schema_version'`;
+    return Number((r[0] as { value?: string } | undefined)?.value) || 0;
+  } catch {
+    return 0; // table absente = base pas encore migrée
+  }
+}
+
 /** DDL idempotente pour les fonctionnalités ajoutées après coup. */
 async function ensureMigrations(raw: SqlTag): Promise<void> {
+  await raw`
+    CREATE TABLE IF NOT EXISTS app_meta (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `;
+
   await raw`
     CREATE TABLE IF NOT EXISTS password_resets (
       id         SERIAL PRIMARY KEY,
@@ -166,6 +189,12 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_gevents_created ON goldenott_events (created_at DESC)`;
+
+  await raw`
+    INSERT INTO app_meta (key, value)
+    VALUES ('schema_version', ${String(SCHEMA_VERSION)})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `;
 }
 
 async function ensureSchema(): Promise<void> {
@@ -173,8 +202,10 @@ async function ensureSchema(): Promise<void> {
 
   const check = await raw`SELECT to_regclass('public.subscriptions') AS t`;
   if (check[0]?.t) {
+    // Base déjà en place : on ne rejoue les migrations que si nécessaire.
+    if ((await readSchemaVersion(raw)) >= SCHEMA_VERSION) return;
     await ensureMigrations(raw);
-    return; // schéma de base déjà en place
+    return;
   }
 
   await raw`
