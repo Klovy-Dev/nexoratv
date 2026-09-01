@@ -4,7 +4,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { listOffers, ordersForUser } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
 import { formatPrice } from "@/lib/validation";
-import OrderForm from "./OrderForm";
 import type { Offer, ProviderKind } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -101,7 +100,7 @@ export default async function CommanderPage({
                       <OfferCard
                         key={offer.id}
                         offer={offer}
-                        canOrder={Boolean(user)}
+                        loggedIn={Boolean(user)}
                         alreadyPending={pendingOfferIds.has(offer.id)}
                       />
                     ))}
@@ -127,13 +126,17 @@ function groupByKind(offers: Offer[]): [ProviderKind, Offer[]][] {
 
 function OfferCard({
   offer,
-  canOrder,
+  loggedIn,
   alreadyPending,
 }: {
   offer: Offer;
-  canOrder: boolean;
+  loggedIn: boolean;
   alreadyPending: boolean;
 }) {
+  const orderHref = loggedIn
+    ? `/commander/${offer.id}`
+    : `/connexion?next=/commander/${offer.id}`;
+
   return (
     <div className={`offer-card${offer.badge ? " offer-card--featured" : ""}`}>
       {offer.badge && <span className="offer-ribbon">{offer.badge}</span>}
@@ -152,8 +155,7 @@ function OfferCard({
         <li>{KIND_FR[offer.kind]}</li>
         {offer.duration_label && <li>Durée : {offer.duration_label}</li>}
         <li>
-          {offer.included_screens} écran{offer.included_screens > 1 ? "s" : ""}{" "}
-          inclus{offer.included_screens > 1 ? "" : ""}
+          {offer.included_screens} écran{offer.included_screens > 1 ? "s" : ""} inclus
           {offer.allow_screens
             ? ` · jusqu'à ${offer.max_screens} (+${formatPrice(offer.extra_screen_cents)}/écran)`
             : ""}
@@ -164,28 +166,15 @@ function OfferCard({
       <div className="offer-cta">
         {alreadyPending ? (
           <p className="flash flash-info" style={{ margin: 0 }}>
-            Commande déjà en attente pour cette offre.
+            Commande déjà en attente — suivez-la dans{" "}
+            <Link href="/profil" style={{ color: "var(--text)" }}>
+              votre profil
+            </Link>
+            .
           </p>
-        ) : canOrder ? (
-          <OrderForm
-            offer={{
-              id: offer.id,
-              title: offer.title,
-              duration_label: offer.duration_label,
-              kind: offer.kind,
-              price_cents: offer.price_cents,
-              included_screens: offer.included_screens,
-              allow_screens: offer.allow_screens,
-              extra_screen_cents: offer.extra_screen_cents,
-              max_screens: offer.max_screens,
-            }}
-          />
         ) : (
-          <Link
-            href="/connexion?next=/commander"
-            className="btn btn-primary btn-block"
-          >
-            Se connecter pour commander
+          <Link href={orderHref} className="btn btn-primary btn-block">
+            Commander
           </Link>
         )}
       </div>
