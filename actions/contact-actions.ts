@@ -1,7 +1,7 @@
 "use server";
 
 import { isEmail, str } from "@/lib/validation";
-import { sendEmail, contactEmailHtml } from "@/lib/mail";
+import { appOrigin, sendEmail, contactEmailHtml } from "@/lib/mail";
 import { notifyEmail } from "@/lib/data";
 import type { FormState } from "@/lib/types";
 
@@ -31,7 +31,7 @@ export async function contactAction(
     await sendEmail({
       to,
       subject: `[Contact NexoraTV] ${subject}`,
-      html: contactEmailHtml(name, email, subject, message),
+      html: contactEmailHtml(name, email, subject, message, await appOrigin()),
       text: `De : ${name} <${email}>\nObjet : ${subject}\n\n${message}`,
       replyTo: email,
     });

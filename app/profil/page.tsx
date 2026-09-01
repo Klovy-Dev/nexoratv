@@ -241,22 +241,6 @@ export default async function ProfilPage({
                         <span />
                       </div>
                     )}
-                    {sub.qr_url && (
-                      <div className="cred-row">
-                        <span className="k">Bouquets</span>
-                        <span className="v" style={{ fontFamily: "inherit" }}>
-                          <a
-                            href={sub.qr_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ color: "var(--blue)" }}
-                          >
-                            Personnaliser mes chaînes ↗
-                          </a>
-                        </span>
-                        <span />
-                      </div>
-                    )}
                     {sub.note && (
                       <div className="cred-row">
                         <span className="k">Note</span>

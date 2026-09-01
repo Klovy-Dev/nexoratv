@@ -1,5 +1,13 @@
 import "server-only";
-import { appOrigin, escapeHtml, sendEmail } from "@/lib/mail";
+import { appOrigin, sendEmail } from "@/lib/mail";
+import {
+  emailButton,
+  escapeHtml,
+  infoTable,
+  noteBox,
+  p,
+  renderEmail,
+} from "@/lib/email-layout";
 import { notifyEmail } from "@/lib/data";
 import { formatPrice } from "@/lib/validation";
 import type { ProviderKind } from "@/lib/types";
@@ -25,37 +33,16 @@ export interface OrderMailInfo {
   isRenewal: boolean;
 }
 
-function shell(inner: string): string {
-  return `
-  <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#08090d;padding:32px;color:#e9eaf1">
-    <div style="max-width:520px;margin:0 auto;background:#141722;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px">
-      <p style="font-size:18px;font-weight:700;margin:0 0 20px">Nexora<span style="color:#ff2e9a">TV</span></p>
-      ${inner}
-      <p style="margin:28px 0 0;font-size:12px;color:#5c6478">NexoraTV — cet e-mail vous est envoyé suite à une action sur votre compte.</p>
-    </div>
-  </div>`;
-}
-
-function detailRows(info: OrderMailInfo): string {
-  const rows: [string, string][] = [
+function rows(info: OrderMailInfo): [string, string][] {
+  const r: [string, string][] = [
     ["Offre", info.title],
     ["Type", KIND_FR[info.kind]],
   ];
-  if (info.kind === "line" && info.screens) {
-    rows.push(["Écrans", String(info.screens)]);
+  if (info.kind === "line" && info.screens && info.screens > 1) {
+    r.push(["Écrans", String(info.screens)]);
   }
-  rows.push(["Montant", formatPrice(info.priceCents)]);
-  return rows
-    .map(
-      ([k, v]) =>
-        `<tr><td style="padding:6px 0;color:#969db1;font-size:13px">${k}</td>
-         <td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(v)}</td></tr>`,
-    )
-    .join("");
-}
-
-function button(href: string, label: string): string {
-  return `<p style="margin:24px 0"><a href="${href}" style="display:inline-block;background:linear-gradient(120deg,#ff2e9a,#a13bd8,#2f80ed);color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600">${label}</a></p>`;
+  r.push(["Montant", formatPrice(info.priceCents)]);
+  return r;
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,47 +50,54 @@ function button(href: string, label: string): string {
 /* ------------------------------------------------------------------ */
 
 export async function sendOrderPlacedEmails(info: OrderMailInfo): Promise<void> {
-  const origin = await appOrigin();
-  const table = `<table style="width:100%;border-collapse:collapse;margin:8px 0 4px">${detailRows(info)}</table>`;
+  const site = await appOrigin();
+  const noun = info.isRenewal ? "demande de renouvellement" : "commande";
 
-  // --- Client ---
   try {
     await sendEmail({
       to: info.customerEmail,
       subject: info.isRenewal
         ? "Votre demande de renouvellement a bien été reçue"
         : "Votre commande NexoraTV a bien été reçue",
-      html: shell(`
-        <p style="margin:0 0 16px">Bonjour ${escapeHtml(info.customerName)},</p>
-        <p style="margin:0 0 16px">Nous avons bien reçu votre ${info.isRenewal ? "demande de renouvellement" : "commande"}. Notre équipe la valide au plus vite ; vous recevrez un e-mail dès qu'elle est activée.</p>
-        ${table}
-        ${button(`${origin}/profil`, "Suivre ma commande")}
-        <p style="margin:0;font-size:13px;color:#969db1">Aucun paiement n'a été prélevé pour l'instant.</p>
-      `),
-      text: `Bonjour ${info.customerName},\n\nNous avons bien reçu votre ${info.isRenewal ? "demande de renouvellement" : "commande"} : ${info.title} — ${formatPrice(info.priceCents)}.\nNotre équipe la valide au plus vite.\n\nSuivi : ${origin}/profil`,
+      html: renderEmail({
+        preheader: `${info.title} — ${formatPrice(info.priceCents)}. Validation en cours.`,
+        title: "Nous avons bien reçu votre commande",
+        siteUrl: site,
+        bodyHtml: `
+          ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
+          ${p(`Votre ${noun} est enregistrée. Notre équipe la valide au plus vite ; vous recevrez un e-mail dès qu'elle est activée.`)}
+          ${infoTable(rows(info))}
+          ${emailButton(`${site}/profil`, "Suivre ma commande")}
+          ${p(`<span style="color:#828aa0;font-size:13px">Aucun paiement n'a été prélevé pour l'instant.</span>`)}
+        `,
+      }),
+      text: `Bonjour ${info.customerName},\n\nVotre ${noun} est enregistrée : ${info.title} — ${formatPrice(info.priceCents)}.\nNotre équipe la valide au plus vite.\n\nSuivi : ${site}/profil`,
     });
   } catch (err) {
     console.error("[order-mail] client 'reçue' échec", err);
   }
 
-  // --- Équipe ---
   try {
     const to = await notifyEmail();
     if (to) {
       await sendEmail({
         to,
-        subject: `Nouvelle ${info.isRenewal ? "demande de renouvellement" : "commande"} — ${info.title}`,
+        subject: `Nouvelle ${noun} — ${info.title}`,
         replyTo: info.customerEmail,
-        html: shell(`
-          <p style="margin:0 0 16px;font-weight:600">${info.isRenewal ? "Renouvellement" : "Nouvelle commande"}</p>
-          <table style="width:100%;border-collapse:collapse;margin:8px 0">
-            <tr><td style="padding:6px 0;color:#969db1;font-size:13px">Client</td><td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(info.customerName)}</td></tr>
-            <tr><td style="padding:6px 0;color:#969db1;font-size:13px">E-mail</td><td style="padding:6px 0;text-align:right">${escapeHtml(info.customerEmail)}</td></tr>
-            ${detailRows(info)}
-          </table>
-          ${button(`${origin}/admin/commandes`, "Traiter la commande")}
-        `),
-        text: `${info.isRenewal ? "Renouvellement" : "Nouvelle commande"}\nClient : ${info.customerName} <${info.customerEmail}>\nOffre : ${info.title} — ${formatPrice(info.priceCents)}\n\n${origin}/admin/commandes`,
+        html: renderEmail({
+          preheader: `${info.customerName} · ${info.title} · ${formatPrice(info.priceCents)}`,
+          title: info.isRenewal ? "Demande de renouvellement" : "Nouvelle commande",
+          siteUrl: site,
+          bodyHtml: `
+            ${infoTable([
+              ["Client", info.customerName],
+              ["E-mail", info.customerEmail],
+              ...rows(info),
+            ])}
+            ${emailButton(`${site}/admin/commandes`, "Traiter la commande")}
+          `,
+        }),
+        text: `${info.isRenewal ? "Renouvellement" : "Nouvelle commande"}\nClient : ${info.customerName} <${info.customerEmail}>\nOffre : ${info.title} — ${formatPrice(info.priceCents)}\n\n${site}/admin/commandes`,
       });
     }
   } catch (err) {
@@ -119,18 +113,23 @@ export async function sendOrderAcceptedEmail(
   info: OrderMailInfo & { subscriptionLabel: string },
 ): Promise<void> {
   try {
-    const origin = await appOrigin();
+    const site = await appOrigin();
     await sendEmail({
       to: info.customerEmail,
-      subject: "Votre abonnement NexoraTV est actif 🎉",
-      html: shell(`
-        <p style="margin:0 0 16px">Bonjour ${escapeHtml(info.customerName)},</p>
-        <p style="margin:0 0 16px">Bonne nouvelle : votre ${info.isRenewal ? "renouvellement" : "abonnement"} <strong>${escapeHtml(info.subscriptionLabel)}</strong> est activé.</p>
-        <p style="margin:0 0 16px">Vos identifiants de connexion sont disponibles dans votre espace client.</p>
-        ${button(`${origin}/profil`, "Voir mes identifiants")}
-        <p style="margin:0;font-size:13px;color:#969db1">Besoin d'aide pour l'installation ? Consultez le <a href="${origin}/tuto" style="color:#a9ccf7">tutoriel</a>.</p>
-      `),
-      text: `Bonjour ${info.customerName},\n\nVotre ${info.isRenewal ? "renouvellement" : "abonnement"} "${info.subscriptionLabel}" est activé.\nVos identifiants : ${origin}/profil`,
+      subject: "Votre abonnement NexoraTV est actif",
+      html: renderEmail({
+        preheader: `${info.subscriptionLabel} — vos identifiants sont disponibles.`,
+        title: "Votre abonnement est activé 🎉",
+        siteUrl: site,
+        bodyHtml: `
+          ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
+          ${p(`Bonne nouvelle : votre ${info.isRenewal ? "renouvellement" : "abonnement"} <strong>${escapeHtml(info.subscriptionLabel)}</strong> est activé.`)}
+          ${p("Vos identifiants de connexion sont disponibles dans votre espace client.")}
+          ${emailButton(`${site}/profil`, "Voir mes identifiants")}
+          ${p(`<span style="color:#828aa0;font-size:13px">Besoin d'aide pour l'installation ? Consultez le <a href="${site}/tuto" style="color:#7fb0f5">tutoriel</a>.</span>`)}
+        `,
+      }),
+      text: `Bonjour ${info.customerName},\n\nVotre ${info.isRenewal ? "renouvellement" : "abonnement"} "${info.subscriptionLabel}" est activé.\nVos identifiants : ${site}/profil`,
     });
   } catch (err) {
     console.error("[order-mail] client 'acceptée' échec", err);
@@ -145,22 +144,23 @@ export async function sendOrderRejectedEmail(
   info: OrderMailInfo & { reason: string },
 ): Promise<void> {
   try {
-    const origin = await appOrigin();
+    const site = await appOrigin();
     await sendEmail({
       to: info.customerEmail,
       subject: "Votre commande NexoraTV n'a pas pu être validée",
-      html: shell(`
-        <p style="margin:0 0 16px">Bonjour ${escapeHtml(info.customerName)},</p>
-        <p style="margin:0 0 16px">Votre commande <strong>${escapeHtml(info.title)}</strong> n'a pas pu être validée.</p>
-        ${
-          info.reason
-            ? `<p style="margin:0 0 4px;font-size:13px;color:#969db1">Motif</p><p style="margin:0 0 16px;padding:12px 14px;background:#1c2030;border-radius:10px">${escapeHtml(info.reason)}</p>`
-            : ""
-        }
-        <p style="margin:0 0 16px">Aucun montant n'a été prélevé. Pour toute question, répondez à cet e-mail ou contactez-nous.</p>
-        ${button(`${origin}/contact`, "Nous contacter")}
-      `),
-      text: `Bonjour ${info.customerName},\n\nVotre commande "${info.title}" n'a pas pu être validée.${info.reason ? `\nMotif : ${info.reason}` : ""}\nAucun montant n'a été prélevé.\n\nContact : ${origin}/contact`,
+      html: renderEmail({
+        preheader: `${info.title} — aucun montant prélevé.`,
+        title: "Votre commande n'a pas pu être validée",
+        siteUrl: site,
+        bodyHtml: `
+          ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
+          ${p(`Votre commande <strong>${escapeHtml(info.title)}</strong> n'a pas pu être validée.`)}
+          ${info.reason ? `<p style="margin:0 0 6px;font-size:13px;color:#828aa0">Motif</p>${noteBox(escapeHtml(info.reason))}` : ""}
+          ${p("Aucun montant n'a été prélevé. Pour toute question, répondez à cet e-mail ou passez par la page contact.")}
+          ${emailButton(`${site}/contact`, "Nous contacter")}
+        `,
+      }),
+      text: `Bonjour ${info.customerName},\n\nVotre commande "${info.title}" n'a pas pu être validée.${info.reason ? `\nMotif : ${info.reason}` : ""}\nAucun montant n'a été prélevé.\n\nContact : ${site}/contact`,
     });
   } catch (err) {
     console.error("[order-mail] client 'refusée' échec", err);

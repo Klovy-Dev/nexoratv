@@ -1,5 +1,14 @@
 import "server-only";
 import { headers } from "next/headers";
+import {
+  emailButton,
+  escapeHtml,
+  infoTable,
+  p,
+  renderEmail,
+} from "@/lib/email-layout";
+
+export { escapeHtml };
 
 /**
  * Envoi d'e-mail via l'API Resend (https://resend.com).
@@ -81,20 +90,20 @@ export function resetEmailHtml(
   link: string,
   minutes: number,
 ): string {
-  return `
-  <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#08090d;padding:32px;color:#e9eaf1">
-    <div style="max-width:480px;margin:0 auto;background:#141722;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px">
-      <p style="font-size:18px;font-weight:700;margin:0 0 20px">Nexora<span style="color:#ff2e9a">TV</span></p>
-      <p style="margin:0 0 16px">Bonjour ${escapeHtml(name)},</p>
-      <p style="margin:0 0 16px">Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau. Ce lien est valable ${minutes} minutes.</p>
-      <p style="margin:24px 0">
-        <a href="${link}" style="display:inline-block;background:linear-gradient(120deg,#ff2e9a,#a13bd8,#2f80ed);color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600">Choisir un nouveau mot de passe</a>
-      </p>
-      <p style="margin:0 0 8px;font-size:13px;color:#969db1">Si le bouton ne fonctionne pas, copiez ce lien :</p>
-      <p style="margin:0 0 16px;font-size:13px;word-break:break-all"><a href="${link}" style="color:#a9ccf7">${link}</a></p>
-      <p style="margin:0;font-size:13px;color:#969db1">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe reste inchangé.</p>
-    </div>
-  </div>`;
+  const siteUrl = safeOrigin(link);
+  return renderEmail({
+    preheader: `Lien de réinitialisation valable ${minutes} minutes.`,
+    title: "Réinitialisation de votre mot de passe",
+    siteUrl,
+    bodyHtml: `
+      ${p(`Bonjour ${escapeHtml(name)},`)}
+      ${p(`Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau — ce lien est valable <strong>${minutes} minutes</strong>.`)}
+      ${emailButton(link, "Choisir un nouveau mot de passe")}
+      <p style="margin:0 0 8px;font-size:13px;color:#828aa0">Si le bouton ne fonctionne pas, copiez ce lien :</p>
+      <p style="margin:0 0 18px;font-size:13px;word-break:break-all"><a href="${link}" style="color:#7fb0f5">${escapeHtml(link)}</a></p>
+      ${p(`<span style="color:#828aa0;font-size:13px">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe reste inchangé.</span>`)}
+    `,
+  });
 }
 
 export function contactEmailHtml(
@@ -102,31 +111,28 @@ export function contactEmailHtml(
   email: string,
   subject: string,
   message: string,
+  siteUrl = "https://nexoratv.fr",
 ): string {
-  return `
-  <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#08090d;padding:32px;color:#e9eaf1">
-    <div style="max-width:520px;margin:0 auto;background:#141722;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px">
-      <p style="font-size:18px;font-weight:700;margin:0 0 20px">Nexora<span style="color:#ff2e9a">TV</span> — Contact</p>
-      <p style="margin:0 0 4px;font-size:13px;color:#969db1">De</p>
-      <p style="margin:0 0 16px">${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
-      <p style="margin:0 0 4px;font-size:13px;color:#969db1">Objet</p>
-      <p style="margin:0 0 16px">${escapeHtml(subject)}</p>
-      <p style="margin:0 0 4px;font-size:13px;color:#969db1">Message</p>
-      <p style="margin:0;white-space:pre-wrap">${escapeHtml(message)}</p>
-    </div>
-  </div>`;
+  return renderEmail({
+    preheader: `${name} — ${subject}`,
+    title: "Nouveau message via le formulaire de contact",
+    siteUrl,
+    bodyHtml: `
+      ${infoTable([
+        ["De", `${name} <${email}>`],
+        ["Objet", subject],
+      ])}
+      <p style="margin:16px 0 6px;font-size:13px;color:#828aa0">Message</p>
+      <p style="margin:0;white-space:pre-wrap;background:#1b1f2b;border-radius:8px;padding:14px 16px">${escapeHtml(message)}</p>
+      ${p(`<span style="color:#828aa0;font-size:13px">Répondez directement à cet e-mail pour recontacter l'expéditeur.</span>`)}
+    `,
+  });
 }
 
-export function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[c] ?? c,
-  );
+function safeOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "https://nexoratv.fr";
+  }
 }
