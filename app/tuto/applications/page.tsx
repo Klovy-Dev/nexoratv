@@ -7,6 +7,7 @@ import TutoToc from "@/components/TutoToc";
 export const metadata: Metadata = { title: "Choisir son application — Tuto" };
 
 const SECTIONS = [
+  { id: "nexoratv", label: "Application NexoraTV" },
   { id: "telephone", label: "Téléphone (Android & iOS)" },
   { id: "box-firestick", label: "Box Android & Fire Stick" },
   { id: "android-tv", label: "Android TV / Google TV" },
@@ -21,29 +22,57 @@ export default function ApplicationsPage() {
       <div className="docs-content">
         <h1 className="docs-h1">Choisir son application</h1>
         <p className="docs-intro">
-          Chez NexoraTV, nous recommandons une application précise selon votre
-          appareil. Dans chacune, connectez-vous en mode{" "}
+          Sur Windows et Android, utilisez notre application officielle{" "}
+          <strong>NexoraTV</strong> : elle réunit direct, films et séries,
+          avec un lecteur intégré et les mises à jour automatiques. Sur les
+          autres appareils, nous recommandons une application tierce précise
+          selon votre matériel. Dans tous les cas, connectez-vous en mode{" "}
           <strong>« Xtream Codes »</strong> avec l&apos;URL du serveur, le nom
           d&apos;utilisateur et le mot de passe affichés sur votre profil.
         </p>
 
-        <article className="docs-section" id="telephone">
-          <SectionTitle id="telephone" kicker="Mobile" title="Téléphone (Android & iOS)" />
+        <article className="docs-section" id="nexoratv">
+          <SectionTitle
+            id="nexoratv"
+            kicker="Recommandé"
+            title="Application NexoraTV (Windows & Android)"
+          />
           <p>
-            Installez <strong>Zen IPTV</strong> depuis le Play Store (Android)
-            ou l&apos;App Store (iPhone), ouvrez l&apos;application, puis
-            connectez-vous en mode Xtream Codes avec vos identifiants.
+            Téléchargez l&apos;application depuis{" "}
+            <a href="/telecharger">nexoratv.fr/telecharger</a> : installeur
+            pour Windows, fichier APK pour Android (téléphone, box Android,
+            Android TV). Ouvrez-la, ajoutez votre compte en mode{" "}
+            <strong>Xtream Codes</strong> et c&apos;est prêt.
+          </p>
+          <Callout type="tip">
+            Pas encore disponible sur iPhone/iPad ni sur les téléviseurs
+            connectés (Samsung, LG…) : utilisez les applications ci-dessous
+            selon votre appareil.
+          </Callout>
+        </article>
+
+        <article className="docs-section" id="telephone">
+          <SectionTitle id="telephone" kicker="Mobile" title="Téléphone" />
+          <p>
+            <strong>Android</strong> : installez l&apos;application NexoraTV
+            ci-dessus (recommandé), ou <strong>Zen IPTV</strong> depuis le
+            Play Store. <strong>iPhone</strong> : installez{" "}
+            <strong>Zen IPTV</strong> depuis l&apos;App Store. Ouvrez
+            l&apos;application puis connectez-vous en mode Xtream Codes avec
+            vos identifiants.
           </p>
         </article>
 
         <article className="docs-section" id="box-firestick">
           <SectionTitle id="box-firestick" kicker="Box" title="Box Android & Amazon Fire Stick" />
           <p>
-            Installez <strong>Ibogold</strong> : sur un Fire Stick, recherchez
-            l&apos;application dans l&apos;<strong>Appstore Amazon</strong> ;
-            sur une box Android classique, téléchargez-la depuis le Play
-            Store ou, si elle n&apos;y figure pas, via son APK officiel.
-            Ouvrez-la puis connectez-vous avec vos identifiants.
+            Sur une box Android classique, installez l&apos;
+            <strong>APK NexoraTV</strong> (recommandé) ou{" "}
+            <strong>Ibogold</strong> depuis le Play Store (ou son APK
+            officiel si absent). Sur un Fire Stick, recherchez{" "}
+            <strong>Ibogold</strong> dans l&apos;<strong>Appstore
+            Amazon</strong>. Ouvrez l&apos;application puis connectez-vous
+            avec vos identifiants.
           </p>
           <Callout type="warning">
             Seules les <strong>anciennes générations</strong> de Fire TV Stick
@@ -103,10 +132,12 @@ export default function ApplicationsPage() {
         <article className="docs-section" id="ordinateur">
           <SectionTitle id="ordinateur" kicker="Bureau" title="Ordinateur (Windows / macOS)" />
           <p>
-            Utilisez <strong>IPTV Smarters Player Lite</strong> ou{" "}
-            <strong>IPTV Smarters Pro</strong> en version bureau, ou lisez
-            directement votre playlist avec <strong>VLC</strong> (Média →
-            Ouvrir un flux réseau → URL de playlist depuis votre profil).
+            <strong>Windows</strong> : installez l&apos;application NexoraTV
+            (recommandé, voir plus haut). <strong>macOS</strong> : utilisez{" "}
+            <strong>IPTV Smarters Player Lite</strong> ou{" "}
+            <strong>IPTV Smarters Pro</strong>, ou lisez directement votre
+            playlist avec <strong>VLC</strong> (Média → Ouvrir un flux réseau
+            → URL de playlist depuis votre profil).
           </p>
         </article>
 

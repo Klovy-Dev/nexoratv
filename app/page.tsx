@@ -41,7 +41,7 @@ export default function HomePage() {
           <div className="hero-stats">
             <div><strong>+20 000</strong><span>chaînes en direct</span></div>
             <div><strong>100 000+</strong><span>films &amp; séries</span></div>
-            <div><strong>4K</strong><span>jusqu&apos;à l&apos;Ultra HD</span></div>
+            <div><strong>HD</strong><span>jusqu&apos;à Full HD</span></div>
             <div><strong>24/7</strong><span>support client</span></div>
           </div>
         </div>
