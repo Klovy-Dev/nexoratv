@@ -46,6 +46,7 @@ export default async function OrdersAdminPage({
           <Link href="/admin">Tous les clients</Link>
           <Link href="/admin/commandes" className="active">Commandes</Link>
           <Link href="/admin/offres">Offres</Link>
+          <Link href="/admin/playlist">Playlists MAC</Link>
         </div>
 
         {ok && (

@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -189,6 +189,26 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_gevents_created ON goldenott_events (created_at DESC)`;
+
+  /* ---------- Portail MAC (app NexoraTV) ---------- */
+
+  // Playlists M3U assignées à une adresse MAC (portail à la MAG) : l'app
+  // interroge /api/playlist?mac=... et charge la playlist correspondante
+  // sans jamais exposer l'URL M3U au client.
+  await raw`
+    CREATE TABLE IF NOT EXISTS device_playlists (
+      id         SERIAL PRIMARY KEY,
+      mac        TEXT NOT NULL UNIQUE,
+      name       TEXT NOT NULL DEFAULT 'Playlist',
+      m3u_url    TEXT NOT NULL,
+      epg_url    TEXT,
+      note       TEXT NOT NULL DEFAULT '',
+      active     BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_device_playlists_mac ON device_playlists (mac)`;
 
   await raw`
     INSERT INTO app_meta (key, value)

@@ -143,3 +143,18 @@ export interface ReviewStats {
   average: number;
   distribution: Record<1 | 2 | 3 | 4 | 5, number>;
 }
+
+/* ---------- Portail MAC (app NexoraTV) ---------- */
+
+/** Playlist M3U assignée à une adresse MAC — cf. /admin/playlist. */
+export interface DevicePlaylist {
+  id: number;
+  mac: string;
+  name: string;
+  m3u_url: string;
+  epg_url: string | null;
+  note: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}

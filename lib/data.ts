@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
 import { isExpired } from "@/lib/validation";
 import type {
+  DevicePlaylist,
   Offer,
   Order,
   OrderView,
@@ -124,6 +125,32 @@ export async function reviewByUser(userId: number): Promise<Review | null> {
     JOIN users u ON u.id = r.user_id
     WHERE r.user_id = ${userId}
   `) as unknown as Review[];
+  return rows[0] ?? null;
+}
+
+/* ---------- Portail MAC (app NexoraTV) ---------- */
+
+export async function listDevicePlaylists(): Promise<DevicePlaylist[]> {
+  return (await sql`
+    SELECT * FROM device_playlists ORDER BY created_at DESC
+  `) as unknown as DevicePlaylist[];
+}
+
+export async function devicePlaylistByMac(
+  mac: string,
+): Promise<DevicePlaylist | null> {
+  const rows = (await sql`
+    SELECT * FROM device_playlists WHERE mac = ${mac} AND active = true
+  `) as unknown as DevicePlaylist[];
+  return rows[0] ?? null;
+}
+
+export async function devicePlaylistById(
+  id: number,
+): Promise<DevicePlaylist | null> {
+  const rows = (await sql`
+    SELECT * FROM device_playlists WHERE id = ${id}
+  `) as unknown as DevicePlaylist[];
   return rows[0] ?? null;
 }
 
