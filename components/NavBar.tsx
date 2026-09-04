@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/commander", label: "Commander" },
   { href: "/avis", label: "Avis" },
   { href: "/tuto", label: "Tuto" },
+  { href: "/telecharger", label: "Télécharger" },
   { href: "/contact", label: "Contact" },
 ];
 

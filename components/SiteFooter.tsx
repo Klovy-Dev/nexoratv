@@ -23,6 +23,7 @@ export default function SiteFooter() {
             <Link href="/">Accueil</Link>
             <Link href="/avis">Avis</Link>
             <Link href="/tuto">Tuto</Link>
+            <Link href="/telecharger">Télécharger l&apos;app</Link>
             <Link href="/contact">Contact</Link>
           </div>
           <div className="footer-col">
