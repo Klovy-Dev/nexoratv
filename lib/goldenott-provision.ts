@@ -86,6 +86,8 @@ export interface ProvisionOptions {
   dnsDomainId?: number | null;
   dnsDomainLabel?: string | null;
   isAdult?: boolean;
+  /** forfait d'essai 24 h → abonnement purgé automatiquement à l'expiration */
+  isTrial?: boolean;
   label: string;
   note?: string;
   actor: string;
@@ -153,13 +155,14 @@ export async function provisionSubscription(
   const rows = (await sql`
     INSERT INTO subscriptions
       (user_id, label, server_url, username, password_enc, expires_at, status,
-       note, screens, provider, provider_kind, provider_ref, package_id,
+       note, screens, is_trial, provider, provider_kind, provider_ref, package_id,
        package_label, provider_status, mac, qr_url, dns_domain_id, dns_domain,
        synced_at)
     VALUES
       (${opts.userId}, ${opts.label}, ${serverUrl}, ${displayUser},
        ${encryptSecret(displayPass)}, ${created.expiresAt}, 'active',
        ${opts.note ?? ""}, ${created.maxConnections ?? opts.maxConnections ?? null},
+       ${opts.isTrial ?? false},
        'goldenott', ${opts.kind}, ${String(created.id)}, ${opts.packageId},
        ${opts.packageLabel ?? null}, ${providerStatus}, ${created.mac ?? null},
        ${created.qrUrl}, ${opts.dnsDomainId ?? null}, ${opts.dnsDomainLabel ?? null},

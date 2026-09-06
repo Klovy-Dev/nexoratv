@@ -5,7 +5,7 @@ import {
   adminStats,
   allUsers,
   pendingOrdersCount,
-  recentGoldenottEvents,
+  purgeExpiredTrialsAndRejected,
   subscriptionsForUser,
   subscriptionById,
   userById,
@@ -46,6 +46,7 @@ export default async function AdminPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const me = await requireAdmin();
+  await purgeExpiredTrialsAndRejected();
   const params = await searchParams;
   const pick = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : "");
   const userParam = pick("user");
@@ -139,12 +140,11 @@ function toDomainOptions(
 /* ------------------------------------------------------------------ */
 
 async function AdminOverview() {
-  const [stats, users, catalog, pending, events] = await Promise.all([
+  const [stats, users, catalog, pending] = await Promise.all([
     adminStats(),
     allUsers(),
     loadGoldenottCatalog(),
     pendingOrdersCount(),
-    recentGoldenottEvents(8),
   ]);
 
   return (
@@ -199,33 +199,21 @@ async function AdminOverview() {
               Gérer les offres
             </Link>
           </div>
-
-          {events.length > 0 && (
-            <div className="go-log">
-              <h3>Dernières opérations</h3>
-              <ul>
-                {events.map((e) => (
-                  <li key={e.id} className={e.ok ? "" : "ko"}>
-                    <span className="go-log-when">{formatDate(e.created_at)}</span>
-                    <span className="go-log-act">{e.action}</span>
-                    <span className="go-log-msg">{e.message || (e.ok ? "OK" : "échec")}</span>
-                    <span className="go-log-actor">{e.actor}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
 
       <div className="panel">
         <h2>Clients inscrits</h2>
+        <p className="muted" style={{ fontSize: "0.85rem", marginTop: -6, marginBottom: 14 }}>
+          Triés par abonnement le plus récent — le dernier client servi
+          apparaît en premier.
+        </p>
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
                 <th>Nom</th><th>E-mail</th><th>Rôle</th>
-                <th>Abonnements</th><th>Inscrit le</th><th />
+                <th>Abonnements</th><th>Dernier abo.</th><th>Inscrit le</th><th />
               </tr>
             </thead>
             <tbody>
@@ -239,6 +227,7 @@ async function AdminOverview() {
                     </span>
                   </td>
                   <td>{u.sub_count}</td>
+                  <td>{u.last_sub_at ? formatDate(u.last_sub_at) : "—"}</td>
                   <td>{formatDate(u.created_at)}</td>
                   <td>
                     <Link className="btn btn-ghost btn-sm" href={`/admin?user=${u.id}`}>
@@ -422,11 +411,7 @@ async function AdminUserDetail({
                   </div>
 
                   {s.provider === "goldenott" && !catalog.error && (
-                    <ProviderActions
-                      subId={s.id}
-                      userId={target.id}
-                      packages={pkgOptions}
-                    />
+                    <ProviderActions subId={s.id} userId={target.id} />
                   )}
 
                   <div className="table-actions" style={{ marginTop: 12 }}>

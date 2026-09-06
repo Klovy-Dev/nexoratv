@@ -121,8 +121,8 @@ export default async function AvisPage() {
               <Link href="/inscription" className="btn btn-primary">
                 Créer mon compte
               </Link>
-              <Link href="/tuto" className="btn btn-ghost">
-                Voir le tuto
+              <Link href="/telecharger" className="btn btn-ghost">
+                Installer l&apos;app
               </Link>
             </div>
           </div>

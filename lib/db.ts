@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -99,6 +99,10 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`CREATE INDEX IF NOT EXISTS idx_reviews_created ON reviews (created_at DESC)`;
 
   await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS screens SMALLINT`;
+
+  // Abonnement issu d'un forfait d'essai (24 h) : purgé automatiquement dès
+  // qu'il expire (cf. purgeExpiredTrialsAndRejected).
+  await raw`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_trial BOOLEAN NOT NULL DEFAULT false`;
 
   /* ---------- Intégration GoldenOTT ---------- */
 
@@ -172,6 +176,10 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`CREATE INDEX IF NOT EXISTS idx_orders_status ON iptv_orders (status, created_at DESC)`;
   await raw`CREATE INDEX IF NOT EXISTS idx_orders_user ON iptv_orders (user_id)`;
   await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS dns_domain_id INTEGER`;
+  // Options cochées par le client à la commande (préférences transmises à
+  // l'admin, qui applique le bon template / réglage adulte au provisioning).
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_adult BOOLEAN NOT NULL DEFAULT false`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_french BOOLEAN NOT NULL DEFAULT false`;
 
   // Journal d'audit : chaque appel sensible vers GoldenOTT (création,
   // prolongation, remboursement, sync) y est tracé, succès comme échec.

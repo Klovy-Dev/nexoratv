@@ -60,15 +60,48 @@ function toView(row: Subscription): SubscriptionView {
 
 export interface UserRow extends User {
   sub_count: number;
+  /** date du dernier abonnement rattaché (null si aucun) */
+  last_sub_at: string | null;
 }
 
+/**
+ * Clients triés du plus récemment « servi » au plus ancien : on prend la
+ * date du dernier abonnement rattaché, et à défaut la date d'inscription.
+ * Le client qui vient de prendre un abonnement remonte donc en tête.
+ */
 export async function allUsers(): Promise<UserRow[]> {
   return (await sql`
     SELECT u.id, u.name, u.email, u.role, u.created_at,
-           (SELECT COUNT(*) FROM subscriptions s WHERE s.user_id = u.id)::int AS sub_count
+           (SELECT COUNT(*) FROM subscriptions s WHERE s.user_id = u.id)::int AS sub_count,
+           (SELECT MAX(s.created_at) FROM subscriptions s WHERE s.user_id = u.id) AS last_sub_at
     FROM users u
-    ORDER BY u.created_at DESC
+    ORDER BY
+      COALESCE(
+        (SELECT MAX(s.created_at) FROM subscriptions s WHERE s.user_id = u.id),
+        u.created_at
+      ) DESC
   `) as unknown as UserRow[];
+}
+
+/**
+ * Nettoyage automatique, best-effort, appelé au chargement des pages admin
+ * et profil (et par le cron) :
+ *   - les commandes refusées sont supprimées (le refus est notifié par
+ *     e-mail, on ne garde pas d'historique) ;
+ *   - les abonnements d'essai 24 h sont supprimés dès qu'ils expirent.
+ */
+export async function purgeExpiredTrialsAndRejected(): Promise<void> {
+  try {
+    await sql`DELETE FROM iptv_orders WHERE status = 'rejected'`;
+    await sql`
+      DELETE FROM subscriptions
+      WHERE is_trial = true
+        AND expires_at IS NOT NULL
+        AND expires_at < CURRENT_DATE
+    `;
+  } catch {
+    /* le nettoyage ne doit jamais bloquer l'affichage */
+  }
 }
 
 /**

@@ -9,6 +9,19 @@
 const REPO = "Klovy-Dev/nexoratv-app";
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;
 
+/**
+ * Lien court de sideload (redirige vers le dernier APK) — à taper dans
+ * l'app Downloader sur Fire TV Stick / Android TV / box.
+ */
+export const APK_SHORT_URL = "nexoratv.fr/apk";
+
+/**
+ * Code Downloader (aftv.news) associé à {@link APK_SHORT_URL} : se saisit
+ * directement dans le champ « code » de l'app Downloader. À mettre à jour
+ * ici si le code aftv.news change.
+ */
+export const DOWNLOADER_CODE = "3276026";
+
 export interface AppAsset {
   name: string;
   url: string;
