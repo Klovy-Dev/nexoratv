@@ -69,6 +69,18 @@ export default async function OrderStepPage({
               <div className="empty-state" style={{ textAlign: "left" }}>
                 <p>Vous avez déjà une commande en attente pour cette offre.</p>
                 <p style={{ marginTop: 10 }}>
+                  ⚠️ Pensez à envoyer un message sur notre WhatsApp au{" "}
+                  <a
+                    href="https://wa.me/33651446869"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "var(--text)" }}
+                  >
+                    +33 6 51 44 68 69
+                  </a>{" "}
+                  pour qu&apos;elle soit acceptée.
+                </p>
+                <p style={{ marginTop: 10 }}>
                   <Link href="/profil" style={{ color: "var(--text)" }}>
                     Suivre ma commande →
                   </Link>
@@ -78,6 +90,7 @@ export default async function OrderStepPage({
               <OrderPageForm
                 offer={{
                   id: offer.id,
+                  title: offer.title,
                   kind: offer.kind,
                   price_cents: offer.price_cents,
                   included_screens: offer.included_screens,

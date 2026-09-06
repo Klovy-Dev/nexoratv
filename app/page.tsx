@@ -11,7 +11,7 @@ const FEATURES = [
 
 const STEPS = [
   ["1", "Créez votre compte", "Inscrivez-vous en une minute et choisissez la formule qui vous convient."],
-  ["2", "Installez l'application", "Suivez notre tuto pas à pas selon votre appareil. Aucune compétence technique requise."],
+  ["2", "Installez l'application", "Téléchargez NexoraTV sur votre appareil en quelques minutes. Aucune compétence technique requise."],
   ["3", "Profitez", "Retrouvez vos identifiants sur votre profil, connectez-vous et lancez votre premier programme."],
 ];
 
@@ -34,8 +34,8 @@ export default function HomePage() {
             <Link href="/inscription" className="btn btn-primary">
               Créer mon compte
             </Link>
-            <Link href="/tuto" className="btn btn-ghost">
-              Voir le tuto
+            <Link href="/telecharger" className="btn btn-ghost">
+              Installer l&apos;app
             </Link>
           </div>
           <div className="hero-stats">
@@ -84,8 +84,8 @@ export default function HomePage() {
             ))}
           </div>
           <div className="center mt-40 reveal">
-            <Link href="/tuto" className="btn btn-ghost">
-              Consulter le guide complet →
+            <Link href="/telecharger" className="btn btn-ghost">
+              Voir comment installer l&apos;app →
             </Link>
           </div>
         </div>

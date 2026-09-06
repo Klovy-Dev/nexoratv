@@ -46,10 +46,21 @@ const nextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   async redirects() {
-    return [
-      { source: "/tuto/televiseurs", destination: "/tuto/appareils", permanent: true },
-      { source: "/tuto/boitiers", destination: "/tuto/appareils", permanent: true },
+    // Anciennes pages du tuto (supprimées) → page Tuto « bientôt disponible ».
+    const oldTuto = [
+      "televiseurs",
+      "boitiers",
+      "appareils",
+      "applications",
+      "connexion",
+      "demarrage",
+      "faq",
     ];
+    return oldTuto.map((slug) => ({
+      source: `/tuto/${slug}`,
+      destination: "/tuto",
+      permanent: false,
+    }));
   },
 };
 

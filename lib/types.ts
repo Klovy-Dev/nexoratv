@@ -22,6 +22,8 @@ export interface Subscription {
   status: "active" | "suspended";
   note: string;
   screens: number | null;
+  /** abonnement issu d'un forfait d'essai 24 h (purgé à l'expiration) */
+  is_trial: boolean;
   created_at: string;
   /* --- Intégration GoldenOTT --- */
   provider: SubProvider;
@@ -107,6 +109,10 @@ export interface Order {
   dns_domain_id: number | null;
   max_connections: number | null;
   is_adult: boolean;
+  /** le client a coché « inclure les chaînes adultes » à la commande */
+  want_adult: boolean;
+  /** le client a coché « uniquement le contenu français » à la commande */
+  want_french: boolean;
   mac: string | null;
   renew_sub_id: number | null;
   status: OrderStatus;

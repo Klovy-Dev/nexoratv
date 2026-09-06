@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
-import { allOrders } from "@/lib/data";
+import { allOrders, purgeExpiredTrialsAndRejected } from "@/lib/data";
 import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { formatDate, formatPrice } from "@/lib/validation";
 import OrderDecision from "./OrderDecision";
@@ -29,6 +29,7 @@ export default async function OrdersAdminPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin();
+  await purgeExpiredTrialsAndRejected();
   const ok = (await searchParams).ok === "1";
 
   const [orders, catalog] = await Promise.all([
@@ -131,6 +132,23 @@ function OrderCard({
           <div className="sub-admin-field">
             <span className="k">MAC</span>
             <span className="v">{order.mac}</span>
+          </div>
+        )}
+        {(order.want_adult || order.want_french) && (
+          <div className="sub-admin-field">
+            <span className="k">Options demandées</span>
+            <span className="v" style={{ fontFamily: "inherit" }}>
+              {[
+                order.want_adult && "🔞 Chaînes adultes",
+                order.want_french && "🇫🇷 Contenu français uniquement",
+              ]
+                .filter(Boolean)
+                .map((t) => (
+                  <span key={t as string} className="order-opt-tag">
+                    {t}
+                  </span>
+                ))}
+            </span>
           </div>
         )}
         {order.customer_note && (

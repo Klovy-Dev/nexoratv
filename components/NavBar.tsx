@@ -11,32 +11,42 @@ const LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/commander", label: "Commander" },
   { href: "/avis", label: "Avis" },
-  { href: "/tuto", label: "Tuto" },
   { href: "/telecharger", label: "Télécharger" },
+];
+
+const MORE_LINKS = [
+  { href: "/tuto", label: "Tuto" },
   { href: "/contact", label: "Contact" },
 ];
 
 export default function NavBar({ user }: { user: User | null }) {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLLIElement>(null);
   const pathname = usePathname();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const moreActive = MORE_LINKS.some((l) => isActive(l.href));
 
   const close = () => setOpen(false);
 
   useEffect(() => {
-    if (!accountOpen) return;
+    if (!accountOpen && !moreOpen) return;
     const onClick = (e: MouseEvent) => {
       if (!accountRef.current?.contains(e.target as Node)) setAccountOpen(false);
+      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
-  }, [accountOpen]);
+  }, [accountOpen, moreOpen]);
 
-  useEffect(() => setAccountOpen(false), [pathname]);
+  useEffect(() => {
+    setAccountOpen(false);
+    setMoreOpen(false);
+  }, [pathname]);
 
   return (
     <>
@@ -58,6 +68,29 @@ export default function NavBar({ user }: { user: User | null }) {
                 </Link>
               </li>
             ))}
+            <li className={`nav-more${moreOpen ? " open" : ""}`} ref={moreRef}>
+              <button
+                type="button"
+                className={`nav-more-trigger${moreActive ? " active" : ""}`}
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                Autres
+                <span className="nav-more-chevron" aria-hidden="true">▾</span>
+              </button>
+              <div className="nav-more-menu">
+                {MORE_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={isActive(l.href) ? "active" : ""}
+                    onClick={() => setMoreOpen(false)}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </li>
           </ul>
 
           <div className="nav-cta">
@@ -122,6 +155,17 @@ export default function NavBar({ user }: { user: User | null }) {
         <div className={`nav-drawer${open ? " open" : ""}`}>
           <nav className="nav-drawer-links">
             {LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={isActive(l.href) ? "active" : ""}
+                onClick={close}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <span className="nav-drawer-sep">Autres</span>
+            {MORE_LINKS.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}

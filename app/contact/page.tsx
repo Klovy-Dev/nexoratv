@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import ContactForm from "./ContactForm";
@@ -31,10 +30,6 @@ export default async function ContactPage() {
               defaultName={user?.name ?? ""}
               defaultEmail={user?.email ?? ""}
             />
-            <p className="auth-switch">
-              Vous pouvez aussi consulter la{" "}
-              <Link href="/tuto/faq">FAQ du tuto</Link>.
-            </p>
           </div>
         </div>
       </section>

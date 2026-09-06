@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import Callout from "@/components/Callout";
+import CopyButton from "@/components/CopyButton";
 import {
   getLatestAppRelease,
   formatSize,
+  APK_SHORT_URL,
+  DOWNLOADER_CODE,
   RELEASES_URL,
   type AppAsset,
 } from "@/lib/app-release";
@@ -11,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Installer l'application",
   description:
-    "Téléchargez l'application NexoraTV pour Windows (installeur) et Android (APK).",
+    "Téléchargez l'application NexoraTV pour Windows (installeur), Android (APK) ou Fire TV Stick (code Downloader).",
 };
 
 // Régénère la page toutes les 30 min (nouvelle version = lien à jour).
@@ -120,10 +123,36 @@ export default async function TelechargerPage() {
                   asset={release?.androidApk ?? null}
                   label="Télécharger l'APK"
                 />
-                <a href="/tuto/applications" className="btn btn-ghost">
-                  Autres applications
-                </a>
               </div>
+            </div>
+
+            {/* -------- Fire TV Stick / Downloader -------- */}
+            <div className="card reveal">
+              <div className="card-icon">📥</div>
+              <h3>Fire TV Stick &amp; Android TV</h3>
+              <p>
+                Sur un Fire TV Stick ou une box Android&nbsp;TV, installez
+                l&apos;app <strong>Downloader</strong> (boutique Amazon /
+                Play Store), ouvrez-la et saisissez&nbsp;:
+              </p>
+              <div className="dl-code">
+                <span className="dl-code-label">Code Downloader</span>
+                <strong className="dl-code-value">{DOWNLOADER_CODE}</strong>
+                <CopyButton value={DOWNLOADER_CODE} label="Copier le code" />
+              </div>
+              <p className="hint" style={{ marginTop: 12 }}>
+                Ou tapez l&apos;adresse{" "}
+                <code>{APK_SHORT_URL}</code> dans le champ URL de Downloader.
+                <span
+                  style={{
+                    display: "inline-flex",
+                    marginLeft: 8,
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <CopyButton value={APK_SHORT_URL} label="Copier le lien" />
+                </span>
+              </p>
             </div>
           </div>
 
@@ -179,6 +208,29 @@ export default async function TelechargerPage() {
               </li>
             </ol>
 
+            <h4 style={{ marginTop: 20, marginBottom: 8 }}>
+              Fire TV Stick / Android TV
+            </h4>
+            <ol className="order-steps">
+              <li className="done">
+                Installez l&apos;app <strong>Downloader</strong> depuis la
+                boutique de votre appareil.
+              </li>
+              <li className="done">
+                Ouvrez Downloader et saisissez le code{" "}
+                <strong>{DOWNLOADER_CODE}</strong> (ou l&apos;adresse{" "}
+                <strong>{APK_SHORT_URL}</strong>).
+              </li>
+              <li className="done">
+                Laissez le téléchargement se faire, puis validez
+                l&apos;installation.
+              </li>
+              <li className="done">
+                Ouvrez <strong>NexoraTV</strong> et connectez-vous en{" "}
+                <strong>Xtream Codes</strong>.
+              </li>
+            </ol>
+
             <Callout type="info">
               Les mises à jour suivantes sont proposées automatiquement dans
               l&apos;application — pas besoin de revenir ici.
@@ -194,8 +246,8 @@ export default async function TelechargerPage() {
               <Link href="/commander" className="btn btn-primary">
                 Voir les offres
               </Link>
-              <Link href="/tuto" className="btn btn-ghost">
-                Consulter le tuto
+              <Link href="/contact" className="btn btn-ghost">
+                Nous contacter
               </Link>
             </div>
           </div>

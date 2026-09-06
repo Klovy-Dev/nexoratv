@@ -1388,3 +1388,129 @@ table.data tbody tr:hover { background: var(--surface); }
   .form-mode-head .seg { display: flex; width: 100%; }
   .form-mode-head .seg button { flex: 1; padding-inline: 8px; }
 }
+
+/* ==========================================================================
+   Menu « Autres » (header)
+   ========================================================================== */
+.nav-more { position: relative; list-style: none; }
+.nav-more-trigger {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 0; cursor: pointer;
+  font-family: inherit; font-size: 0.94rem; font-weight: 500;
+  color: var(--text-muted); transition: color 0.2s;
+}
+.nav-more-trigger:hover, .nav-more-trigger.active { color: var(--text); }
+.nav-more-chevron { font-size: 0.7rem; transition: transform 0.2s; }
+.nav-more.open .nav-more-chevron { transform: rotate(180deg); }
+.nav-more-menu {
+  position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%) translateY(-6px);
+  min-width: 170px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow);
+  padding: 8px; z-index: 110;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.nav-more.open .nav-more-menu {
+  opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0);
+}
+.nav-more-menu a {
+  display: block; padding: 9px 10px; border-radius: 8px;
+  font-size: 0.88rem; color: var(--text-muted);
+}
+.nav-more-menu a:hover, .nav-more-menu a.active { background: var(--surface-2); color: var(--text); }
+
+.nav-drawer-sep {
+  padding: 16px 24px 6px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Onglets du profil
+   ========================================================================== */
+.profil-tabbar {
+  display: flex; gap: 6px; margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.profil-tabbar::-webkit-scrollbar { display: none; }
+.profil-tab {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none; border: 0; cursor: pointer;
+  font-family: inherit; font-size: 0.95rem; font-weight: 600;
+  color: var(--text-muted); padding: 12px 14px;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+}
+.profil-tab:hover { color: var(--text); }
+.profil-tab.active { color: var(--text); border-bottom-color: var(--pink); }
+.profil-tab-badge {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px;
+  padding: 0 6px; border-radius: 999px;
+  background: var(--warning); color: #1a1200;
+  font-size: 0.72rem; font-weight: 800;
+}
+.profil-tabpanel { animation: profil-fade 0.25s var(--ease); }
+@keyframes profil-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Commande — message WhatsApp obligatoire + options
+   ========================================================================== */
+.order-wa-notice {
+  border: 1px solid var(--danger);
+  background: rgba(255, 84, 112, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px; margin-bottom: 18px;
+}
+.order-wa-notice strong { color: #ffb3bf; }
+.order-wa-notice p { margin: 6px 0 0; font-size: 0.92rem; color: var(--text); }
+.order-wa-notice a { color: #ffd28a; font-weight: 700; text-decoration: underline; }
+.order-wa-btn {
+  margin-top: 12px; background: #25d366; color: #05230f; font-weight: 700;
+  border: 0;
+}
+.order-wa-btn:hover { background: #1fbf5b; }
+
+.order-options { display: grid; gap: 10px; margin-bottom: 18px; }
+.order-option {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer;
+}
+.order-option input { margin-top: 3px; flex-shrink: 0; }
+.order-option strong { display: block; font-size: 0.92rem; }
+.order-option small { display: block; color: var(--text-muted); font-size: 0.82rem; }
+
+.order-opt-tag {
+  display: inline-block; margin: 2px 6px 2px 0; padding: 3px 9px;
+  border-radius: 999px; background: rgba(255, 176, 46, 0.16); color: #ffd28a;
+  font-size: 0.8rem; font-weight: 600;
+}
+
+/* ==========================================================================
+   Télécharger — code Downloader
+   ========================================================================== */
+.dl-code {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 16px; padding: 14px 16px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.dl-code-label {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.dl-code-value {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: 0.14em;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .profile-head { padding: 22px; gap: 16px; }
+  .profile-head h1 { font-size: 1.4rem; }
+  .profil-tab { padding: 11px 12px; font-size: 0.9rem; }
+  .order-wa-notice { padding: 14px; }
+}

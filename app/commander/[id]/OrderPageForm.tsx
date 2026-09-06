@@ -11,6 +11,7 @@ const initial: FormState = {};
 
 export interface OrderStepOffer {
   id: number;
+  title: string;
   kind: "line" | "mag" | "code";
   price_cents: number;
   included_screens: number;
@@ -18,6 +19,9 @@ export interface OrderStepOffer {
   extra_screen_cents: number;
   max_screens: number;
 }
+
+const WHATSAPP_NUMBER = "33651446869";
+const WHATSAPP_DISPLAY = "+33 6 51 44 68 69";
 
 export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
   const [state, action] = useActionState(createOrderAction, initial);
@@ -34,11 +38,55 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
     screenChoices.push(n);
   }
 
+  const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    `Bonjour, je viens de commander l'offre « ${offer.title} » sur NexoraTV. Merci de valider ma commande.`,
+  )}`;
+
   return (
     <form action={action} className="panel order-form">
       <h2>Votre commande</h2>
       <FormErrors state={state} />
       <input type="hidden" name="offer_id" value={offer.id} />
+
+      <div className="order-wa-notice">
+        <strong>⚠️ Étape obligatoire</strong>
+        <p>
+          Après avoir confirmé, vous <strong>devez</strong> nous envoyer un
+          message sur WhatsApp au{" "}
+          <a href={waLink} target="_blank" rel="noopener noreferrer">
+            {WHATSAPP_DISPLAY}
+          </a>{" "}
+          pour que votre commande soit acceptée. Sans ce message, la commande
+          ne sera pas traitée.
+        </p>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-sm order-wa-btn"
+        >
+          Ouvrir WhatsApp
+        </a>
+      </div>
+
+      <div className="order-options">
+        <label className="order-option">
+          <input type="checkbox" name="want_adult" />
+          <span>
+            <strong>Inclure les chaînes adultes</strong>
+            <small>Bouquets réservés aux adultes (18+).</small>
+          </span>
+        </label>
+        <label className="order-option">
+          <input type="checkbox" name="want_french" />
+          <span>
+            <strong>Uniquement le contenu français</strong>
+            <small>
+              Seulement les chaînes, films et séries en français.
+            </small>
+          </span>
+        </label>
+      </div>
 
       {showScreens && (
         <div className="form-group">

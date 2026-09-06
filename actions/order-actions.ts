@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { offerById, orderById, subscriptionById } from "@/lib/data";
+import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { GoldenottError } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
@@ -39,6 +40,8 @@ export async function createOrderAction(
 
   const offerId = Number(formData.get("offer_id")) || 0;
   const customerNote = str(formData.get("customer_note")).slice(0, 500);
+  const wantAdult = formData.get("want_adult") === "on";
+  const wantFrench = formData.get("want_french") === "on";
   let mac = str(formData.get("mac"));
 
   const offer = await offerById(offerId);
@@ -84,12 +87,13 @@ export async function createOrderAction(
   await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       dns_domain_id, max_connections, is_adult, mac, customer_note)
+       dns_domain_id, max_connections, is_adult, want_adult, want_french, mac,
+       customer_note)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${offer.dns_domain_id}, ${screens}, ${offer.is_adult},
-       ${offer.kind === "mag" ? mac : null}, ${customerNote})
+       ${offer.dns_domain_id}, ${screens}, ${offer.is_adult}, ${wantAdult},
+       ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote})
   `;
 
   await sendOrderPlacedEmails({
@@ -232,6 +236,12 @@ export async function approveOrderAction(
     if (credErrors.length > 0) return { fieldErrors: credErrors };
   }
 
+  // Un forfait d'essai (24 h) donne un abonnement jetable, purgé à l'expiration.
+  const catalog = await loadGoldenottCatalog();
+  const isTrial = Boolean(
+    catalog.packages.find((p) => p.id === order.package_id)?.isTrial,
+  );
+
   try {
     await provisionSubscription({
       userId: order.user_id,
@@ -241,6 +251,7 @@ export async function approveOrderAction(
       templateId: order.template_id,
       dnsDomainId: order.dns_domain_id,
       isAdult: order.is_adult,
+      isTrial,
       label,
       note: order.customer_note,
       actor: me.email,
@@ -283,9 +294,10 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
   const adminNote = str(formData.get("admin_note")).slice(0, 500);
 
   const order = await orderById(orderId);
+  // Refus = notification par e-mail puis suppression : on ne garde aucun
+  // historique de commande refusée.
   const rows = (await sql`
-    UPDATE iptv_orders
-    SET status = 'rejected', admin_note = ${adminNote}, decided_at = now()
+    DELETE FROM iptv_orders
     WHERE id = ${orderId} AND status = 'pending'
     RETURNING id
   `) as unknown as { id: number }[];
