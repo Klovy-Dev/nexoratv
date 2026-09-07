@@ -121,6 +121,10 @@ function groupByKind(offers: Offer[]): [ProviderKind, Offer[]][] {
     if (!map.has(o.kind)) map.set(o.kind, []);
     map.get(o.kind)!.push(o);
   }
+  // Chaque groupe : du moins cher au plus cher.
+  for (const list of map.values()) {
+    list.sort((a, b) => a.price_cents - b.price_cents || a.id - b.id);
+  }
   return [...map.entries()];
 }
 
