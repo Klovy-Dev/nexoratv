@@ -1,0 +1,28 @@
+#EXTM3U
+# Playlist de démonstration NexoraTV — chaînes en direct gratuites et
+# contenus libres de droits (Creative Commons / domaine public).
+# Destinée aux tests (App Store / Google Play review). Aucun contenu sous droits.
+
+#EXTINF:-1 tvg-id="RedBullTV" group-title="Divertissement",Red Bull TV
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8
+
+#EXTINF:-1 tvg-id="DWEnglish" group-title="Actualités",DW English
+https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8
+
+#EXTINF:-1 tvg-id="France24EN" group-title="Actualités",France 24 English
+https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8
+
+#EXTINF:-1 group-title="Films libres de droits",Big Buck Bunny (Blender, CC-BY)
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 group-title="Films libres de droits",Tears of Steel (Blender, CC-BY)
+https://test-streams.mux.dev/tos_ismc/main.m3u8
+
+#EXTINF:-1 group-title="Films libres de droits",Tears of Steel — VOD (Unified Streaming)
+https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8
+
+#EXTINF:-1 group-title="Démo technique",HLS Sample (Mux)
+https://test-streams.mux.dev/test_001/stream.m3u8
+
+#EXTINF:-1 group-title="Démo technique",Apple HLS Sample (BipBop)
+https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8
