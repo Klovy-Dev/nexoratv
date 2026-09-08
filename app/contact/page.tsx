@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 const WHATSAPP_NUMBER = "33651446869";
 const WHATSAPP_DISPLAY = "+33 6 51 44 68 69";
 const SUPPORT_EMAIL = "contact@nexoratv.fr";
+// TODO: remplacer par le vrai lien d'invitation permanent une fois le serveur créé.
+const DISCORD_INVITE = "https://discord.gg/nexoratv";
 
 export default function ContactPage() {
   return (
@@ -31,6 +33,27 @@ export default function ContactPage() {
       <section style={{ paddingTop: 30, paddingBottom: 20 }}>
         <div className="container">
           <div className="grid">
+            <div className="card">
+              <div className="card-icon" aria-hidden="true">
+                🎮
+              </div>
+              <h3>Communauté Discord</h3>
+              <p>
+                Posez vos questions aux autres utilisateurs et à l&apos;équipe,
+                suivez les annonces de mises à jour et proposez vos idées. FAQ et
+                salons d&apos;entraide sur place.
+              </p>
+              <a
+                className="btn btn-primary"
+                href={DISCORD_INVITE}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginTop: 16 }}
+              >
+                Rejoindre le Discord
+              </a>
+            </div>
+
             <div className="card">
               <div className="card-icon" aria-hidden="true">
                 💬
