@@ -43,22 +43,33 @@ export default async function TutoPage() {
             </div>
           ) : (
             <div className="tuto-sections">
-              {sections.map((s) => (
-                <article key={s.id} className="panel reveal tuto-section">
-                  <h2>
-                    {s.icon && (
-                      <span className="tuto-section-icon">{s.icon}</span>
-                    )}
-                    {s.title}
-                  </h2>
-                  {s.description && (
-                    <p className="tuto-section-desc">{s.description}</p>
-                  )}
+              {sections.map((s, i) => (
+                <details
+                  key={s.id}
+                  className="tuto-item reveal"
+                  open={i === 0}
+                >
+                  <summary className="tuto-item-head">
+                    <span className="tuto-item-title">
+                      {s.icon && (
+                        <span className="tuto-section-icon">{s.icon}</span>
+                      )}
+                      <span>
+                        {s.title}
+                        {s.description && (
+                          <span className="tuto-item-desc">{s.description}</span>
+                        )}
+                      </span>
+                    </span>
+                    <span className="tuto-item-chevron" aria-hidden>
+                      ⌄
+                    </span>
+                  </summary>
                   <div
                     className="tuto-section-body"
                     dangerouslySetInnerHTML={{ __html: markdownToHtml(s.body) }}
                   />
-                </article>
+                </details>
               ))}
             </div>
           )}

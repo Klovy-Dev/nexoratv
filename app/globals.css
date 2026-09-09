@@ -545,16 +545,33 @@ table.data tbody tr:hover { background: var(--surface); }
 .legal ul { padding-left: 22px; }
 .legal .updated { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 30px; }
 
-/* ---------- Page Tuto ---------- */
-.tuto-sections { display: grid; gap: 20px; }
-.tuto-section > h2 {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 1.25rem; margin-bottom: 6px;
+/* ---------- Page Tuto (accordéon façon FAQ) ---------- */
+.tuto-sections { display: grid; gap: 12px; }
+.tuto-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
 }
+.tuto-item[open] { border-color: var(--blue); }
+.tuto-item-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 22px; cursor: pointer; list-style: none;
+  font-weight: 600; color: var(--text);
+}
+.tuto-item-head::-webkit-details-marker { display: none; }
+.tuto-item-title {
+  display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;
+}
+.tuto-item-title > span { display: flex; flex-direction: column; gap: 3px; }
+.tuto-item-desc {
+  font-weight: 400; font-size: 0.88rem; color: var(--text-muted);
+}
+.tuto-item-chevron {
+  transition: transform 0.2s ease; color: var(--text-muted); font-size: 1.1rem;
+}
+.tuto-item[open] .tuto-item-chevron { transform: rotate(180deg); }
 .tuto-section-icon { font-size: 1.4rem; line-height: 1; }
-.tuto-section-desc {
-  color: var(--text-muted); font-size: 0.95rem;
-  margin: 0 0 16px; font-style: italic;
+.tuto-section-body {
+  padding: 4px 22px 22px;
 }
 .tuto-section-body p {
   color: var(--text-muted); font-size: 0.96rem; margin-bottom: 12px;
