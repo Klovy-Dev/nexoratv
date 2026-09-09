@@ -14,12 +14,11 @@ export const RELEASES_URL = `https://github.com/${REPO}/releases`;
 const MANIFEST_URL = `https://raw.githubusercontent.com/${REPO}/main/update.json`;
 
 /**
- * Lien court de sideload (redirige vers le dernier APK) — à taper dans
- * l'app Downloader sur Fire TV Stick / Android TV / box. Se termine par
- * « .apk » pour que Downloader le télécharge directement au lieu de
- * l'ouvrir dans son navigateur. `nexoratv.fr/apk` reste actif (compat).
+ * Liens de sideload (Fire TV Stick / Android TV / box) :
+ * - `nexoratv.fr/apk` : toujours le dernier APK (302, code Downloader dessus) ;
+ * - `nexoratv.fr/X.Y.Z.apk` : une version précise (redirect dans next.config).
  */
-export const APK_SHORT_URL = "nexoratv.fr/version.apk";
+export const APK_SHORT_URL = "nexoratv.fr/apk";
 
 /**
  * Code Downloader (aftv.news) associé à {@link APK_SHORT_URL} : se saisit

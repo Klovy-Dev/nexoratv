@@ -56,11 +56,22 @@ const nextConfig = {
       "demarrage",
       "faq",
     ];
-    return oldTuto.map((slug) => ({
-      source: `/tuto/${slug}`,
-      destination: "/tuto",
-      permanent: false,
-    }));
+    return [
+      ...oldTuto.map((slug) => ({
+        source: `/tuto/${slug}`,
+        destination: "/tuto",
+        permanent: false,
+      })),
+      // Lien de sideload versionné : nexoratv.fr/1.3.7.apk → l'APK de cette
+      // version sur GitHub. Downloader (Fire TV) accepte l'URL car elle finit
+      // par « .apk ». Marche pour n'importe quelle version publiée.
+      {
+        source: "/:version(\\d+\\.\\d+\\.\\d+).apk",
+        destination:
+          "https://github.com/Klovy-Dev/nexoratv-app/releases/download/android-v:version/NexoraTV-:version.apk",
+        permanent: false,
+      },
+    ];
   },
 };
 
