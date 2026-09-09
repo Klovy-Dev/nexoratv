@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -217,6 +217,24 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_device_playlists_mac ON device_playlists (mac)`;
+
+  /* ---------- Page Tuto (éditable depuis /admin/tuto) ---------- */
+
+  // Sections de la page publique /tuto : titre, picto et corps de texte
+  // (paragraphes, listes « - », étapes « 1. », **gras**). Ordonnées par `sort`.
+  await raw`
+    CREATE TABLE IF NOT EXISTS tuto_sections (
+      id         SERIAL PRIMARY KEY,
+      title      TEXT NOT NULL,
+      icon       TEXT NOT NULL DEFAULT '',
+      body       TEXT NOT NULL DEFAULT '',
+      sort       INTEGER NOT NULL DEFAULT 0,
+      published  BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_tuto_sections_sort ON tuto_sections (sort, id)`;
 
   await raw`
     INSERT INTO app_meta (key, value)

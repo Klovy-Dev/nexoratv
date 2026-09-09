@@ -4,6 +4,7 @@ import { decryptSecret } from "@/lib/crypto";
 import { isExpired } from "@/lib/validation";
 import type {
   DevicePlaylist,
+  TutoSection,
   Offer,
   Order,
   OrderView,
@@ -184,6 +185,29 @@ export async function devicePlaylistById(
   const rows = (await sql`
     SELECT * FROM device_playlists WHERE id = ${id}
   `) as unknown as DevicePlaylist[];
+  return rows[0] ?? null;
+}
+
+/* ---------- Page Tuto ---------- */
+
+export async function listTutoSections(): Promise<TutoSection[]> {
+  return (await sql`
+    SELECT * FROM tuto_sections ORDER BY sort, id
+  `) as unknown as TutoSection[];
+}
+
+export async function listPublishedTutoSections(): Promise<TutoSection[]> {
+  return (await sql`
+    SELECT * FROM tuto_sections WHERE published = true ORDER BY sort, id
+  `) as unknown as TutoSection[];
+}
+
+export async function tutoSectionById(
+  id: number,
+): Promise<TutoSection | null> {
+  const rows = (await sql`
+    SELECT * FROM tuto_sections WHERE id = ${id}
+  `) as unknown as TutoSection[];
   return rows[0] ?? null;
 }
 

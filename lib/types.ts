@@ -152,6 +152,20 @@ export interface ReviewStats {
 
 /* ---------- Portail MAC (app NexoraTV) ---------- */
 
+/** Section de la page publique /tuto — éditable depuis /admin/tuto. */
+export interface TutoSection {
+  id: number;
+  title: string;
+  /** picto (emoji) affiché à côté du titre ; vide = aucun */
+  icon: string;
+  /** corps : paragraphes, listes « - », étapes « 1. », **gras** */
+  body: string;
+  sort: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Playlist M3U assignée à une adresse MAC — cf. /admin/playlist. */
 export interface DevicePlaylist {
   id: number;

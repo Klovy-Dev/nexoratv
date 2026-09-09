@@ -1,16 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
-import { listDevicePlaylists, devicePlaylistById } from "@/lib/data";
+import { listTutoSections, tutoSectionById } from "@/lib/data";
 import { formatDate } from "@/lib/validation";
-import { deleteDevicePlaylistAction } from "@/actions/device-playlist-actions";
+import { deleteTutoSectionAction } from "@/actions/tuto-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
-import DevicePlaylistForm from "./DevicePlaylistForm";
+import TutoSectionForm from "./TutoSectionForm";
 
-export const metadata: Metadata = { title: "Playlists MAC — Administration" };
+export const metadata: Metadata = { title: "Page Tuto — Administration" };
 export const dynamic = "force-dynamic";
 
-export default async function DevicePlaylistAdminPage({
+export default async function TutoAdminPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -20,9 +20,9 @@ export default async function DevicePlaylistAdminPage({
   const editId = typeof params.edit === "string" ? Number(params.edit) : null;
   const ok = params.ok;
 
-  const [playlists, editing] = await Promise.all([
-    listDevicePlaylists(),
-    editId ? devicePlaylistById(editId) : Promise.resolve(null),
+  const [sections, editing] = await Promise.all([
+    listTutoSections(),
+    editId ? tutoSectionById(editId) : Promise.resolve(null),
   ]);
 
   return (
@@ -32,80 +32,79 @@ export default async function DevicePlaylistAdminPage({
           <Link href="/admin">Tous les clients</Link>
           <Link href="/admin/commandes">Commandes</Link>
           <Link href="/admin/offres">Offres</Link>
-          <Link href="/admin/playlist" className="active">Playlists MAC</Link>
-          <Link href="/admin/tuto">Page Tuto</Link>
+          <Link href="/admin/playlist">Playlists MAC</Link>
+          <Link href="/admin/tuto" className="active">Page Tuto</Link>
         </div>
 
         {ok === "1" && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
-            Playlist enregistrée.
+            Section enregistrée.
           </div>
         )}
         {ok === "del" && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
-            Playlist supprimée.
+            Section supprimée.
           </div>
         )}
 
         <p className="lead" style={{ marginBottom: 24 }}>
-          Chaque appareil NexoraTV génère une adresse MAC unique (visible dans
-          Sources → <em>Activer par adresse MAC</em>). Assignez-lui ici un
-          lien M3U : l&apos;application le charge automatiquement, sans que le
-          client voie jamais l&apos;URL.
+          Ces sections composent la page publique{" "}
+          <Link href="/tuto">/tuto</Link>. Elles s&apos;affichent dans
+          l&apos;ordre du champ <em>Ordre</em>. Dans le contenu&nbsp;: une ligne
+          par paragraphe, <code>- </code> en début de ligne pour une puce,
+          <code>1. </code> pour une étape numérotée, <code>**texte**</code> pour
+          du gras.
         </p>
 
-        <DevicePlaylistForm editing={editing} />
+        <TutoSectionForm
+          editing={editing}
+          nextSort={(sections.at(-1)?.sort ?? 0) + 10}
+        />
 
         <div className="panel">
-          <h2>Playlists assignées ({playlists.length})</h2>
-          {playlists.length === 0 ? (
-            <p className="muted">Aucune playlist assignée pour le moment.</p>
+          <h2>Sections ({sections.length})</h2>
+          {sections.length === 0 ? (
+            <p className="muted">Aucune section pour le moment.</p>
           ) : (
             <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
-                    <th>MAC</th>
-                    <th>Nom</th>
+                    <th>Ordre</th>
+                    <th>Titre</th>
                     <th>Statut</th>
-                    <th>Ajoutée le</th>
+                    <th>Modifiée le</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {playlists.map((p) => (
-                    <tr key={p.id}>
+                  {sections.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.sort}</td>
                       <td>
-                        <code>{p.mac}</code>
-                      </td>
-                      <td>
-                        {p.name}
-                        {p.note && (
-                          <div className="muted" style={{ fontSize: "0.8rem" }}>
-                            {p.note}
-                          </div>
-                        )}
+                        {s.icon && <span style={{ marginRight: 6 }}>{s.icon}</span>}
+                        {s.title}
                       </td>
                       <td>
                         <span
-                          className={`badge ${p.active ? "badge-active" : "badge-suspended"}`}
+                          className={`badge ${s.published ? "badge-active" : "badge-suspended"}`}
                         >
-                          {p.active ? "Active" : "Désactivée"}
+                          {s.published ? "Publiée" : "Masquée"}
                         </span>
                       </td>
-                      <td>{formatDate(p.created_at)}</td>
+                      <td>{formatDate(s.updated_at)}</td>
                       <td className="table-actions">
                         <Link
                           className="btn btn-ghost btn-sm"
-                          href={`/admin/playlist?edit=${p.id}`}
+                          href={`/admin/tuto?edit=${s.id}`}
                         >
                           Modifier
                         </Link>
-                        <form action={deleteDevicePlaylistAction} className="inline-form">
-                          <input type="hidden" name="id" value={p.id} />
+                        <form action={deleteTutoSectionAction} className="inline-form">
+                          <input type="hidden" name="id" value={s.id} />
                           <ConfirmSubmit
                             className="btn btn-danger btn-sm"
-                            confirm="Supprimer cette playlist ?"
+                            confirm="Supprimer cette section ?"
                           >
                             Suppr.
                           </ConfirmSubmit>

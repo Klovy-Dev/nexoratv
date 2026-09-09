@@ -67,6 +67,7 @@ export default async function AdminPage({
           <Link href="/admin/commandes">Commandes</Link>
           <Link href="/admin/offres">Offres</Link>
           <Link href="/admin/playlist">Playlists MAC</Link>
+          <Link href="/admin/tuto">Page Tuto</Link>
           {target && (
             <span className="admin-tabs-current active" style={{ padding: "9px 18px" }}>
               {target.name}

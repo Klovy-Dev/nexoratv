@@ -545,6 +545,24 @@ table.data tbody tr:hover { background: var(--surface); }
 .legal ul { padding-left: 22px; }
 .legal .updated { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 30px; }
 
+/* ---------- Page Tuto ---------- */
+.tuto-sections { display: grid; gap: 20px; }
+.tuto-section h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.25rem; margin-bottom: 14px;
+}
+.tuto-section-icon { font-size: 1.4rem; line-height: 1; }
+.tuto-section p { color: var(--text-muted); font-size: 0.96rem; margin-bottom: 12px; }
+.tuto-section p:last-child { margin-bottom: 0; }
+.tuto-list, .tuto-steps {
+  color: var(--text-muted); font-size: 0.96rem;
+  padding-left: 22px; margin: 0 0 12px;
+}
+.tuto-list { list-style: disc; }
+.tuto-steps { list-style: decimal; }
+.tuto-list li, .tuto-steps li { margin-bottom: 6px; }
+.tuto-list:last-child, .tuto-steps:last-child { margin-bottom: 0; }
+
 /* ---------- Page Avis ---------- */
 .rating-summary {
   display: flex; align-items: center; gap: 40px; flex-wrap: wrap;
