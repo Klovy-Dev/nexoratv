@@ -545,6 +545,25 @@ table.data tbody tr:hover { background: var(--surface); }
 .legal ul { padding-left: 22px; }
 .legal .updated { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 30px; }
 
+/* ---------- Page Télécharger (bientôt disponible) ---------- */
+.soon-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 15px; margin-bottom: 20px;
+  border-radius: 999px; font-size: 0.82rem; font-weight: 600;
+  border: 1px solid rgba(255, 197, 66, 0.4);
+  background: rgba(255, 197, 66, 0.12); color: #ffd98a;
+}
+.soon-card { display: flex; flex-direction: column; }
+.soon-card p { flex: 1; }
+.soon-tag {
+  align-self: flex-start; margin-top: 16px;
+  padding: 4px 12px; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--surface-2); color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
 /* ---------- Page Tuto (accordéon façon FAQ) ---------- */
 .tuto-sections { display: grid; gap: 12px; }
 .tuto-item {
