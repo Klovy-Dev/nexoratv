@@ -50,10 +50,8 @@ export default async function TutoAdminPage({
         <p className="lead" style={{ marginBottom: 24 }}>
           Ces sections composent la page publique{" "}
           <Link href="/tuto">/tuto</Link>. Elles s&apos;affichent dans
-          l&apos;ordre du champ <em>Ordre</em>. Dans le contenu&nbsp;: une ligne
-          par paragraphe, <code>- </code> en début de ligne pour une puce,
-          <code>1. </code> pour une étape numérotée, <code>**texte**</code> pour
-          du gras.
+          l&apos;ordre du champ <em>Ordre</em>. Rédigez le contenu directement
+          dans l&apos;éditeur ci-dessous.
         </p>
 
         <TutoSectionForm

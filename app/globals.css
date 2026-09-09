@@ -547,21 +547,87 @@ table.data tbody tr:hover { background: var(--surface); }
 
 /* ---------- Page Tuto ---------- */
 .tuto-sections { display: grid; gap: 20px; }
-.tuto-section h2 {
+.tuto-section > h2 {
   display: flex; align-items: center; gap: 10px;
-  font-size: 1.25rem; margin-bottom: 14px;
+  font-size: 1.25rem; margin-bottom: 6px;
 }
 .tuto-section-icon { font-size: 1.4rem; line-height: 1; }
-.tuto-section p { color: var(--text-muted); font-size: 0.96rem; margin-bottom: 12px; }
-.tuto-section p:last-child { margin-bottom: 0; }
-.tuto-list, .tuto-steps {
+.tuto-section-desc {
+  color: var(--text-muted); font-size: 0.95rem;
+  margin: 0 0 16px; font-style: italic;
+}
+.tuto-section-body p {
+  color: var(--text-muted); font-size: 0.96rem; margin-bottom: 12px;
+}
+.tuto-section-body p:last-child { margin-bottom: 0; }
+.tuto-section-body ul, .tuto-section-body ol {
   color: var(--text-muted); font-size: 0.96rem;
   padding-left: 22px; margin: 0 0 12px;
 }
-.tuto-list { list-style: disc; }
-.tuto-steps { list-style: decimal; }
-.tuto-list li, .tuto-steps li { margin-bottom: 6px; }
-.tuto-list:last-child, .tuto-steps:last-child { margin-bottom: 0; }
+.tuto-section-body ul { list-style: disc; }
+.tuto-section-body ol { list-style: decimal; }
+.tuto-section-body li { margin-bottom: 6px; }
+.tuto-section-body ul:last-child, .tuto-section-body ol:last-child { margin-bottom: 0; }
+.tuto-section-body strong { color: var(--text); }
+
+/* ---------- Éditeur de texte enrichi (admin) ---------- */
+.rte {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-soft); overflow: hidden;
+}
+.rte-toolbar {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 8px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.rte-toolbar button {
+  min-width: 34px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg-soft); color: var(--text);
+  font-size: 0.85rem; cursor: pointer;
+}
+.rte-toolbar button:hover { border-color: var(--blue); }
+.rte-area {
+  padding: 14px 16px; min-height: 200px;
+  font-size: 0.96rem; line-height: 1.6; color: var(--text);
+  outline: none;
+}
+.rte-area:focus { box-shadow: inset 0 0 0 2px rgba(47, 128, 237, 0.35); }
+.rte-area p { margin: 0 0 10px; }
+.rte-area ul, .rte-area ol { margin: 0 0 10px; padding-left: 24px; }
+.rte-area ul { list-style: disc; }
+.rte-area ol { list-style: decimal; }
+
+/* ---------- Sélecteur d'emoji (admin) ---------- */
+.emoji-picker { position: relative; }
+.emoji-picker-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.emoji-picker-preview {
+  display: inline-grid; place-items: center;
+  width: 40px; height: 40px; font-size: 1.4rem;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-soft);
+}
+.emoji-panel {
+  position: absolute; z-index: 20; top: calc(100% + 8px); left: 0;
+  width: min(420px, 90vw); max-height: 320px; overflow-y: auto;
+  padding: 12px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.emoji-group + .emoji-group { margin-top: 12px; }
+.emoji-group-label {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px;
+}
+.emoji-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 2px;
+}
+.emoji-cell {
+  aspect-ratio: 1; border: 0; background: transparent;
+  font-size: 1.25rem; border-radius: 8px; cursor: pointer;
+}
+.emoji-cell:hover { background: var(--bg-soft); }
+.emoji-cell.is-active { background: rgba(47, 128, 237, 0.22); }
 
 /* ---------- Page Avis ---------- */
 .rating-summary {

@@ -19,6 +19,7 @@ export async function saveTutoSectionAction(
 
   const id = Number(formData.get("id")) || null;
   const title = str(formData.get("title"));
+  const description = str(formData.get("description")).slice(0, 300);
   const icon = str(formData.get("icon")).slice(0, 8);
   const body = str(formData.get("body"));
   const sort = Number(formData.get("sort")) || 0;
@@ -32,14 +33,15 @@ export async function saveTutoSectionAction(
   if (id) {
     await sql`
       UPDATE tuto_sections SET
-        title = ${title}, icon = ${icon}, body = ${body},
-        sort = ${sort}, published = ${published}, updated_at = now()
+        title = ${title}, description = ${description}, icon = ${icon},
+        body = ${body}, sort = ${sort}, published = ${published},
+        updated_at = now()
       WHERE id = ${id}
     `;
   } else {
     await sql`
-      INSERT INTO tuto_sections (title, icon, body, sort, published)
-      VALUES (${title}, ${icon}, ${body}, ${sort}, ${published})
+      INSERT INTO tuto_sections (title, description, icon, body, sort, published)
+      VALUES (${title}, ${description}, ${icon}, ${body}, ${sort}, ${published})
     `;
   }
 

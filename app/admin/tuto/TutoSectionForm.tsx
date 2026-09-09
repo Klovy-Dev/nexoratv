@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { saveTutoSectionAction } from "@/actions/tuto-actions";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
+import RichTextEditor from "@/components/RichTextEditor";
+import EmojiPicker from "@/components/EmojiPicker";
 import type { FormState, TutoSection } from "@/lib/types";
 
 const initial: FormState = {};
@@ -26,43 +28,49 @@ export default function TutoSectionForm({
       <form action={action} key={key}>
         {editing && <input type="hidden" name="id" value={editing.id} />}
 
-        <div className="grid-2">
-          <div className="form-group">
-            <label htmlFor="tuto-title">Titre</label>
-            <input
-              id="tuto-title"
-              name="title"
-              className="input"
-              placeholder="Ex. Installer sur Android"
-              defaultValue={editing?.title ?? ""}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="tuto-icon">Picto (emoji, facultatif)</label>
-            <input
-              id="tuto-icon"
-              name="icon"
-              className="input"
-              placeholder="🤖"
-              defaultValue={editing?.icon ?? ""}
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="tuto-title">Titre</label>
+          <input
+            id="tuto-title"
+            name="title"
+            className="input"
+            placeholder="Ex. Installer sur Android"
+            defaultValue={editing?.title ?? ""}
+            required
+          />
         </div>
 
         <div className="form-group">
-          <label htmlFor="tuto-body">Contenu</label>
-          <textarea
-            id="tuto-body"
-            name="body"
-            className="textarea"
-            rows={10}
-            placeholder={
-              "Une ligne = un paragraphe.\n- Ligne commençant par « - » = puce\n1. Ligne « 1. » = étape numérotée\n**gras** pour mettre en valeur"
-            }
-            defaultValue={editing?.body ?? ""}
-            required
+          <label htmlFor="tuto-description">Description (sous-titre)</label>
+          <input
+            id="tuto-description"
+            name="description"
+            className="input"
+            placeholder="Courte phrase affichée sous le titre (facultatif)"
+            defaultValue={editing?.description ?? ""}
           />
+        </div>
+
+        <div className="form-group">
+          <label>Picto</label>
+          <EmojiPicker
+            name="icon"
+            defaultValue={editing?.icon ?? ""}
+            resetKey={key}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Contenu</label>
+          <RichTextEditor
+            name="body"
+            defaultValue={editing?.body ?? ""}
+            resetKey={key}
+          />
+          <p className="hint">
+            Utilisez la barre d&apos;outils pour le gras, l&apos;italique et les
+            listes. Chaque retour à la ligne crée un nouveau paragraphe.
+          </p>
         </div>
 
         <div className="grid-2">

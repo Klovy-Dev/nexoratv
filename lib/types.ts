@@ -156,6 +156,8 @@ export interface ReviewStats {
 export interface TutoSection {
   id: number;
   title: string;
+  /** sous-titre affiché sous le titre ; vide = aucun */
+  description: string;
   /** picto (emoji) affiché à côté du titre ; vide = aucun */
   icon: string;
   /** corps : paragraphes, listes « - », étapes « 1. », **gras** */

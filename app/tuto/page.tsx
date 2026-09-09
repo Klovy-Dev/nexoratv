@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Fragment, type ReactNode } from "react";
 import { listPublishedTutoSections } from "@/lib/data";
+import { markdownToHtml } from "@/lib/tuto-format";
 
 export const metadata: Metadata = {
   title: "Tuto — Installation & prise en main",
@@ -12,69 +12,6 @@ export const metadata: Metadata = {
 // Régénère la page quand l'admin modifie une section (revalidatePath) ou
 // au plus toutes les 5 min.
 export const revalidate = 300;
-
-/* -------- Rendu du corps de texte des sections -------- */
-
-function inline(text: string, keyPrefix: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
-    const m = /^\*\*([^*]+)\*\*$/.exec(part);
-    return m ? (
-      <strong key={`${keyPrefix}-${i}`}>{m[1]}</strong>
-    ) : (
-      <Fragment key={`${keyPrefix}-${i}`}>{part}</Fragment>
-    );
-  });
-}
-
-function renderBody(body: string): ReactNode[] {
-  const lines = body.replace(/\r\n/g, "\n").split("\n");
-  const blocks: ReactNode[] = [];
-  let list: { ordered: boolean; items: string[] } | null = null;
-  let key = 0;
-
-  const flushList = () => {
-    if (!list) return;
-    const items = list.items.map((it, i) => (
-      <li key={i}>{inline(it, `li-${key}-${i}`)}</li>
-    ));
-    blocks.push(
-      list.ordered ? (
-        <ol key={`b${key++}`} className="tuto-steps">
-          {items}
-        </ol>
-      ) : (
-        <ul key={`b${key++}`} className="tuto-list">
-          {items}
-        </ul>
-      ),
-    );
-    list = null;
-  };
-
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) {
-      flushList();
-      continue;
-    }
-    const bullet = /^[-*]\s+(.*)$/.exec(line);
-    const step = /^\d+[.)]\s+(.*)$/.exec(line);
-    if (bullet) {
-      if (list && list.ordered) flushList();
-      list ??= { ordered: false, items: [] };
-      list.items.push(bullet[1]);
-    } else if (step) {
-      if (list && !list.ordered) flushList();
-      list ??= { ordered: true, items: [] };
-      list.items.push(step[1]);
-    } else {
-      flushList();
-      blocks.push(<p key={`b${key++}`}>{inline(line, `p${key}`)}</p>);
-    }
-  }
-  flushList();
-  return blocks;
-}
 
 export default async function TutoPage() {
   const sections = await listPublishedTutoSections();
@@ -114,7 +51,13 @@ export default async function TutoPage() {
                     )}
                     {s.title}
                   </h2>
-                  {renderBody(s.body)}
+                  {s.description && (
+                    <p className="tuto-section-desc">{s.description}</p>
+                  )}
+                  <div
+                    className="tuto-section-body"
+                    dangerouslySetInnerHTML={{ __html: markdownToHtml(s.body) }}
+                  />
                 </article>
               ))}
             </div>

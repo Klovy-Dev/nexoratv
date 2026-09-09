@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -235,6 +235,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_tuto_sections_sort ON tuto_sections (sort, id)`;
+  // Sous-titre affiché sous le titre de la section.
+  await raw`ALTER TABLE tuto_sections ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`;
 
   await raw`
     INSERT INTO app_meta (key, value)
