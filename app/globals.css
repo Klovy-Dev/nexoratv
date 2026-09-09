@@ -555,6 +555,8 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .soon-card { display: flex; flex-direction: column; }
 .soon-card p { flex: 1; }
+.card-icon.is-logo { background: #fff; }
+.card-icon.is-logo svg { display: block; }
 .soon-tag {
   align-self: flex-start; margin-top: 16px;
   padding: 4px 12px; border-radius: 999px;

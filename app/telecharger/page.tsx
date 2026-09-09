@@ -1,5 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  WindowsLogo,
+  AndroidLogo,
+  FireTvLogo,
+} from "@/components/PlatformLogos";
 
 export const metadata: Metadata = {
   title: "Application — Bientôt disponible",
@@ -9,17 +14,17 @@ export const metadata: Metadata = {
 
 const PLATFORMS = [
   {
-    icon: "🪟",
+    Logo: WindowsLogo,
     name: "Windows 10 / 11",
     desc: "Installeur classique, sans droits administrateur, avec mises à jour automatiques.",
   },
   {
-    icon: "🤖",
+    Logo: AndroidLogo,
     name: "Android",
     desc: "Téléphone, tablette, box et Android TV. Fichier APK à installer directement.",
   },
   {
-    icon: "📺",
+    Logo: FireTvLogo,
     name: "Fire TV Stick",
     desc: "Installation via Downloader sur Fire TV Stick et box Android TV.",
   },
@@ -47,7 +52,9 @@ export default function TelechargerPage() {
           <div className="grid">
             {PLATFORMS.map((p) => (
               <div key={p.name} className="card reveal soon-card">
-                <div className="card-icon">{p.icon}</div>
+                <div className="card-icon is-logo">
+                  <p.Logo size={30} />
+                </div>
                 <h3>{p.name}</h3>
                 <p>{p.desc}</p>
                 <span className="soon-tag">Bientôt</span>
