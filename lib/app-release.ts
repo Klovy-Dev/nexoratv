@@ -1,13 +1,17 @@
 /**
- * Dernière version publiée de l'application NexoraTV (dépôt GitHub
- * `Klovy-Dev/nexoratv-app`). Utilisé par la page /telecharger.
+ * Dernière version publiée de l'application NexoraTV.
  *
- * La réponse GitHub est mise en cache 30 min (ISR) pour rester bien en
- * dessous de la limite d'API non authentifiée (60 req/h/IP).
+ * Source de vérité = le manifeste **`update.json`** du dépôt
+ * `Klovy-Dev/nexoratv-app` (tenu à jour par la CI, un bloc par plateforme).
+ * On ne se fie plus à `releases/latest` : depuis le passage aux tags par
+ * plateforme (`win-v*`, `android-v*`, `ios-v*`), « latest » sur GitHub = la
+ * dernière plateforme publiée, pas forcément celle qu'on veut servir — et la
+ * liste `/releases` n'est pas triée de façon fiable par date.
  */
 
 const REPO = "Klovy-Dev/nexoratv-app";
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;
+const MANIFEST_URL = `https://raw.githubusercontent.com/${REPO}/main/update.json`;
 
 /**
  * Lien court de sideload (redirige vers le dernier APK) — à taper dans
@@ -25,57 +29,41 @@ export const DOWNLOADER_CODE = "3276026";
 export interface AppAsset {
   name: string;
   url: string;
-  size: number;
+  size?: number;
 }
 
 export interface AppRelease {
-  version: string; // ex. "1.1.0"
-  tag: string; // ex. "v1.1.0"
-  publishedAt: string | null;
+  windowsVersion: string | null; // ex. "2.1.0"
+  androidVersion: string | null; // ex. "1.3.5"
   windowsInstaller: AppAsset | null;
-  windowsPortable: AppAsset | null;
   androidApk: AppAsset | null;
 }
 
-type GhAsset = { name: string; browser_download_url: string; size: number };
-type GhRelease = {
-  tag_name: string;
-  name: string | null;
-  published_at: string | null;
-  assets: GhAsset[];
+type ManifestBlock = { version?: string; url?: string };
+type Manifest = {
+  windows?: ManifestBlock;
+  android?: ManifestBlock;
+  // Ancien format à plat (repli).
+  version?: string;
+  windows_url?: string;
+  android_url?: string;
 };
 
-function pick(assets: GhAsset[], test: (n: string) => boolean): AppAsset | null {
-  const a = assets.find((x) => test(x.name.toLowerCase()));
-  return a ? { name: a.name, url: a.browser_download_url, size: a.size } : null;
+function asset(url: string | null | undefined): AppAsset | null {
+  if (!url) return null;
+  return { name: url.split("/").pop() || "download", url };
 }
 
 export async function getLatestAppRelease(): Promise<AppRelease | null> {
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${REPO}/releases/latest`,
-      {
-        headers: { Accept: "application/vnd.github+json" },
-        next: { revalidate: 1800 },
-      },
-    );
+    const res = await fetch(MANIFEST_URL, { next: { revalidate: 600 } });
     if (!res.ok) return null;
-    const r = (await res.json()) as GhRelease;
-    const assets = r.assets ?? [];
-
+    const m = (await res.json()) as Manifest;
     return {
-      version: r.tag_name.replace(/^v/, ""),
-      tag: r.tag_name,
-      publishedAt: r.published_at,
-      windowsInstaller: pick(
-        assets,
-        (n) => n.endsWith(".exe") && n.includes("setup"),
-      ),
-      windowsPortable: pick(
-        assets,
-        (n) => n.endsWith(".zip") && n.includes("windows"),
-      ),
-      androidApk: pick(assets, (n) => n.endsWith(".apk")),
+      windowsVersion: m.windows?.version ?? m.version ?? null,
+      androidVersion: m.android?.version ?? m.version ?? null,
+      windowsInstaller: asset(m.windows?.url ?? m.windows_url),
+      androidApk: asset(m.android?.url ?? m.android_url),
     };
   } catch {
     return null;
