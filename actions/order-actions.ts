@@ -4,8 +4,17 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { offerById, orderById, subscriptionById } from "@/lib/data";
-import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import {
+  hasUsedTrial,
+  offerById,
+  orderById,
+  subscriptionById,
+} from "@/lib/data";
+import {
+  isTrialPackage,
+  loadGoldenottCatalog,
+  trialPackageIds,
+} from "@/lib/goldenott-catalog";
 import { GoldenottError } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
@@ -47,6 +56,19 @@ export async function createOrderAction(
   const offer = await offerById(offerId);
   if (!offer || !offer.active) {
     return { fieldErrors: ["Cette offre n'est plus disponible."] };
+  }
+
+  // L'essai n'est autorisé qu'une seule fois par compte.
+  const catalog = await loadGoldenottCatalog();
+  if (
+    isTrialPackage(catalog, offer.goldenott_package_id) &&
+    (await hasUsedTrial(user.id, trialPackageIds(catalog)))
+  ) {
+    return {
+      fieldErrors: [
+        "Vous avez déjà profité d'un essai. Cette offre est réservée aux nouveaux comptes.",
+      ],
+    };
   }
 
   if (offer.kind === "mag") {

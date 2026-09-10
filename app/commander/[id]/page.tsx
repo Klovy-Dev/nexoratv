@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
-import { offerById, ordersForUser } from "@/lib/data";
+import { hasUsedTrial, offerById, ordersForUser } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
+import { isTrialPackage, loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { formatPrice } from "@/lib/validation";
 import OrderPageForm from "./OrderPageForm";
 import type { ProviderKind } from "@/lib/types";
@@ -44,6 +45,11 @@ export default async function OrderStepPage({
     (o) => o.status === "pending" && o.offer_id === offer.id,
   );
 
+  const catalog = await loadGoldenottCatalog();
+  const trialLocked =
+    isTrialPackage(catalog, offer.goldenott_package_id) &&
+    (await hasUsedTrial(user.id, trialPackageIds(catalog)));
+
   return (
     <section className="order-step">
       <div className="container" style={{ maxWidth: 940 }}>
@@ -65,7 +71,19 @@ export default async function OrderStepPage({
               {offer.tagline && <p className="lead">{offer.tagline}</p>}
             </header>
 
-            {pending ? (
+            {trialLocked ? (
+              <div className="empty-state" style={{ textAlign: "left" }}>
+                <p>
+                  Vous avez déjà profité d&apos;un essai. Cette offre est
+                  réservée aux nouveaux comptes — une seule fois par client.
+                </p>
+                <p style={{ marginTop: 10 }}>
+                  <Link href="/commander" style={{ color: "var(--text)" }}>
+                    Voir nos formules complètes →
+                  </Link>
+                </p>
+              </div>
+            ) : pending ? (
               <div className="empty-state" style={{ textAlign: "left" }}>
                 <p>Vous avez déjà une commande en attente pour cette offre.</p>
                 <p style={{ marginTop: 10 }}>

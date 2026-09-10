@@ -1254,6 +1254,10 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .offer-card:hover { transform: translateY(-4px); border-color: rgba(161, 59, 216, 0.5); }
 
+/* Essai déjà utilisé : offre grisée, non commandable */
+.offer-card--locked { opacity: 0.55; }
+.offer-card--locked:hover { transform: none; border-color: var(--border); }
+
 /* Offre mise en avant (champ « Bandeau » rempli) */
 .offer-card--featured {
   border-color: var(--pink);

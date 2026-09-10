@@ -29,6 +29,23 @@ export interface GoldenottCatalog {
   domains: GoldenottDomain[];
 }
 
+/** ids des forfaits GoldenOTT considérés comme « essai » (gratuit ou payant). */
+export function trialPackageIds(catalog: GoldenottCatalog): number[] {
+  return catalog.packages
+    .filter((p) => p.isTrial || p.isPaidTrial)
+    .map((p) => p.id);
+}
+
+/** Le forfait GoldenOTT `packageId` est-il un forfait d'essai ? */
+export function isTrialPackage(
+  catalog: GoldenottCatalog,
+  packageId: number | null | undefined,
+): boolean {
+  if (packageId == null) return false;
+  const p = catalog.packages.find((x) => x.id === packageId);
+  return Boolean(p && (p.isTrial || p.isPaidTrial));
+}
+
 export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> => {
   if (!goldenottConfigured()) {
     return {

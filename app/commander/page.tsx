@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
-import { listOffers, ordersForUser } from "@/lib/data";
+import { hasUsedTrial, listOffers, ordersForUser } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
+import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { formatPrice } from "@/lib/validation";
 import type { Offer, ProviderKind } from "@/lib/types";
 
@@ -26,7 +27,13 @@ export default async function CommanderPage({
 }) {
   const done = (await searchParams).commande === "1";
   const user = await getCurrentUser();
-  const offers = goldenottConfigured() ? await listOffers(true) : [];
+  const configured = goldenottConfigured();
+  const offers = configured ? await listOffers(true) : [];
+  const catalog = configured
+    ? await loadGoldenottCatalog()
+    : null;
+  const trialIds = catalog ? new Set(trialPackageIds(catalog)) : new Set<number>();
+
   const pendingOfferIds = new Set(
     user
       ? (await ordersForUser(user.id))
@@ -34,6 +41,12 @@ export default async function CommanderPage({
           .map((o) => o.offer_id as number)
       : [],
   );
+
+  // L'essai n'est proposé qu'une fois par compte.
+  const trialUsed =
+    user && catalog
+      ? await hasUsedTrial(user.id, trialPackageIds(catalog))
+      : false;
 
   const groups = groupByKind(offers);
 
@@ -102,6 +115,9 @@ export default async function CommanderPage({
                         offer={offer}
                         loggedIn={Boolean(user)}
                         alreadyPending={pendingOfferIds.has(offer.id)}
+                        trialLocked={
+                          trialUsed && trialIds.has(offer.goldenott_package_id)
+                        }
                       />
                     ))}
                   </div>
@@ -132,17 +148,23 @@ function OfferCard({
   offer,
   loggedIn,
   alreadyPending,
+  trialLocked,
 }: {
   offer: Offer;
   loggedIn: boolean;
   alreadyPending: boolean;
+  trialLocked: boolean;
 }) {
   const orderHref = loggedIn
     ? `/commander/${offer.id}`
     : `/connexion?next=/commander/${offer.id}`;
 
   return (
-    <div className={`offer-card${offer.badge ? " offer-card--featured" : ""}`}>
+    <div
+      className={`offer-card${offer.badge ? " offer-card--featured" : ""}${
+        trialLocked ? " offer-card--locked" : ""
+      }`}
+    >
       {offer.badge && <span className="offer-ribbon">{offer.badge}</span>}
       <div className="offer-card-head">
         <h3>{offer.title}</h3>
@@ -168,7 +190,12 @@ function OfferCard({
       </ul>
 
       <div className="offer-cta">
-        {alreadyPending ? (
+        {trialLocked ? (
+          <p className="flash flash-info" style={{ margin: 0 }}>
+            Essai déjà utilisé — une seule fois par compte. Découvrez nos
+            formules complètes ci-dessus.
+          </p>
+        ) : alreadyPending ? (
           <p className="flash flash-info" style={{ margin: 0 }}>
             Commande déjà en attente — suivez-la dans{" "}
             <Link href="/profil" style={{ color: "var(--text)" }}>

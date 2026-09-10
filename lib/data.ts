@@ -260,6 +260,33 @@ export async function ordersForUser(userId: number): Promise<Order[]> {
   `) as unknown as Order[];
 }
 
+/**
+ * Le client a-t-il déjà profité d'un forfait d'essai ? (commande en attente
+ * ou honorée sur un forfait d'essai, ou abonnement d'essai encore présent).
+ * Sert à n'autoriser l'essai qu'une seule fois par compte.
+ */
+export async function hasUsedTrial(
+  userId: number,
+  trialPackageIds: number[],
+): Promise<boolean> {
+  const trialSub = (await sql`
+    SELECT 1 FROM subscriptions
+    WHERE user_id = ${userId} AND is_trial = true
+    LIMIT 1
+  `) as unknown as unknown[];
+  if (trialSub.length > 0) return true;
+
+  if (trialPackageIds.length === 0) return false;
+  const order = (await sql`
+    SELECT 1 FROM iptv_orders
+    WHERE user_id = ${userId}
+      AND status IN ('pending', 'fulfilled')
+      AND package_id = ANY(${trialPackageIds})
+    LIMIT 1
+  `) as unknown as unknown[];
+  return order.length > 0;
+}
+
 export async function allOrders(statusFilter?: string): Promise<OrderView[]> {
   if (statusFilter) {
     return (await sql`
