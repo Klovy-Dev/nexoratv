@@ -57,7 +57,9 @@ function asset(url: string | null | undefined): AppAsset | null {
 
 export async function getLatestAppRelease(): Promise<AppRelease | null> {
   try {
-    const res = await fetch(MANIFEST_URL, { next: { revalidate: 600 } });
+    // Redirects /latest.apk & /apk uniquement : on veut du frais, pas 10 min
+    // de retard après une release (GitHub raw a déjà son propre cache ~5 min).
+    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
     if (!res.ok) return null;
     const m = (await res.json()) as Manifest;
     return {
