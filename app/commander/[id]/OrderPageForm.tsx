@@ -20,9 +20,6 @@ export interface OrderStepOffer {
   max_screens: number;
 }
 
-const WHATSAPP_NUMBER = "33651446869";
-const WHATSAPP_DISPLAY = "+33 6 51 44 68 69";
-
 export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
   const [state, action] = useActionState(createOrderAction, initial);
   const [screens, setScreens] = useState<number>(offer.included_screens || 1);
@@ -38,36 +35,11 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
     screenChoices.push(n);
   }
 
-  const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Bonjour, je viens de commander l'offre « ${offer.title} » sur NexoraTV. Merci de valider ma commande.`,
-  )}`;
-
   return (
     <form action={action} className="panel order-form">
       <h2>Votre commande</h2>
       <FormErrors state={state} />
       <input type="hidden" name="offer_id" value={offer.id} />
-
-      <div className="order-wa-notice">
-        <strong>⚠️ Étape obligatoire</strong>
-        <p>
-          Après avoir confirmé, vous <strong>devez</strong> nous envoyer un
-          message sur WhatsApp au{" "}
-          <a href={waLink} target="_blank" rel="noopener noreferrer">
-            {WHATSAPP_DISPLAY}
-          </a>{" "}
-          pour que votre commande soit acceptée. Sans ce message, la commande
-          ne sera pas traitée.
-        </p>
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-sm order-wa-btn"
-        >
-          Ouvrir WhatsApp
-        </a>
-      </div>
 
       <div className="order-options">
         <label className="order-option">
@@ -142,13 +114,19 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
       </div>
 
       <div className="order-total">
-        <span>Total à régler après validation</span>
+        <span>Total à régler</span>
         <strong>{formatPrice(total)}</strong>
       </div>
 
-      <SubmitButton className="btn btn-primary btn-block" pendingLabel="Envoi…">
-        Confirmer la commande
+      <SubmitButton
+        className="btn btn-primary btn-block"
+        pendingLabel="Redirection vers Stripe…"
+      >
+        Payer {formatPrice(total)} avec Stripe
       </SubmitButton>
+      <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
+        🔒 Paiement sécurisé par carte bancaire, traité par Stripe.
+      </p>
     </form>
   );
 }

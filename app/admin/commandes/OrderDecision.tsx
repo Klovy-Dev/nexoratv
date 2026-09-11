@@ -112,10 +112,14 @@ export default function OrderDecision({
       {mode === "reject" && (
         <form action={rejectOrderAction} className="provider-panel">
           <input type="hidden" name="order_id" value={orderId} />
+          <p className="form-note">
+            Le client a déjà payé par carte : refuser déclenche automatiquement
+            son remboursement intégral via Stripe.
+          </p>
           <label className="mini-label">Motif du refus (visible par le client)</label>
           <input name="admin_note" className="input" maxLength={200} />
           <SubmitButton className="btn btn-danger btn-sm">
-            Confirmer le refus
+            Refuser &amp; rembourser
           </SubmitButton>
         </form>
       )}

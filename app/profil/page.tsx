@@ -14,8 +14,9 @@ import SecretValue from "@/components/SecretValue";
 import NameForm from "./NameForm";
 import PasswordForm from "./PasswordForm";
 import ProfilTabs, { type ProfilTab } from "./ProfilTabs";
-import { cancelOrderAction } from "@/actions/order-actions";
+import { cancelOrderAction, resumeOrderPaymentAction } from "@/actions/order-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import SubmitButton from "@/components/SubmitButton";
 import type { Order, ProviderKind } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Mon profil" };
@@ -28,7 +29,8 @@ const KIND_CRED_LABEL: Record<ProviderKind, string> = {
 };
 
 const ORDER_STATUS: Record<string, { cls: string; label: string; dot: string }> = {
-  pending: { cls: "badge-suspended", label: "En attente de validation", dot: "warning" },
+  awaiting_payment: { cls: "badge-suspended", label: "En attente de paiement", dot: "warning" },
+  pending: { cls: "badge-suspended", label: "Payée — activation en cours", dot: "warning" },
   fulfilled: { cls: "badge-active", label: "Activée", dot: "success" },
   rejected: { cls: "badge-expired", label: "Refusée", dot: "danger" },
   cancelled: { cls: "badge", label: "Annulée", dot: "muted" },
@@ -52,9 +54,14 @@ export default async function ProfilPage({
   ]);
 
   const visibleOrders = orders.filter(
-    (o) => o.status === "pending" || o.status === "rejected",
+    (o) =>
+      o.status === "pending" ||
+      o.status === "awaiting_payment" ||
+      o.status === "rejected",
   );
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
+  const pendingCount = orders.filter(
+    (o) => o.status === "pending" || o.status === "awaiting_payment",
+  ).length;
 
   /* ---------- Contenu des onglets ---------- */
 
@@ -181,16 +188,8 @@ export default async function ProfilPage({
                 </span>
                 {o.status === "pending" && (
                   <span className="order-track-reason">
-                    ⚠️ Envoyez un message sur notre WhatsApp{" "}
-                    <a
-                      href="https://wa.me/33651446869"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "var(--text)" }}
-                    >
-                      +33 6 51 44 68 69
-                    </a>{" "}
-                    pour que votre commande soit acceptée.
+                    Paiement confirmé — notre équipe finalise l&apos;activation,
+                    vous recevrez un e-mail dès qu&apos;elle est prête.
                   </span>
                 )}
                 {o.status === "rejected" && o.admin_note && (
@@ -201,7 +200,18 @@ export default async function ProfilPage({
               </div>
               <div className="order-track-side">
                 <span className={`badge ${s.cls}`}>{s.label}</span>
-                {o.status === "pending" && (
+                {o.status === "awaiting_payment" && (
+                  <form action={resumeOrderPaymentAction} className="inline-form">
+                    <input type="hidden" name="order_id" value={o.id} />
+                    <SubmitButton
+                      className="btn btn-primary btn-sm"
+                      pendingLabel="Redirection…"
+                    >
+                      Payer maintenant
+                    </SubmitButton>
+                  </form>
+                )}
+                {o.status === "awaiting_payment" && (
                   <form action={cancelOrderAction} className="inline-form">
                     <input type="hidden" name="order_id" value={o.id} />
                     <ConfirmSubmit
@@ -257,19 +267,9 @@ export default async function ProfilPage({
           </div>
         )}
         {commande && (
-          <div className="flash flash-error" style={{ marginBottom: 20 }}>
-            Votre commande a bien été enregistrée. <strong>Elle ne sera
-            validée qu&apos;après un message de votre part sur notre WhatsApp
-            au{" "}
-            <a
-              href="https://wa.me/33651446869"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "inherit", textDecoration: "underline" }}
-            >
-              +33 6 51 44 68 69
-            </a>
-            </strong>.
+          <div className="flash flash-success" style={{ marginBottom: 20 }}>
+            Paiement reçu, merci ! Votre abonnement est activé automatiquement
+            — vous recevrez un e-mail dès qu&apos;il est prêt.
           </div>
         )}
 

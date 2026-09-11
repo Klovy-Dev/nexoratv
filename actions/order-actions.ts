@@ -15,25 +15,60 @@ import {
   loadGoldenottCatalog,
   trialPackageIds,
 } from "@/lib/goldenott-catalog";
-import { GoldenottError } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
   prepareLineCredentials,
   provisionSubscription,
   validateLineCredentials,
 } from "@/lib/goldenott-provision";
+import { appOrigin } from "@/lib/mail";
+import { errMessages } from "@/lib/order-fulfillment";
+import { stripe, stripeConfigured } from "@/lib/stripe";
 import { isMac, normalizeMac, str } from "@/lib/validation";
-import {
-  sendOrderAcceptedEmail,
-  sendOrderPlacedEmails,
-  sendOrderRejectedEmail,
-} from "@/lib/order-mail";
+import { sendOrderAcceptedEmail, sendOrderRejectedEmail } from "@/lib/order-mail";
 import { offerPriceCents, type FormState } from "@/lib/types";
 
-function errMessages(err: unknown): string[] {
-  if (err instanceof GoldenottError) return err.allMessages;
-  if (err instanceof Error) return [err.message];
-  return ["Erreur inattendue."];
+/**
+ * Ouvre une session Stripe Checkout pour une commande déjà enregistrée
+ * (statut 'awaiting_payment') et enregistre son identifiant. Renvoie l'URL
+ * de paiement hébergée par Stripe vers laquelle rediriger le client.
+ */
+async function createCheckoutSession(opts: {
+  orderId: number;
+  userEmail: string;
+  title: string;
+  priceCents: number;
+  cancelPath: string;
+}): Promise<string> {
+  const site = await appOrigin();
+  const session = await stripe().checkout.sessions.create({
+    mode: "payment",
+    payment_method_types: ["card"],
+    customer_email: opts.userEmail,
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: { name: opts.title },
+          unit_amount: opts.priceCents,
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: { order_id: String(opts.orderId) },
+    success_url: `${site}/profil?commande=1`,
+    cancel_url: `${site}${opts.cancelPath}?annule=1`,
+  });
+
+  if (!session.url) {
+    throw new Error("Stripe n'a pas renvoyé d'URL de paiement.");
+  }
+
+  await sql`
+    UPDATE iptv_orders SET stripe_session_id = ${session.id} WHERE id = ${opts.orderId}
+  `;
+
+  return session.url;
 }
 
 /* ================================================================== */
@@ -46,6 +81,12 @@ export async function createOrderAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser();
+
+  if (!stripeConfigured()) {
+    return {
+      fieldErrors: ["Le paiement par carte n'est pas configuré pour le moment."],
+    };
+  }
 
   const offerId = Number(formData.get("offer_id")) || 0;
   const customerNote = str(formData.get("customer_note")).slice(0, 500);
@@ -97,40 +138,51 @@ export async function createOrderAction(
     return { fieldErrors: ["Trop de commandes récentes. Réessayez plus tard."] };
   }
 
-  // Une seule commande en attente par offre et par client.
+  // Une seule commande en attente (paiement ou traitement) par offre et par client.
   const existing = (await sql`
     SELECT 1 FROM iptv_orders
-    WHERE user_id = ${user.id} AND offer_id = ${offerId} AND status = 'pending'
+    WHERE user_id = ${user.id} AND offer_id = ${offerId}
+      AND status IN ('awaiting_payment', 'pending')
   `) as unknown as unknown[];
   if (existing.length > 0) {
     return { fieldErrors: ["Vous avez déjà une commande en attente pour cette offre."] };
   }
 
-  await sql`
+  const rows = (await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
        dns_domain_id, max_connections, is_adult, want_adult, want_french, mac,
-       customer_note)
+       customer_note, status)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${screens}, ${offer.is_adult}, ${wantAdult},
-       ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote})
-  `;
+       ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote},
+       'awaiting_payment')
+    RETURNING id
+  `) as unknown as { id: number }[];
+  const orderId = rows[0].id;
 
-  await sendOrderPlacedEmails({
-    customerName: user.name,
-    customerEmail: user.email,
-    title: offer.title,
-    priceCents,
-    kind: offer.kind,
-    screens: offer.kind === "line" ? screens : null,
-    isRenewal: false,
-  });
+  let checkoutUrl: string;
+  try {
+    checkoutUrl = await createCheckoutSession({
+      orderId,
+      userEmail: user.email,
+      title: offer.title,
+      priceCents,
+      cancelPath: `/commander/${offer.id}`,
+    });
+  } catch (err) {
+    await sql`DELETE FROM iptv_orders WHERE id = ${orderId}`;
+    return {
+      fieldErrors: [
+        err instanceof Error ? err.message : "Impossible de lancer le paiement.",
+      ],
+    };
+  }
 
   revalidatePath("/profil");
-  revalidatePath("/admin/commandes");
-  redirect("/profil?commande=1");
+  redirect(checkoutUrl);
 }
 
 /** Le client demande le renouvellement d'un abonnement GoldenOTT existant. */
@@ -139,6 +191,13 @@ export async function createRenewalOrderAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser();
+
+  if (!stripeConfigured()) {
+    return {
+      fieldErrors: ["Le paiement par carte n'est pas configuré pour le moment."],
+    };
+  }
+
   const subId = Number(formData.get("sub_id")) || 0;
   const offerId = Number(formData.get("offer_id")) || 0;
 
@@ -153,46 +212,88 @@ export async function createRenewalOrderAction(
 
   const existing = (await sql`
     SELECT 1 FROM iptv_orders
-    WHERE user_id = ${user.id} AND renew_sub_id = ${subId} AND status = 'pending'
+    WHERE user_id = ${user.id} AND renew_sub_id = ${subId}
+      AND status IN ('awaiting_payment', 'pending')
   `) as unknown as unknown[];
   if (existing.length > 0) {
     return { fieldErrors: ["Une demande de renouvellement est déjà en attente."] };
   }
 
-  await sql`
+  const title = `Renouvellement — ${sub.label}`;
+  const rows = (await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note)
+       dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note, status)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind},
-       ${`Renouvellement — ${sub.label}`}, ${offer.price_cents},
+       ${title}, ${offer.price_cents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${sub.screens ?? offer.included_screens},
        ${offer.is_adult}, ${subId},
-       ${str(formData.get("customer_note")).slice(0, 500)})
-  `;
+       ${str(formData.get("customer_note")).slice(0, 500)}, 'awaiting_payment')
+    RETURNING id
+  `) as unknown as { id: number }[];
+  const orderId = rows[0].id;
 
-  await sendOrderPlacedEmails({
-    customerName: user.name,
-    customerEmail: user.email,
-    title: `Renouvellement — ${sub.label}`,
-    priceCents: offer.price_cents,
-    kind: offer.kind,
-    screens: sub.screens,
-    isRenewal: true,
-  });
+  let checkoutUrl: string;
+  try {
+    checkoutUrl = await createCheckoutSession({
+      orderId,
+      userEmail: user.email,
+      title,
+      priceCents: offer.price_cents,
+      cancelPath: "/profil",
+    });
+  } catch (err) {
+    await sql`DELETE FROM iptv_orders WHERE id = ${orderId}`;
+    return {
+      fieldErrors: [
+        err instanceof Error ? err.message : "Impossible de lancer le paiement.",
+      ],
+    };
+  }
 
   revalidatePath("/profil");
-  revalidatePath("/admin/commandes");
-  redirect("/profil?commande=1");
+  redirect(checkoutUrl);
 }
 
+/** Le client relance le paiement d'une commande restée sans paiement. */
+export async function resumeOrderPaymentAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const orderId = Number(formData.get("order_id")) || 0;
+
+  const order = await orderById(orderId);
+  if (!order || order.user_id !== user.id || order.status !== "awaiting_payment") {
+    redirect("/profil?onglet=commandes");
+  }
+
+  let checkoutUrl: string;
+  try {
+    checkoutUrl = await createCheckoutSession({
+      orderId: order.id,
+      userEmail: user.email,
+      title: order.title,
+      priceCents: order.price_cents,
+      cancelPath: "/profil",
+    });
+  } catch {
+    redirect("/profil?onglet=commandes");
+  }
+
+  redirect(checkoutUrl);
+}
+
+/**
+ * Le client annule une commande. Réservé aux commandes non payées :
+ * une fois le paiement Stripe confirmé (statut 'pending' ou 'fulfilled'),
+ * une annulation doit passer par le support pour être remboursée.
+ */
 export async function cancelOrderAction(formData: FormData): Promise<void> {
   const user = await requireUser();
   const orderId = Number(formData.get("order_id")) || 0;
   await sql`
     UPDATE iptv_orders SET status = 'cancelled', decided_at = now()
-    WHERE id = ${orderId} AND user_id = ${user.id} AND status = 'pending'
+    WHERE id = ${orderId} AND user_id = ${user.id} AND status = 'awaiting_payment'
   `;
   revalidatePath("/profil");
   revalidatePath("/admin/commandes");
@@ -325,6 +426,23 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
   `) as unknown as { id: number }[];
 
   if (rows.length > 0 && order) {
+    // Une commande 'pending' est désormais toujours une commande déjà payée
+    // par carte (le paiement est confirmé avant provisioning) : la refuser
+    // doit rembourser le client automatiquement.
+    const hadPayment = Boolean(order.stripe_payment_intent_id);
+    if (hadPayment) {
+      try {
+        await stripe().refunds.create({
+          payment_intent: order.stripe_payment_intent_id!,
+        });
+      } catch (err) {
+        console.error(
+          `[order-actions] remboursement Stripe échoué pour la commande #${orderId}`,
+          err,
+        );
+      }
+    }
+
     await sendOrderRejectedEmail({
       customerName: order.user_name,
       customerEmail: order.user_email,
@@ -334,6 +452,7 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
       screens: order.max_connections,
       isRenewal: Boolean(order.renew_sub_id),
       reason: adminNote,
+      refunded: hadPayment,
     });
   }
 
@@ -341,3 +460,4 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
   revalidatePath("/admin");
   redirect("/admin/commandes?ok=1");
 }
+

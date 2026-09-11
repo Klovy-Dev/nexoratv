@@ -17,7 +17,7 @@ const KIND_FR: Record<ProviderKind, string> = {
 };
 
 const STATUS_FR: Record<string, [string, string]> = {
-  pending: ["badge-suspended", "En attente"],
+  pending: ["badge-suspended", "Payée — à activer"],
   fulfilled: ["badge-active", "Provisionnée"],
   rejected: ["badge-expired", "Refusée"],
   cancelled: ["badge", "Annulée"],
@@ -32,11 +32,15 @@ export default async function OrdersAdminPage({
   await purgeExpiredTrialsAndRejected();
   const ok = (await searchParams).ok === "1";
 
-  const [orders, catalog] = await Promise.all([
+  const [allOrdersList, catalog] = await Promise.all([
     allOrders(),
     loadGoldenottCatalog(),
   ]);
 
+  // Les commandes 'awaiting_payment' (session Stripe ouverte, pas encore
+  // payée) ne nécessitent aucune action admin : purgées après 2 h si
+  // abandonnées, sinon elles deviennent 'pending' (payées) automatiquement.
+  const orders = allOrdersList.filter((o) => o.status !== "awaiting_payment");
   const pending = orders.filter((o) => o.status === "pending");
   const done = orders.filter((o) => o.status !== "pending");
 

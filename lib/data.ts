@@ -94,6 +94,12 @@ export async function allUsers(): Promise<UserRow[]> {
 export async function purgeExpiredTrialsAndRejected(): Promise<void> {
   try {
     await sql`DELETE FROM iptv_orders WHERE status = 'rejected'`;
+    // Sessions Stripe abandonnées (client reparti sans payer) : on libère
+    // l'offre après 2 h pour ne pas bloquer une nouvelle tentative.
+    await sql`
+      DELETE FROM iptv_orders
+      WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
+    `;
     await sql`
       DELETE FROM subscriptions
       WHERE is_trial = true
@@ -280,7 +286,7 @@ export async function hasUsedTrial(
   const order = (await sql`
     SELECT 1 FROM iptv_orders
     WHERE user_id = ${userId}
-      AND status IN ('pending', 'fulfilled')
+      AND status IN ('awaiting_payment', 'pending', 'fulfilled')
       AND package_id = ANY(${trialPackageIds})
     LIMIT 1
   `) as unknown as unknown[];

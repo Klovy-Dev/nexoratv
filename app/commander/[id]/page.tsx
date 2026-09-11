@@ -42,7 +42,9 @@ export default async function OrderStepPage({
   if (!offer || !offer.active) redirect("/commander");
 
   const pending = (await ordersForUser(user.id)).some(
-    (o) => o.status === "pending" && o.offer_id === offer.id,
+    (o) =>
+      (o.status === "pending" || o.status === "awaiting_payment") &&
+      o.offer_id === offer.id,
   );
 
   const catalog = await loadGoldenottCatalog();
@@ -59,8 +61,8 @@ export default async function OrderStepPage({
 
         <ol className="order-steps" aria-label="Étapes de la commande">
           <li className="done">Choix de la formule</li>
-          <li className="current">Votre commande</li>
-          <li>Activation par l&apos;équipe</li>
+          <li className="current">Paiement</li>
+          <li>Activation automatique</li>
         </ol>
 
         <div className="order-layout">
@@ -87,19 +89,7 @@ export default async function OrderStepPage({
               <div className="empty-state" style={{ textAlign: "left" }}>
                 <p>Vous avez déjà une commande en attente pour cette offre.</p>
                 <p style={{ marginTop: 10 }}>
-                  ⚠️ Pensez à envoyer un message sur notre WhatsApp au{" "}
-                  <a
-                    href="https://wa.me/33651446869"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "var(--text)" }}
-                  >
-                    +33 6 51 44 68 69
-                  </a>{" "}
-                  pour qu&apos;elle soit acceptée.
-                </p>
-                <p style={{ marginTop: 10 }}>
-                  <Link href="/profil" style={{ color: "var(--text)" }}>
+                  <Link href="/profil?onglet=commandes" style={{ color: "var(--text)" }}>
                     Suivre ma commande →
                   </Link>
                 </p>
@@ -121,10 +111,10 @@ export default async function OrderStepPage({
 
             <ul className="order-reassure">
               <li>
-                <span aria-hidden="true">💳</span> Aucun paiement immédiat
+                <span aria-hidden="true">🔒</span> Paiement sécurisé par Stripe
               </li>
               <li>
-                <span aria-hidden="true">⚡</span> Activation rapide après validation
+                <span aria-hidden="true">⚡</span> Activation automatique après paiement
               </li>
               <li>
                 <span aria-hidden="true">💬</span> Support si besoin d&apos;aide

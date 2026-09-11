@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -180,6 +180,28 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   // l'admin, qui applique le bon template / réglage adulte au provisioning).
   await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_adult BOOLEAN NOT NULL DEFAULT false`;
   await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_french BOOLEAN NOT NULL DEFAULT false`;
+
+  /* ---------- Paiement par carte (Stripe) ---------- */
+
+  // Une commande n'est plus insérée « en attente » directement : elle passe
+  // par 'awaiting_payment' (session Stripe ouverte, non payée) avant de
+  // devenir 'pending' (payée, à provisionner) puis 'fulfilled'.
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS stripe_session_id TEXT`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`;
+  await raw`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_stripe_session
+      ON iptv_orders (stripe_session_id) WHERE stripe_session_id IS NOT NULL
+  `;
+
+  // Déduplication des webhooks Stripe (un événement peut être renvoyé
+  // plusieurs fois par Stripe ; on ne le traite qu'une seule fois).
+  await raw`
+    CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+      id         TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
 
   // Journal d'audit : chaque appel sensible vers GoldenOTT (création,
   // prolongation, remboursement, sync) y est tracé, succès comme échec.

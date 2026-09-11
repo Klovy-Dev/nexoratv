@@ -46,62 +46,39 @@ function rows(info: OrderMailInfo): [string, string][] {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Commande passée : client + équipe                                  */
+/*  Paiement reçu, provisioning automatique échoué → alerte équipe     */
 /* ------------------------------------------------------------------ */
 
-export async function sendOrderPlacedEmails(info: OrderMailInfo): Promise<void> {
-  const site = await appOrigin();
-  const noun = info.isRenewal ? "demande de renouvellement" : "commande";
-
+export async function sendProvisioningFailedAlert(
+  info: OrderMailInfo & { reason: string },
+): Promise<void> {
   try {
+    const site = await appOrigin();
+    const to = await notifyEmail();
+    if (!to) return;
     await sendEmail({
-      to: info.customerEmail,
-      subject: info.isRenewal
-        ? "Votre demande de renouvellement a bien été reçue"
-        : "Votre commande NexoraTV a bien été reçue",
+      to,
+      subject: `⚠️ Paiement reçu, activation à faire manuellement — ${info.title}`,
+      replyTo: info.customerEmail,
       html: renderEmail({
-        preheader: `${info.title} — ${formatPrice(info.priceCents)}. Validation en cours.`,
-        title: "Nous avons bien reçu votre commande",
+        preheader: `${info.customerName} a payé mais l'activation automatique a échoué.`,
+        title: "Activation automatique échouée",
         siteUrl: site,
         bodyHtml: `
-          ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
-          ${p(`Votre ${noun} est enregistrée. Notre équipe la valide au plus vite ; vous recevrez un e-mail dès qu'elle est activée.`)}
-          ${infoTable(rows(info))}
-          ${emailButton(`${site}/profil`, "Suivre ma commande")}
-          ${p(`<span style="color:#828aa0;font-size:13px">Aucun paiement n'a été prélevé pour l'instant.</span>`)}
+          ${p(`Le paiement de <strong>${escapeHtml(info.customerName)}</strong> a bien été reçu, mais l'activation automatique du côté GoldenOTT a échoué.`)}
+          ${infoTable([
+            ["Client", info.customerName],
+            ["E-mail", info.customerEmail],
+            ...rows(info),
+          ])}
+          ${noteBox(escapeHtml(info.reason))}
+          ${emailButton(`${site}/admin/commandes`, "Traiter manuellement")}
         `,
       }),
-      text: `Bonjour ${info.customerName},\n\nVotre ${noun} est enregistrée : ${info.title} — ${formatPrice(info.priceCents)}.\nNotre équipe la valide au plus vite.\n\nSuivi : ${site}/profil`,
+      text: `Paiement reçu mais activation automatique échouée.\nClient : ${info.customerName} <${info.customerEmail}>\nOffre : ${info.title} — ${formatPrice(info.priceCents)}\nErreur : ${info.reason}\n\n${site}/admin/commandes`,
     });
   } catch (err) {
-    console.error("[order-mail] client 'reçue' échec", err);
-  }
-
-  try {
-    const to = await notifyEmail();
-    if (to) {
-      await sendEmail({
-        to,
-        subject: `Nouvelle ${noun} — ${info.title}`,
-        replyTo: info.customerEmail,
-        html: renderEmail({
-          preheader: `${info.customerName} · ${info.title} · ${formatPrice(info.priceCents)}`,
-          title: info.isRenewal ? "Demande de renouvellement" : "Nouvelle commande",
-          siteUrl: site,
-          bodyHtml: `
-            ${infoTable([
-              ["Client", info.customerName],
-              ["E-mail", info.customerEmail],
-              ...rows(info),
-            ])}
-            ${emailButton(`${site}/admin/commandes`, "Traiter la commande")}
-          `,
-        }),
-        text: `${info.isRenewal ? "Renouvellement" : "Nouvelle commande"}\nClient : ${info.customerName} <${info.customerEmail}>\nOffre : ${info.title} — ${formatPrice(info.priceCents)}\n\n${site}/admin/commandes`,
-      });
-    }
-  } catch (err) {
-    console.error("[order-mail] équipe 'nouvelle commande' échec", err);
+    console.error("[order-mail] alerte activation échouée", err);
   }
 }
 
@@ -141,26 +118,29 @@ export async function sendOrderAcceptedEmail(
 /* ------------------------------------------------------------------ */
 
 export async function sendOrderRejectedEmail(
-  info: OrderMailInfo & { reason: string },
+  info: OrderMailInfo & { reason: string; refunded: boolean },
 ): Promise<void> {
+  const moneyNote = info.refunded
+    ? "Vous avez été débité(e) mais serez intégralement remboursé(e) sous quelques jours."
+    : "Aucun montant n'a été prélevé.";
   try {
     const site = await appOrigin();
     await sendEmail({
       to: info.customerEmail,
       subject: "Votre commande NexoraTV n'a pas pu être validée",
       html: renderEmail({
-        preheader: `${info.title} — aucun montant prélevé.`,
+        preheader: `${info.title} — ${moneyNote}`,
         title: "Votre commande n'a pas pu être validée",
         siteUrl: site,
         bodyHtml: `
           ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
           ${p(`Votre commande <strong>${escapeHtml(info.title)}</strong> n'a pas pu être validée.`)}
           ${info.reason ? `<p style="margin:0 0 6px;font-size:13px;color:#828aa0">Motif</p>${noteBox(escapeHtml(info.reason))}` : ""}
-          ${p("Aucun montant n'a été prélevé. Pour toute question, répondez à cet e-mail ou passez par la page contact.")}
+          ${p(`${moneyNote} Pour toute question, répondez à cet e-mail ou passez par la page contact.`)}
           ${emailButton(`${site}/contact`, "Nous contacter")}
         `,
       }),
-      text: `Bonjour ${info.customerName},\n\nVotre commande "${info.title}" n'a pas pu être validée.${info.reason ? `\nMotif : ${info.reason}` : ""}\nAucun montant n'a été prélevé.\n\nContact : ${site}/contact`,
+      text: `Bonjour ${info.customerName},\n\nVotre commande "${info.title}" n'a pas pu être validée.${info.reason ? `\nMotif : ${info.reason}` : ""}\n${moneyNote}\n\nContact : ${site}/contact`,
     });
   } catch (err) {
     console.error("[order-mail] client 'refusée' échec", err);

@@ -95,7 +95,12 @@ export function offerPriceCents(
   return offer.price_cents + extra * offer.extra_screen_cents;
 }
 
-export type OrderStatus = "pending" | "fulfilled" | "rejected" | "cancelled";
+export type OrderStatus =
+  | "awaiting_payment"
+  | "pending"
+  | "fulfilled"
+  | "rejected"
+  | "cancelled";
 
 export interface Order {
   id: number;
@@ -119,6 +124,11 @@ export interface Order {
   subscription_id: number | null;
   customer_note: string;
   admin_note: string;
+  /** identifiant de la session Stripe Checkout ouverte pour cette commande */
+  stripe_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  /** horodatage de la confirmation de paiement Stripe */
+  paid_at: string | null;
   created_at: string;
   decided_at: string | null;
 }
