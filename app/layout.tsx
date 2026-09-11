@@ -22,6 +22,21 @@ export const metadata: Metadata = {
     "NexoraTV : des milliers de chaînes, films et séries en direct. Une expérience de streaming moderne, fluide et sans coupure.",
   applicationName: "NexoraTV",
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "NexoraTV — Streaming nouvelle génération",
+    description:
+      "Des milliers de chaînes, films et séries en direct sur tous vos écrans.",
+    images: [{ url: "/logo-full.png", width: 480, height: 480 }],
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "NexoraTV — Streaming nouvelle génération",
+    description:
+      "Des milliers de chaînes, films et séries en direct sur tous vos écrans.",
+    images: ["/logo-full.png"],
+  },
 };
 
 export const viewport: Viewport = {

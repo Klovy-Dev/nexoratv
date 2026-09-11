@@ -107,7 +107,10 @@ export function renderEmail(o: EmailOpts): string {
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:${C.card};border:1px solid ${C.border};border-radius:16px;overflow:hidden;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif">
         <tr>
           <td style="padding:26px 32px 0">
-            <a href="${o.siteUrl}" style="color:${C.heading};font-size:20px;font-weight:800;text-decoration:none;letter-spacing:-.01em">Nexora<span style="color:${C.pink}">TV</span></a>
+            <a href="${o.siteUrl}" style="text-decoration:none">
+              <img src="${o.siteUrl}/logo.png" width="28" height="28" alt="" style="vertical-align:middle;border-radius:7px;margin-right:8px">
+              <span style="color:${C.heading};font-size:20px;font-weight:800;letter-spacing:-.01em;vertical-align:middle">Nexora<span style="color:${C.pink}">TV</span></span>
+            </a>
           </td>
         </tr>
         <tr><td style="padding:16px 32px 0"><div style="height:3px;border-radius:3px;background:${C.grad}"></div></td></tr>

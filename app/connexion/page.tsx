@@ -16,6 +16,8 @@ export default async function ConnexionPage({
 
   return (
     <div className="auth-card reveal">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-full.png" alt="NexoraTV" className="auth-card-logo" width={84} height={84} />
       <h1>Connexion</h1>
       <p className="sub">
         Accédez à votre profil et à vos identifiants d&apos;abonnement.
