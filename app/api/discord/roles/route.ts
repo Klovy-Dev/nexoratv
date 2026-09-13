@@ -13,22 +13,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request): Promise<Response> {
   // Fail-closed : sans secret configuré, la route reste fermée.
   const secret = process.env.DISCORD_BOT_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    // DIAGNOSTIC TEMPORAIRE (à retirer) : aucune valeur secrète n'est exposée,
-    // seulement des booléens/longueurs pour localiser le problème.
-    return NextResponse.json(
-      {
-        error: "unauthorized",
-        debug: {
-          secretConfigured: Boolean(secret),
-          secretLength: secret?.length ?? 0,
-          gotAuthHeader: Boolean(authHeader),
-          authHeaderLength: authHeader?.length ?? 0,
-        },
-      },
-      { status: 401 },
-    );
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const statuses = await discordRoleStatuses();
