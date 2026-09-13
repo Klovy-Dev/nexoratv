@@ -9,6 +9,8 @@ import type {
   Order,
   OrderView,
   ProviderKind,
+  ReferralInfo,
+  ReferralReward,
   Review,
   ReviewStats,
   Subscription,
@@ -95,7 +97,16 @@ export async function purgeExpiredTrialsAndRejected(): Promise<void> {
   try {
     await sql`DELETE FROM iptv_orders WHERE status = 'rejected'`;
     // Sessions Stripe abandonnées (client reparti sans payer) : on libère
-    // l'offre après 2 h pour ne pas bloquer une nouvelle tentative.
+    // l'offre après 2 h pour ne pas bloquer une nouvelle tentative. Le crédit
+    // de parrainage réservé dessus doit d'abord être restitué au client.
+    const abandoned = (await sql`
+      SELECT user_id, credit_applied_cents FROM iptv_orders
+      WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
+        AND credit_applied_cents > 0
+    `) as unknown as { user_id: number; credit_applied_cents: number }[];
+    for (const o of abandoned) {
+      await releaseReferralCredit(o.user_id, o.credit_applied_cents);
+    }
     await sql`
       DELETE FROM iptv_orders
       WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
@@ -350,6 +361,172 @@ export async function recentGoldenottEvents(limit = 30): Promise<GoldenottEvent[
     ORDER BY created_at DESC
     LIMIT ${limit}
   `) as unknown as GoldenottEvent[];
+}
+
+/* ---------- Parrainage ---------- */
+
+/** Récompense créditée au parrain à la première commande payée d'un filleul. */
+export const REFERRAL_REWARD_CENTS = 500;
+
+/** Un client règle toujours au moins 1 € par carte, même crédit épuisé. */
+const REFERRAL_MIN_PAYABLE_CENTS = 100;
+
+export async function referralInfo(userId: number): Promise<ReferralInfo | null> {
+  const rows = (await sql`
+    SELECT referral_code AS code, referral_balance_cents AS balance_cents
+    FROM users WHERE id = ${userId}
+  `) as unknown as ReferralInfo[];
+  return rows[0] ?? null;
+}
+
+export async function userIdByReferralCode(code: string): Promise<number | null> {
+  const clean = code.trim().toUpperCase();
+  if (!clean) return null;
+  const rows = (await sql`
+    SELECT id FROM users WHERE referral_code = ${clean}
+  `) as unknown as { id: number }[];
+  return rows[0]?.id ?? null;
+}
+
+export async function referralRewardsForUser(referrerId: number): Promise<ReferralReward[]> {
+  return (await sql`
+    SELECT r.id, r.cents, r.created_at, u.name AS referred_name
+    FROM referral_rewards r
+    JOIN users u ON u.id = r.referred_user_id
+    WHERE r.referrer_id = ${referrerId}
+    ORDER BY r.created_at DESC
+  `) as unknown as ReferralReward[];
+}
+
+/**
+ * Réserve sur une commande jusqu'au solde de crédit parrainage disponible
+ * (au moins 1 € reste toujours à régler par carte, minimum imposé par
+ * Stripe) et décrémente le solde du client d'autant. Renvoie le montant
+ * réservé, en centimes.
+ */
+export async function reserveReferralCredit(
+  userId: number,
+  priceCents: number,
+): Promise<number> {
+  const maxUsable = Math.max(0, priceCents - REFERRAL_MIN_PAYABLE_CENTS);
+  if (maxUsable <= 0) return 0;
+
+  const rows = (await sql`
+    SELECT referral_balance_cents FROM users WHERE id = ${userId}
+  `) as unknown as { referral_balance_cents: number }[];
+  const applied = Math.min(rows[0]?.referral_balance_cents ?? 0, maxUsable);
+  if (applied <= 0) return 0;
+
+  await sql`
+    UPDATE users SET referral_balance_cents = referral_balance_cents - ${applied}
+    WHERE id = ${userId}
+  `;
+  return applied;
+}
+
+/** Restitue un crédit réservé (commande annulée, refusée ou abandonnée). */
+export async function releaseReferralCredit(
+  userId: number,
+  cents: number,
+): Promise<void> {
+  if (cents <= 0) return;
+  await sql`
+    UPDATE users SET referral_balance_cents = referral_balance_cents + ${cents}
+    WHERE id = ${userId}
+  `;
+}
+
+/**
+ * Récompense le parrain d'un client à sa toute première commande payée —
+ * jamais sur un renouvellement, ni sur un forfait d'essai gratuit. Sans
+ * effet si ce filleul a déjà généré une récompense (index unique sur
+ * `referred_user_id`, vérifié en base pour éviter toute course).
+ */
+export async function grantReferralReward(order: {
+  id: number;
+  user_id: number;
+  price_cents: number;
+}): Promise<void> {
+  if (order.price_cents <= 0) return;
+
+  const rows = (await sql`
+    SELECT referred_by FROM users WHERE id = ${order.user_id}
+  `) as unknown as { referred_by: number | null }[];
+  const referrerId = rows[0]?.referred_by;
+  if (!referrerId) return;
+
+  const inserted = (await sql`
+    INSERT INTO referral_rewards (referrer_id, referred_user_id, order_id, cents)
+    VALUES (${referrerId}, ${order.user_id}, ${order.id}, ${REFERRAL_REWARD_CENTS})
+    ON CONFLICT (referred_user_id) DO NOTHING
+    RETURNING id
+  `) as unknown as { id: number }[];
+  if (inserted.length === 0) return;
+
+  await sql`
+    UPDATE users SET referral_balance_cents = referral_balance_cents + ${REFERRAL_REWARD_CENTS}
+    WHERE id = ${referrerId}
+  `;
+}
+
+/* ---------- Compte Discord lié ---------- */
+
+export async function discordIdForUser(userId: number): Promise<string | null> {
+  const rows = (await sql`
+    SELECT discord_id FROM users WHERE id = ${userId}
+  `) as unknown as { discord_id: string | null }[];
+  return rows[0]?.discord_id ?? null;
+}
+
+/** @returns false si ce compte Discord est déjà relié à un autre utilisateur. */
+export async function setDiscordId(
+  userId: number,
+  discordId: string,
+): Promise<boolean> {
+  try {
+    await sql`UPDATE users SET discord_id = ${discordId} WHERE id = ${userId}`;
+    return true;
+  } catch {
+    return false; // conflit sur l'index unique (déjà relié ailleurs)
+  }
+}
+
+export async function clearDiscordId(userId: number): Promise<void> {
+  await sql`UPDATE users SET discord_id = NULL WHERE id = ${userId}`;
+}
+
+export type DiscordRoleStatus = "active" | "trial" | "none";
+
+/**
+ * Pour chaque client ayant relié son compte Discord : le rôle qui
+ * correspond à son abonnement actuel. Consommé par le bot Discord
+ * (cf. /api/discord/roles) pour synchroniser les rôles du serveur.
+ */
+export async function discordRoleStatuses(): Promise<
+  { discordId: string; status: DiscordRoleStatus }[]
+> {
+  const rows = (await sql`
+    SELECT u.discord_id, s.status, s.is_trial, s.expires_at
+    FROM users u
+    JOIN subscriptions s ON s.user_id = u.id
+    WHERE u.discord_id IS NOT NULL
+  `) as unknown as {
+    discord_id: string;
+    status: "active" | "suspended";
+    is_trial: boolean;
+    expires_at: string | null;
+  }[];
+
+  const byUser = new Map<string, DiscordRoleStatus>();
+  for (const row of rows) {
+    if (row.status !== "active" || isExpired(row.expires_at)) continue;
+    const current = byUser.get(row.discord_id);
+    const next: DiscordRoleStatus = row.is_trial ? "trial" : "active";
+    // "active" (abonnement payant) prime sur "trial" si le client a les deux.
+    if (!current || next === "active") byUser.set(row.discord_id, next);
+  }
+
+  return [...byUser.entries()].map(([discordId, status]) => ({ discordId, status }));
 }
 
 export async function logGoldenottEvent(e: {

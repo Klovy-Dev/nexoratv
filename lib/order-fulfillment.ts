@@ -1,7 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
-import { orderById, subscriptionById } from "@/lib/data";
+import { grantReferralReward, orderById, subscriptionById } from "@/lib/data";
 import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { GoldenottError } from "@/lib/goldenott";
 import {
@@ -143,4 +143,11 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
     isRenewal: false,
     subscriptionLabel: order.title,
   });
+
+  // Parrainage : ne doit jamais faire échouer l'activation déjà réussie.
+  try {
+    await grantReferralReward(order);
+  } catch (err) {
+    console.error("[order-fulfillment] récompense de parrainage échouée :", err);
+  }
 }

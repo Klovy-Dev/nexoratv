@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 11;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -259,6 +259,45 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`CREATE INDEX IF NOT EXISTS idx_tuto_sections_sort ON tuto_sections (sort, id)`;
   // Sous-titre affiché sous le titre de la section.
   await raw`ALTER TABLE tuto_sections ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`;
+
+  /* ---------- Parrainage ---------- */
+
+  // Code de parrainage (unique, généré à l'inscription) + parrain éventuel +
+  // solde de crédit gagné, exprimé en centimes.
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT`;
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id) ON DELETE SET NULL`;
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_balance_cents INTEGER NOT NULL DEFAULT 0`;
+  // Comptes déjà existants : on leur attribue un code déterministe basé sur
+  // leur id (court, unique, aucune collision possible).
+  await raw`UPDATE users SET referral_code = 'NX' || UPPER(to_hex(id)) WHERE referral_code IS NULL`;
+  await raw`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users (referral_code)`;
+
+  // Historique des récompenses accordées (un parrain ne peut être récompensé
+  // qu'une fois par filleul, sur sa toute première commande payée).
+  await raw`
+    CREATE TABLE IF NOT EXISTS referral_rewards (
+      id               SERIAL PRIMARY KEY,
+      referrer_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      order_id         INTEGER REFERENCES iptv_orders(id) ON DELETE SET NULL,
+      cents            INTEGER NOT NULL,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_rewards_referred ON referral_rewards (referred_user_id)`;
+  await raw`CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer ON referral_rewards (referrer_id, created_at DESC)`;
+
+  // Crédit de parrainage déduit sur cette commande (réservé dès la création,
+  // restitué si la commande est annulée / refusée / abandonnée).
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS credit_applied_cents INTEGER NOT NULL DEFAULT 0`;
+
+  /* ---------- Compte Discord lié (bot serveur NexoraTV) ---------- */
+
+  // Identifiant Discord (snowflake) relié via OAuth2 sur /profil, permettant
+  // au bot Discord d'attribuer automatiquement le rôle correspondant à
+  // l'abonnement du client (cf. /api/discord/roles).
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`;
+  await raw`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_discord_id ON users (discord_id) WHERE discord_id IS NOT NULL`;
 
   await raw`
     INSERT INTO app_meta (key, value)

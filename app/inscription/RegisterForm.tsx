@@ -11,7 +11,7 @@ import type { FormState } from "@/lib/types";
 
 const initial: FormState = {};
 
-export default function RegisterForm() {
+export default function RegisterForm({ refCode }: { refCode?: string }) {
   const [state, action] = useActionState(registerAction, initial);
 
   return (
@@ -90,6 +90,8 @@ export default function RegisterForm() {
             <Link href="/confidentialite">politique de confidentialité</Link>.
           </label>
         </div>
+
+        {refCode && <input type="hidden" name="ref" value={refCode} />}
 
         {/* Honeypot anti-bot */}
         <div style={{ position: "absolute", left: "-9999px" }} aria-hidden="true">

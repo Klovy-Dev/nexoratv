@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
-import { hasUsedTrial, offerById, ordersForUser } from "@/lib/data";
+import { hasUsedTrial, offerById, ordersForUser, referralInfo } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
 import { isTrialPackage, loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { formatPrice } from "@/lib/validation";
@@ -51,6 +51,7 @@ export default async function OrderStepPage({
   const trialLocked =
     isTrialPackage(catalog, offer.goldenott_package_id) &&
     (await hasUsedTrial(user.id, trialPackageIds(catalog)));
+  const referral = await referralInfo(user.id);
 
   return (
     <section className="order-step">
@@ -95,18 +96,27 @@ export default async function OrderStepPage({
                 </p>
               </div>
             ) : (
-              <OrderPageForm
-                offer={{
-                  id: offer.id,
-                  title: offer.title,
-                  kind: offer.kind,
-                  price_cents: offer.price_cents,
-                  included_screens: offer.included_screens,
-                  allow_screens: offer.allow_screens,
-                  extra_screen_cents: offer.extra_screen_cents,
-                  max_screens: offer.max_screens,
-                }}
-              />
+              <>
+                {referral && referral.balance_cents > 0 && (
+                  <div className="flash flash-success" style={{ marginBottom: 16 }}>
+                    Vous avez {formatPrice(referral.balance_cents)} de crédit
+                    parrainage — il sera déduit automatiquement de cette
+                    commande (1 € minimum reste à régler par carte).
+                  </div>
+                )}
+                <OrderPageForm
+                  offer={{
+                    id: offer.id,
+                    title: offer.title,
+                    kind: offer.kind,
+                    price_cents: offer.price_cents,
+                    included_screens: offer.included_screens,
+                    allow_screens: offer.allow_screens,
+                    extra_screen_cents: offer.extra_screen_cents,
+                    max_screens: offer.max_screens,
+                  }}
+                />
+              </>
             )}
 
             <ul className="order-reassure">

@@ -10,6 +10,7 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
+import { userIdByReferralCode } from "@/lib/data";
 import { appOrigin, resetEmailHtml, sendEmail } from "@/lib/mail";
 import {
   LOGIN_LOCKOUT_MINUTES,
@@ -51,6 +52,7 @@ export async function registerAction(
   const confirm = String(formData.get("password_confirm") ?? "");
   const accepted = formData.get("accept") === "on";
   const honeypot = str(formData.get("website"));
+  const refCode = str(formData.get("ref"));
 
   const errors: string[] = [];
   if (honeypot) errors.push("Requête invalide.");
@@ -67,10 +69,14 @@ export async function registerAction(
     return { fieldErrors: ["Impossible de créer le compte avec ces informations."] };
   }
 
+  // Un compte parrain valide (jamais soi-même, impossible à ce stade) : la
+  // récompense n'est créditée que plus tard, à la première commande payée.
+  const referredBy = refCode ? await userIdByReferralCode(refCode) : null;
+
   const hash = await hashPassword(password);
   const inserted = (await sql`
-    INSERT INTO users (name, email, password_hash, role)
-    VALUES (${name}, ${email}, ${hash}, 'client')
+    INSERT INTO users (name, email, password_hash, role, referred_by)
+    VALUES (${name}, ${email}, ${hash}, 'client', ${referredBy})
     RETURNING id, name, email, role, created_at
   `) as unknown as {
     id: number;
@@ -79,6 +85,12 @@ export async function registerAction(
     role: "client" | "admin";
     created_at: string;
   }[];
+
+  // Code de parrainage propre à ce compte, dérivé de son id (court, unique).
+  await sql`
+    UPDATE users SET referral_code = 'NX' || UPPER(to_hex(id))
+    WHERE id = ${inserted[0].id}
+  `;
 
   await createSession(inserted[0]);
   redirect("/profil?bienvenue=1");

@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import {
+  grantReferralReward,
   hasUsedTrial,
   offerById,
   orderById,
+  releaseReferralCredit,
+  reserveReferralCredit,
   subscriptionById,
 } from "@/lib/data";
 import {
@@ -148,17 +151,22 @@ export async function createOrderAction(
     return { fieldErrors: ["Vous avez déjà une commande en attente pour cette offre."] };
   }
 
+  // Crédit de parrainage disponible : réservé tout de suite (restitué si la
+  // commande est annulée / refusée / abandonnée), déduit du montant Stripe.
+  const creditApplied = await reserveReferralCredit(user.id, priceCents);
+  const chargeCents = priceCents - creditApplied;
+
   const rows = (await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
        dns_domain_id, max_connections, is_adult, want_adult, want_french, mac,
-       customer_note, status)
+       customer_note, status, credit_applied_cents)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${screens}, ${offer.is_adult}, ${wantAdult},
        ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote},
-       'awaiting_payment')
+       'awaiting_payment', ${creditApplied})
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
@@ -169,11 +177,12 @@ export async function createOrderAction(
       orderId,
       userEmail: user.email,
       title: offer.title,
-      priceCents,
+      priceCents: chargeCents,
       cancelPath: `/commander/${offer.id}`,
     });
   } catch (err) {
     await sql`DELETE FROM iptv_orders WHERE id = ${orderId}`;
+    await releaseReferralCredit(user.id, creditApplied);
     return {
       fieldErrors: [
         err instanceof Error ? err.message : "Impossible de lancer le paiement.",
@@ -220,17 +229,22 @@ export async function createRenewalOrderAction(
   }
 
   const title = `Renouvellement — ${sub.label}`;
+  const creditApplied = await reserveReferralCredit(user.id, offer.price_cents);
+  const chargeCents = offer.price_cents - creditApplied;
+
   const rows = (await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note, status)
+       dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note, status,
+       credit_applied_cents)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind},
        ${title}, ${offer.price_cents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${sub.screens ?? offer.included_screens},
        ${offer.is_adult}, ${subId},
-       ${str(formData.get("customer_note")).slice(0, 500)}, 'awaiting_payment')
+       ${str(formData.get("customer_note")).slice(0, 500)}, 'awaiting_payment',
+       ${creditApplied})
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
@@ -241,11 +255,12 @@ export async function createRenewalOrderAction(
       orderId,
       userEmail: user.email,
       title,
-      priceCents: offer.price_cents,
+      priceCents: chargeCents,
       cancelPath: "/profil",
     });
   } catch (err) {
     await sql`DELETE FROM iptv_orders WHERE id = ${orderId}`;
+    await releaseReferralCredit(user.id, creditApplied);
     return {
       fieldErrors: [
         err instanceof Error ? err.message : "Impossible de lancer le paiement.",
@@ -273,7 +288,7 @@ export async function resumeOrderPaymentAction(formData: FormData): Promise<void
       orderId: order.id,
       userEmail: user.email,
       title: order.title,
-      priceCents: order.price_cents,
+      priceCents: order.price_cents - order.credit_applied_cents,
       cancelPath: "/profil",
     });
   } catch {
@@ -291,10 +306,14 @@ export async function resumeOrderPaymentAction(formData: FormData): Promise<void
 export async function cancelOrderAction(formData: FormData): Promise<void> {
   const user = await requireUser();
   const orderId = Number(formData.get("order_id")) || 0;
-  await sql`
+  const rows = (await sql`
     UPDATE iptv_orders SET status = 'cancelled', decided_at = now()
     WHERE id = ${orderId} AND user_id = ${user.id} AND status = 'awaiting_payment'
-  `;
+    RETURNING credit_applied_cents
+  `) as unknown as { credit_applied_cents: number }[];
+  if (rows[0]?.credit_applied_cents) {
+    await releaseReferralCredit(user.id, rows[0].credit_applied_cents);
+  }
   revalidatePath("/profil");
   revalidatePath("/admin/commandes");
   redirect("/profil");
@@ -406,6 +425,12 @@ export async function approveOrderAction(
     subscriptionLabel: label,
   });
 
+  try {
+    await grantReferralReward(order);
+  } catch (err) {
+    console.error("[order-actions] récompense de parrainage échouée :", err);
+  }
+
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
   redirect("/admin/commandes?ok=1");
@@ -429,6 +454,9 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
     // Une commande 'pending' est désormais toujours une commande déjà payée
     // par carte (le paiement est confirmé avant provisioning) : la refuser
     // doit rembourser le client automatiquement.
+    if (order.credit_applied_cents) {
+      await releaseReferralCredit(order.user_id, order.credit_applied_cents);
+    }
     const hadPayment = Boolean(order.stripe_payment_intent_id);
     if (hadPayment) {
       try {

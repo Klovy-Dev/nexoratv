@@ -1,7 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
-import { ordersForUser, purgeExpiredTrialsAndRejected, subscriptionsForUser } from "@/lib/data";
+import {
+  ordersForUser,
+  purgeExpiredTrialsAndRejected,
+  referralInfo,
+  referralRewardsForUser,
+  REFERRAL_REWARD_CENTS,
+  subscriptionsForUser,
+} from "@/lib/data";
+import { appOrigin } from "@/lib/mail";
 import {
   daysUntil,
   expiryLabel,
@@ -13,6 +21,8 @@ import CopyButton from "@/components/CopyButton";
 import SecretValue from "@/components/SecretValue";
 import NameForm from "./NameForm";
 import PasswordForm from "./PasswordForm";
+import DiscordLinkCard from "./DiscordLinkCard";
+import { discordIdForUser } from "@/lib/data";
 import ProfilTabs, { type ProfilTab } from "./ProfilTabs";
 import { cancelOrderAction, resumeOrderPaymentAction } from "@/actions/order-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -47,11 +57,20 @@ export default async function ProfilPage({
   const bienvenue = params.bienvenue;
   const commande = params.commande === "1";
   const tabParam = typeof params.onglet === "string" ? params.onglet : undefined;
+  const discordStatus =
+    params.discord === "linked" || params.discord === "conflict" || params.discord === "error"
+      ? params.discord
+      : undefined;
 
-  const [subs, orders] = await Promise.all([
+  const [subs, orders, referral, referralRewards, origin, discordId] = await Promise.all([
     subscriptionsForUser(user.id),
     ordersForUser(user.id),
+    referralInfo(user.id),
+    referralRewardsForUser(user.id),
+    appOrigin(),
+    discordIdForUser(user.id),
   ]);
+  const referralLink = referral ? `${origin}/inscription?ref=${referral.code}` : "";
 
   const visibleOrders = orders.filter(
     (o) =>
@@ -238,11 +257,82 @@ export default async function ProfilPage({
       </div>
     );
 
+  const referralPanel = (
+    <>
+      <div className="empty-state" style={{ textAlign: "left" }}>
+        <p>
+          Offrez {formatPrice(REFERRAL_REWARD_CENTS)} à un ami : dès sa
+          première commande payée, vous recevez {formatPrice(REFERRAL_REWARD_CENTS)}{" "}
+          de crédit, déduits automatiquement de votre prochaine commande.
+        </p>
+      </div>
+
+      {referral && (
+        <div className="grid-2" style={{ marginTop: 16 }}>
+          <div className="panel">
+            <h3 style={{ marginTop: 0 }}>Votre lien de parrainage</h3>
+            <div className="cred-list">
+              <div className="cred-row">
+                <span className="k">Code</span>
+                <span className="v">{referral.code}</span>
+                <CopyButton value={referral.code} />
+              </div>
+              <div className="cred-row">
+                <span className="k">Lien</span>
+                <span className="v" style={{ fontSize: "0.8rem" }}>
+                  {referralLink}
+                </span>
+                <CopyButton value={referralLink} />
+              </div>
+            </div>
+          </div>
+
+          <div className="panel">
+            <h3 style={{ marginTop: 0 }}>Votre crédit</h3>
+            <div className="order-recap-price" style={{ padding: 0 }}>
+              <strong>{formatPrice(referral.balance_cents)}</strong>
+            </div>
+            <p className="muted" style={{ fontSize: "0.85rem", marginTop: 6 }}>
+              Appliqué automatiquement à votre prochaine commande (1 €
+              minimum reste toujours à régler par carte).
+            </p>
+          </div>
+        </div>
+      )}
+
+      {referralRewards.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Historique</h3>
+          <div className="order-track">
+            {referralRewards.map((r) => (
+              <div className="order-track-card dot-success" key={r.id}>
+                <div className="order-track-main">
+                  <strong>{r.referred_name}</strong>
+                  <span className="muted">
+                    Premier abonnement payé · {formatDate(r.created_at)}
+                  </span>
+                </div>
+                <div className="order-track-side">
+                  <span className="badge badge-active">
+                    +{formatPrice(r.cents)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   const accountPanel = (
     <>
       <div className="grid-2">
         <NameForm currentName={user.name} email={user.email} />
         <PasswordForm />
+      </div>
+      <div style={{ marginTop: 20 }}>
+        <DiscordLinkCard discordId={discordId} status={discordStatus} />
       </div>
     </>
   );
@@ -255,6 +345,7 @@ export default async function ProfilPage({
       badge: pendingCount || undefined,
       content: ordersPanel,
     },
+    { id: "parrainage", label: "Parrainage", content: referralPanel },
     { id: "compte", label: "Paramètres du compte", content: accountPanel },
   ];
 

@@ -9,6 +9,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { passwordProblems, str } from "@/lib/validation";
+import { clearDiscordId } from "@/lib/data";
 import type { FormState } from "@/lib/types";
 
 export async function updateNameAction(
@@ -54,4 +55,10 @@ export async function changePasswordAction(
   const hash = await hashPassword(next);
   await sql`UPDATE users SET password_hash = ${hash} WHERE id = ${user.id}`;
   return { ok: true };
+}
+
+export async function unlinkDiscordAction(_formData: FormData): Promise<void> {
+  const user = await requireUser();
+  await clearDiscordId(user.id);
+  revalidatePath("/profil");
 }

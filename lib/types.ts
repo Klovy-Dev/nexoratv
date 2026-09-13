@@ -129,6 +129,8 @@ export interface Order {
   stripe_payment_intent_id: string | null;
   /** horodatage de la confirmation de paiement Stripe */
   paid_at: string | null;
+  /** crédit de parrainage déduit du prix affiché, réservé sur cette commande */
+  credit_applied_cents: number;
   created_at: string;
   decided_at: string | null;
 }
@@ -176,6 +178,23 @@ export interface TutoSection {
   published: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/* ---------- Parrainage ---------- */
+
+/** Solde et code de parrainage d'un client. */
+export interface ReferralInfo {
+  code: string;
+  balance_cents: number;
+}
+
+/** Une récompense accordée à un parrain (ligne d'historique). */
+export interface ReferralReward {
+  id: number;
+  cents: number;
+  created_at: string;
+  /** nom du filleul à l'origine de la récompense */
+  referred_name: string;
 }
 
 /** Playlist M3U assignée à une adresse MAC — cf. /admin/playlist. */
