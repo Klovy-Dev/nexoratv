@@ -450,6 +450,8 @@ export interface RemoteSubscription {
   enabled: number | null;
   packageName: string | null;
   isUsed: boolean | null;
+  /** forfait actuellement actif côté GoldenOTT est-il un essai ? null = information absente de la réponse. */
+  isTrial: boolean | null;
 }
 
 export async function getSubscription(
@@ -480,6 +482,7 @@ export async function getSubscription(
           : null,
     packageName: pkg?.package_name ?? pkg?.name ?? null,
     isUsed: "is_used" in d ? bool(d.is_used) : null,
+    isTrial: "is_trial" in d ? bool(d.is_trial) : null,
   };
 }
 

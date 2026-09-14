@@ -347,15 +347,21 @@ export async function syncSubscriptionLocal(
 
   const nextStatus = localStatus(remote.status, remote.enabled);
   const nextExpiry = remote.expiresAt ?? sub.expires_at;
+  // GoldenOTT indique lui-même si le forfait actuellement actif est un essai :
+  // corrige is_trial sans jamais toucher à la durée réelle (utile quand une
+  // prolongation vers un forfait payant a laissé is_trial=true en base).
+  const nextIsTrial = remote.isTrial ?? sub.is_trial;
   const changed =
     nextExpiry !== sub.expires_at ||
     nextStatus !== sub.status ||
+    nextIsTrial !== sub.is_trial ||
     (remote.status ?? null) !== sub.provider_status;
 
   await sql`
     UPDATE subscriptions SET
       expires_at = ${nextExpiry}::date,
       status = ${nextStatus},
+      is_trial = ${nextIsTrial},
       provider_status = ${remote.status},
       server_url = COALESCE(NULLIF(${remote.dnsLink ?? ""}, ''), server_url),
       synced_at = now()
