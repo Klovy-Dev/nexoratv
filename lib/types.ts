@@ -95,6 +95,8 @@ export function offerPriceCents(
   return offer.price_cents + extra * offer.extra_screen_cents;
 }
 
+export type PaymentProvider = "stripe" | "paypal";
+
 export type OrderStatus =
   | "awaiting_payment"
   | "pending"
@@ -124,10 +126,15 @@ export interface Order {
   subscription_id: number | null;
   customer_note: string;
   admin_note: string;
+  /** moyen de paiement choisi par le client pour cette commande */
+  payment_provider: PaymentProvider;
   /** identifiant de la session Stripe Checkout ouverte pour cette commande */
   stripe_session_id: string | null;
   stripe_payment_intent_id: string | null;
-  /** horodatage de la confirmation de paiement Stripe */
+  /** identifiant de la commande PayPal (Orders v2) ouverte pour cette commande */
+  paypal_order_id: string | null;
+  paypal_capture_id: string | null;
+  /** horodatage de la confirmation de paiement (Stripe ou PayPal) */
   paid_at: string | null;
   /** crédit de parrainage déduit du prix affiché, réservé sur cette commande */
   credit_applied_cents: number;

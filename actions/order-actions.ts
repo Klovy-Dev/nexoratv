@@ -26,10 +26,11 @@ import {
 } from "@/lib/goldenott-provision";
 import { appOrigin } from "@/lib/mail";
 import { errMessages } from "@/lib/order-fulfillment";
+import { createPaypalOrder, paypalConfigured, refundPaypalCapture } from "@/lib/paypal";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 import { isMac, normalizeMac, str } from "@/lib/validation";
 import { sendOrderAcceptedEmail, sendOrderRejectedEmail } from "@/lib/order-mail";
-import { offerPriceCents, type FormState } from "@/lib/types";
+import { offerPriceCents, type FormState, type PaymentProvider } from "@/lib/types";
 
 /**
  * Ouvre une session Stripe Checkout pour une commande déjà enregistrée
@@ -74,6 +75,48 @@ async function createCheckoutSession(opts: {
   return session.url;
 }
 
+/**
+ * Ouvre une commande PayPal (Orders v2) pour une commande déjà enregistrée
+ * et enregistre son identifiant. Renvoie le lien d'approbation PayPal vers
+ * lequel rediriger le client.
+ */
+async function createPaypalCheckout(opts: {
+  orderId: number;
+  title: string;
+  priceCents: number;
+  cancelPath: string;
+}): Promise<string> {
+  const site = await appOrigin();
+  const created = await createPaypalOrder({
+    amountCents: opts.priceCents,
+    description: opts.title,
+    customId: String(opts.orderId),
+    returnUrl: `${site}/api/paypal/return?order_id=${opts.orderId}`,
+    cancelUrl: `${site}${opts.cancelPath}?annule=1`,
+  });
+
+  await sql`
+    UPDATE iptv_orders SET paypal_order_id = ${created.id} WHERE id = ${opts.orderId}
+  `;
+
+  return created.approveUrl;
+}
+
+/** Choisit et vérifie le moyen de paiement soumis par le client. */
+function pickPaymentMethod(formData: FormData): PaymentProvider | null {
+  const method = str(formData.get("payment_method")) === "paypal" ? "paypal" : "stripe";
+  if (method === "stripe" && !stripeConfigured()) return null;
+  if (method === "paypal" && !paypalConfigured()) return null;
+  return method;
+}
+
+async function openCheckout(
+  method: PaymentProvider,
+  opts: { orderId: number; userEmail: string; title: string; priceCents: number; cancelPath: string },
+): Promise<string> {
+  return method === "paypal" ? createPaypalCheckout(opts) : createCheckoutSession(opts);
+}
+
 /* ================================================================== */
 /*  CÔTÉ CLIENT                                                         */
 /* ================================================================== */
@@ -85,9 +128,10 @@ export async function createOrderAction(
 ): Promise<FormState> {
   const user = await requireUser();
 
-  if (!stripeConfigured()) {
+  const paymentMethod = pickPaymentMethod(formData);
+  if (!paymentMethod) {
     return {
-      fieldErrors: ["Le paiement par carte n'est pas configuré pour le moment."],
+      fieldErrors: ["Ce moyen de paiement n'est pas configuré pour le moment."],
     };
   }
 
@@ -160,20 +204,20 @@ export async function createOrderAction(
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
        dns_domain_id, max_connections, is_adult, want_adult, want_french, mac,
-       customer_note, status, credit_applied_cents)
+       customer_note, status, credit_applied_cents, payment_provider)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${screens}, ${offer.is_adult}, ${wantAdult},
        ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote},
-       'awaiting_payment', ${creditApplied})
+       'awaiting_payment', ${creditApplied}, ${paymentMethod})
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
 
   let checkoutUrl: string;
   try {
-    checkoutUrl = await createCheckoutSession({
+    checkoutUrl = await openCheckout(paymentMethod, {
       orderId,
       userEmail: user.email,
       title: offer.title,
@@ -201,9 +245,10 @@ export async function createRenewalOrderAction(
 ): Promise<FormState> {
   const user = await requireUser();
 
-  if (!stripeConfigured()) {
+  const paymentMethod = pickPaymentMethod(formData);
+  if (!paymentMethod) {
     return {
-      fieldErrors: ["Le paiement par carte n'est pas configuré pour le moment."],
+      fieldErrors: ["Ce moyen de paiement n'est pas configuré pour le moment."],
     };
   }
 
@@ -236,7 +281,7 @@ export async function createRenewalOrderAction(
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
        dns_domain_id, max_connections, is_adult, renew_sub_id, customer_note, status,
-       credit_applied_cents)
+       credit_applied_cents, payment_provider)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind},
        ${title}, ${offer.price_cents},
@@ -244,14 +289,14 @@ export async function createRenewalOrderAction(
        ${offer.dns_domain_id}, ${sub.screens ?? offer.included_screens},
        ${offer.is_adult}, ${subId},
        ${str(formData.get("customer_note")).slice(0, 500)}, 'awaiting_payment',
-       ${creditApplied})
+       ${creditApplied}, ${paymentMethod})
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
 
   let checkoutUrl: string;
   try {
-    checkoutUrl = await createCheckoutSession({
+    checkoutUrl = await openCheckout(paymentMethod, {
       orderId,
       userEmail: user.email,
       title,
@@ -284,7 +329,7 @@ export async function resumeOrderPaymentAction(formData: FormData): Promise<void
 
   let checkoutUrl: string;
   try {
-    checkoutUrl = await createCheckoutSession({
+    checkoutUrl = await openCheckout(order.payment_provider, {
       orderId: order.id,
       userEmail: user.email,
       title: order.title,
@@ -457,15 +502,22 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
     if (order.credit_applied_cents) {
       await releaseReferralCredit(order.user_id, order.credit_applied_cents);
     }
-    const hadPayment = Boolean(order.stripe_payment_intent_id);
+    const hadPayment =
+      order.payment_provider === "paypal"
+        ? Boolean(order.paypal_capture_id)
+        : Boolean(order.stripe_payment_intent_id);
     if (hadPayment) {
       try {
-        await stripe().refunds.create({
-          payment_intent: order.stripe_payment_intent_id!,
-        });
+        if (order.payment_provider === "paypal") {
+          await refundPaypalCapture(order.paypal_capture_id!);
+        } else {
+          await stripe().refunds.create({
+            payment_intent: order.stripe_payment_intent_id!,
+          });
+        }
       } catch (err) {
         console.error(
-          `[order-actions] remboursement Stripe échoué pour la commande #${orderId}`,
+          `[order-actions] remboursement ${order.payment_provider} échoué pour la commande #${orderId}`,
           err,
         );
       }

@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -298,6 +298,26 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   // l'abonnement du client (cf. /api/discord/roles).
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`;
   await raw`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_discord_id ON users (discord_id) WHERE discord_id IS NOT NULL`;
+
+  /* ---------- Paiement PayPal (alternative à Stripe) ---------- */
+
+  // Moyen de paiement utilisé pour cette commande — détermine quel service
+  // rembourser en cas de refus admin (cf. rejectOrderAction).
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS payment_provider TEXT NOT NULL DEFAULT 'stripe'`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS paypal_order_id TEXT`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS paypal_capture_id TEXT`;
+  await raw`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_paypal_order
+      ON iptv_orders (paypal_order_id) WHERE paypal_order_id IS NOT NULL
+  `;
+
+  // Déduplication des webhooks PayPal (même principe que stripe_webhook_events).
+  await raw`
+    CREATE TABLE IF NOT EXISTS paypal_webhook_events (
+      id         TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
 
   await raw`
     INSERT INTO app_meta (key, value)

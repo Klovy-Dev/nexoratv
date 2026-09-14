@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { hasUsedTrial, offerById, ordersForUser, referralInfo } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
 import { isTrialPackage, loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
+import { paypalConfigured } from "@/lib/paypal";
 import { formatPrice } from "@/lib/validation";
 import OrderPageForm from "./OrderPageForm";
 import type { ProviderKind } from "@/lib/types";
@@ -115,6 +116,7 @@ export default async function OrderStepPage({
                     extra_screen_cents: offer.extra_screen_cents,
                     max_screens: offer.max_screens,
                   }}
+                  paypalEnabled={paypalConfigured()}
                 />
               </>
             )}

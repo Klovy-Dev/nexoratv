@@ -20,9 +20,16 @@ export interface OrderStepOffer {
   max_screens: number;
 }
 
-export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
+export default function OrderPageForm({
+  offer,
+  paypalEnabled,
+}: {
+  offer: OrderStepOffer;
+  paypalEnabled: boolean;
+}) {
   const [state, action] = useActionState(createOrderAction, initial);
   const [screens, setScreens] = useState<number>(offer.included_screens || 1);
+  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">("stripe");
 
   const showScreens = offer.kind === "line" && offer.allow_screens;
   const total = useMemo(
@@ -113,6 +120,40 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
         />
       </div>
 
+      {paypalEnabled && (
+        <div className="form-group">
+          <label>Moyen de paiement</label>
+          <div className="order-options">
+            <label className="order-option">
+              <input
+                type="radio"
+                name="payment_method"
+                value="stripe"
+                checked={paymentMethod === "stripe"}
+                onChange={() => setPaymentMethod("stripe")}
+              />
+              <span>
+                <strong>Carte bancaire</strong>
+                <small>Visa, Mastercard… via Stripe.</small>
+              </span>
+            </label>
+            <label className="order-option">
+              <input
+                type="radio"
+                name="payment_method"
+                value="paypal"
+                checked={paymentMethod === "paypal"}
+                onChange={() => setPaymentMethod("paypal")}
+              />
+              <span>
+                <strong>PayPal</strong>
+                <small>Compte PayPal ou carte via PayPal.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
       <div className="order-total">
         <span>Total à régler</span>
         <strong>{formatPrice(total)}</strong>
@@ -120,12 +161,14 @@ export default function OrderPageForm({ offer }: { offer: OrderStepOffer }) {
 
       <SubmitButton
         className="btn btn-primary btn-block"
-        pendingLabel="Redirection vers Stripe…"
+        pendingLabel={
+          paymentMethod === "paypal" ? "Redirection vers PayPal…" : "Redirection vers Stripe…"
+        }
       >
-        Payer {formatPrice(total)} avec Stripe
+        Payer {formatPrice(total)} {paymentMethod === "paypal" ? "avec PayPal" : "avec Stripe"}
       </SubmitButton>
       <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
-        🔒 Paiement sécurisé par carte bancaire, traité par Stripe.
+        🔒 Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
       </p>
     </form>
   );
