@@ -598,6 +598,30 @@ export async function expiringSubscriptionsForReminder(
   }));
 }
 
+/**
+ * Essais (is_trial = true) reliés à un compte Discord qui se terminent
+ * aujourd'hui — utilisé pour relancer vers un forfait payant.
+ */
+export async function expiringTrialsForReminder(): Promise<ExpiringSubscription[]> {
+  const rows = (await sql`
+    SELECT s.id AS subscription_id, u.discord_id, s.label, s.expires_at
+    FROM subscriptions s
+    JOIN users u ON u.id = s.user_id
+    WHERE u.discord_id IS NOT NULL
+      AND s.status = 'active'
+      AND s.is_trial = true
+      AND s.expires_at = CURRENT_DATE
+  `) as unknown as { subscription_id: number; discord_id: string; label: string; expires_at: string }[];
+
+  return rows.map((r) => ({
+    subscriptionId: r.subscription_id,
+    discordId: r.discord_id,
+    label: r.label,
+    expiresAt: toDateString(r.expires_at) ?? r.expires_at,
+    daysLeft: 0,
+  }));
+}
+
 export interface DiscordStatsSnapshot {
   totalUsers: number;
   activeSubs: number;

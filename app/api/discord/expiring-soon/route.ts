@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { expiringSubscriptionsForReminder } from "@/lib/data";
+import { expiringSubscriptionsForReminder, expiringTrialsForReminder } from "@/lib/data";
 
 /**
- * Consommée quotidiennement par le bot pour envoyer un rappel DM avant
- * l'expiration d'un abonnement payant.
+ * Consommée quotidiennement par le bot pour envoyer un rappel DM :
+ * - `subscriptions` : abonnements payants à J-3 (renouvellement)
+ * - `trials` : essais qui se terminent aujourd'hui (relance vers un forfait payant)
  *   curl -H "Authorization: Bearer <DISCORD_BOT_SECRET>" "https://.../api/discord/expiring-soon"
  */
 
@@ -17,6 +18,10 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const subscriptions = await expiringSubscriptionsForReminder(REMINDER_DAYS);
-  return NextResponse.json({ subscriptions });
+  const [subscriptions, trials] = await Promise.all([
+    expiringSubscriptionsForReminder(REMINDER_DAYS),
+    expiringTrialsForReminder(),
+  ]);
+
+  return NextResponse.json({ subscriptions, trials });
 }
