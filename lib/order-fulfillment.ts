@@ -10,6 +10,8 @@ import {
   provisionSubscription,
 } from "@/lib/goldenott-provision";
 import { sendOrderAcceptedEmail, sendProvisioningFailedAlert } from "@/lib/order-mail";
+import { notifyOrderWebhook } from "@/lib/discord-webhook";
+import { formatPrice } from "@/lib/validation";
 import type { OrderView } from "@/lib/types";
 
 /**
@@ -60,6 +62,12 @@ async function markProvisioningFailed(order: OrderView, message: string): Promis
     isRenewal: Boolean(order.renew_sub_id),
     reason: message,
   });
+  await notifyOrderWebhook({
+    title: '⚠️ Provisioning automatique échoué — action requise',
+    description: `**${order.user_name}** (${order.user_email})\n${order.title} — ${formatPrice(order.price_cents)}`,
+    color: 0xe74c3c,
+    fields: [{ name: 'Raison', value: message.slice(0, 1000) }],
+  });
 }
 
 async function fulfillRenewal(order: OrderView): Promise<void> {
@@ -96,6 +104,11 @@ async function fulfillRenewal(order: OrderView): Promise<void> {
     screens: order.max_connections,
     isRenewal: true,
     subscriptionLabel: sub.label,
+  });
+  await notifyOrderWebhook({
+    title: '🔁 Renouvellement traité',
+    description: `**${order.user_name}** (${order.user_email})\n${order.title} — ${formatPrice(order.price_cents)}`,
+    color: 0x2ecc71,
   });
 }
 
@@ -142,6 +155,11 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
     screens: order.max_connections,
     isRenewal: false,
     subscriptionLabel: order.title,
+  });
+  await notifyOrderWebhook({
+    title: '🛒 Nouvelle commande provisionnée',
+    description: `**${order.user_name}** (${order.user_email})\n${order.title} — ${formatPrice(order.price_cents)}`,
+    color: 0x2ecc71,
   });
 
   // Parrainage : ne doit jamais faire échouer l'activation déjà réussie.

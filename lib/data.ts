@@ -529,6 +529,105 @@ export async function discordRoleStatuses(): Promise<
   return [...byUser.entries()].map(([discordId, status]) => ({ discordId, status }));
 }
 
+/** Résumé d'abonnement pour affichage Discord (jamais le mot de passe). */
+export interface DiscordSubscriptionSummary {
+  label: string;
+  status: "active" | "suspended";
+  isTrial: boolean;
+  expiresAt: string | null;
+  expired: boolean;
+}
+
+/** @returns null si aucun compte NexoraTV n'est relié à ce Discord ID. */
+export async function subscriptionsForDiscordId(
+  discordId: string,
+): Promise<DiscordSubscriptionSummary[] | null> {
+  const users = (await sql`
+    SELECT id FROM users WHERE discord_id = ${discordId}
+  `) as unknown as { id: number }[];
+  if (!users[0]) return null;
+
+  const rows = (await sql`
+    SELECT label, status, is_trial, expires_at FROM subscriptions
+    WHERE user_id = ${users[0].id}
+    ORDER BY created_at DESC
+  `) as unknown as { label: string; status: "active" | "suspended"; is_trial: boolean; expires_at: string | null }[];
+
+  return rows.map((r) => ({
+    label: r.label,
+    status: r.status,
+    isTrial: r.is_trial,
+    expiresAt: toDateString(r.expires_at),
+    expired: isExpired(toDateString(r.expires_at)),
+  }));
+}
+
+export interface ExpiringSubscription {
+  subscriptionId: number;
+  discordId: string;
+  label: string;
+  expiresAt: string;
+  daysLeft: number;
+}
+
+/**
+ * Abonnements payants (hors essai) reliés à un compte Discord, qui expirent
+ * dans exactement `days` jours. Consommé quotidiennement par le bot pour
+ * envoyer un rappel — la déduplication (un seul rappel par abonnement) est
+ * gérée côté bot, pas ici.
+ */
+export async function expiringSubscriptionsForReminder(
+  days: number,
+): Promise<ExpiringSubscription[]> {
+  const rows = (await sql`
+    SELECT s.id AS subscription_id, u.discord_id, s.label, s.expires_at
+    FROM subscriptions s
+    JOIN users u ON u.id = s.user_id
+    WHERE u.discord_id IS NOT NULL
+      AND s.status = 'active'
+      AND s.is_trial = false
+      AND s.expires_at = CURRENT_DATE + ${days}::int
+  `) as unknown as { subscription_id: number; discord_id: string; label: string; expires_at: string }[];
+
+  return rows.map((r) => ({
+    subscriptionId: r.subscription_id,
+    discordId: r.discord_id,
+    label: r.label,
+    expiresAt: toDateString(r.expires_at) ?? r.expires_at,
+    daysLeft: days,
+  }));
+}
+
+export interface DiscordStatsSnapshot {
+  totalUsers: number;
+  activeSubs: number;
+  trialSubs: number;
+  pendingOrders: number;
+}
+
+export async function discordStatsSnapshot(): Promise<DiscordStatsSnapshot> {
+  const [users, subs, orders] = await Promise.all([
+    sql`SELECT COUNT(*)::int AS n FROM users` as unknown as Promise<{ n: number }[]>,
+    sql`
+      SELECT
+        COUNT(*) FILTER (WHERE is_trial = false)::int AS active,
+        COUNT(*) FILTER (WHERE is_trial = true)::int AS trial
+      FROM subscriptions
+      WHERE status = 'active' AND (expires_at IS NULL OR expires_at >= CURRENT_DATE)
+    ` as unknown as Promise<{ active: number; trial: number }[]>,
+    sql`SELECT COUNT(*)::int AS n FROM iptv_orders WHERE status = 'pending'` as unknown as Promise<
+      { n: number }[]
+    >,
+  ]);
+
+  return {
+    totalUsers: users[0]?.n ?? 0,
+    activeSubs: subs[0]?.active ?? 0,
+    trialSubs: subs[0]?.trial ?? 0,
+    pendingOrders: orders[0]?.n ?? 0,
+  };
+}
+
 export async function logGoldenottEvent(e: {
   actor: string;
   action: string;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { str } from "@/lib/validation";
+import { notifyReviewWebhook } from "@/lib/discord-webhook";
 import type { FormState } from "@/lib/types";
 
 export async function submitReviewAction(
@@ -32,6 +33,15 @@ export async function submitReviewAction(
   `;
 
   revalidatePath("/avis");
+
+  if (rating >= 4) {
+    await notifyReviewWebhook({
+      title: `${'⭐'.repeat(rating)} Nouvel avis`,
+      description: `**${user.name}**\n${body}`,
+      color: 0xf1c40f,
+    });
+  }
+
   return { ok: true };
 }
 
