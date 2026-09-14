@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { sql } from "@/lib/db";
 import { encryptSecret, randomCode } from "@/lib/crypto";
 import { logGoldenottEvent } from "@/lib/data";
+import { isTrialPackage, loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import {
   createSubscription,
   extendSubscription,
@@ -230,11 +231,19 @@ export async function extendSubscriptionLocal(
     throw err;
   }
 
+  // Un essai (is_trial=true) prolongé vers un forfait payant doit perdre son
+  // statut d'essai, sinon la purge quotidienne (purgeExpiredTrialsAndRejected)
+  // peut le supprimer silencieusement dès que sa DATE D'ESSAI D'ORIGINE est
+  // dépassée — même si le nouveau forfait payant est, lui, encore valide.
+  const catalog = await loadGoldenottCatalog();
+  const isTrial = isTrialPackage(catalog, packageId);
+
   await sql`
     UPDATE subscriptions SET
       expires_at = COALESCE(${result.expiresAt}::date, expires_at),
       package_id = ${packageId},
       package_label = ${packageLabel ?? sub.package_label},
+      is_trial = ${isTrial},
       status = 'active',
       synced_at = now()
     WHERE id = ${sub.id}
