@@ -5,11 +5,10 @@ import { DISCORD_INVITE_URL } from "@/lib/community-links";
 export const metadata: Metadata = {
   title: "Support",
   description:
-    "Contacter NexoraTV : support par WhatsApp, e-mail pour les demandes écrites, suppression de compte.",
+    "Contacter NexoraTV : support par Telegram, e-mail pour les demandes écrites, suppression de compte.",
 };
 
-const WHATSAPP_NUMBER = "33651446869";
-const WHATSAPP_DISPLAY = "+33 6 51 44 68 69";
+const TELEGRAM_URL = "https://t.me/+sY5fAIgqlLkzYjQ0";
 const SUPPORT_EMAIL = "contact@nexoratv.fr";
 
 export default function ContactPage() {
@@ -57,23 +56,20 @@ export default function ContactPage() {
               <div className="card-icon" aria-hidden="true">
                 💬
               </div>
-              <h3>Support WhatsApp</h3>
+              <h3>Support Telegram</h3>
               <p>
                 Le moyen le plus rapide de nous joindre : commandes, activation,
                 aide technique. On répond sous 24&nbsp;h ouvrées, et 7j/7 pour
                 les urgences techniques.
               </p>
-              <p className="muted" style={{ marginTop: 4 }}>
-                {WHATSAPP_DISPLAY}
-              </p>
               <a
                 className="btn btn-primary"
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                href={TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginTop: 16 }}
               >
-                Ouvrir WhatsApp
+                Ouvrir Telegram
               </a>
             </div>
 
@@ -87,7 +83,7 @@ export default function ContactPage() {
                 mentions légales ou à la protection des données.
               </p>
               <p className="muted" style={{ marginTop: 4 }}>
-                Le support technique et les commandes se traitent sur WhatsApp,
+                Le support technique et les commandes se traitent sur Telegram,
                 pas par e-mail.
               </p>
               <a
@@ -105,15 +101,13 @@ export default function ContactPage() {
               </div>
               <h3>Supprimer mon compte</h3>
               <p>
-                Envoyez la demande depuis le numéro ou l&apos;adresse e-mail
-                associés à votre compte. Le compte et les données personnelles
-                associées sont supprimés sous 30&nbsp;jours.
+                Envoyez la demande depuis le compte Telegram ou l&apos;adresse
+                e-mail associés à votre compte. Le compte et les données
+                personnelles associées sont supprimés sous 30&nbsp;jours.
               </p>
               <a
                 className="btn btn-ghost"
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-                  "Bonjour, je souhaite supprimer mon compte NexoraTV.",
-                )}`}
+                href={TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginTop: 16 }}
