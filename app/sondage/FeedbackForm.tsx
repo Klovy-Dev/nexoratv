@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import { submitFeedbackAction } from "@/actions/feedback-actions";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
-import StarRatingInput from "@/components/StarRatingInput";
 import type { FormState } from "@/lib/types";
 
 const initial: FormState = {};
@@ -33,23 +32,6 @@ export default function FeedbackForm({
       <FormErrors state={state} />
 
       <form action={action}>
-        <div className="form-group">
-          <label>Votre satisfaction globale</label>
-          <StarRatingInput defaultValue={3} />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="fb-liked">Qu&apos;est-ce que vous appréciez le plus ?</label>
-          <textarea
-            id="fb-liked"
-            name="liked"
-            className="textarea"
-            rows={3}
-            maxLength={1000}
-            placeholder="La fiabilité, le catalogue, le support…"
-          />
-        </div>
-
         <div className="form-group">
           <label htmlFor="fb-improve">Qu&apos;est-ce qu&apos;on pourrait améliorer ?</label>
           <textarea

@@ -5,7 +5,7 @@ import FeedbackForm from "./FeedbackForm";
 export const metadata: Metadata = {
   title: "Votre avis compte",
   description:
-    "Dites-nous ce que vous pensez de NexoraTV et ce que vous aimeriez voir ajouté.",
+    "Dites-nous ce qu'on pourrait améliorer et ce que vous aimeriez voir ajouté sur NexoraTV.",
 };
 export const dynamic = "force-dynamic";
 
@@ -25,9 +25,8 @@ export default async function SondagePage() {
           Aidez-nous à <span className="gradient-text">améliorer NexoraTV</span>
         </h1>
         <p className="lead" style={{ marginInline: "auto" }}>
-          Deux minutes suffisent. Dites-nous ce que vous aimez, ce qui vous
-          agace, et ce que vous aimeriez voir ajouté — anonymement si vous
-          préférez.
+          Deux minutes suffisent. Dites-nous ce qui vous agace et ce que vous
+          aimeriez voir ajouté — anonymement si vous préférez.
         </p>
 
         <div style={{ textAlign: "left", marginTop: 32 }}>
