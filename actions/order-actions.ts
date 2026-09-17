@@ -2,16 +2,18 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { clientIp, requireAdmin, requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import {
   grantReferralReward,
   hasUsedTrial,
+  markTrialUsedByIp,
   offerById,
   orderById,
   releaseReferralCredit,
   reserveReferralCredit,
   subscriptionById,
+  trialBlockedForIp,
 } from "@/lib/data";
 import {
   isTrialPackage,
@@ -22,10 +24,11 @@ import {
   extendSubscriptionLocal,
   prepareLineCredentials,
   provisionSubscription,
+  resolveProvisioningOptions,
   validateLineCredentials,
 } from "@/lib/goldenott-provision";
 import { appOrigin } from "@/lib/mail";
-import { errMessages } from "@/lib/order-fulfillment";
+import { errMessages, fulfillPaidOrder } from "@/lib/order-fulfillment";
 import { createPaypalOrder, paypalConfigured, refundPaypalCapture } from "@/lib/paypal";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 import { isMac, normalizeMac, str } from "@/lib/validation";
@@ -148,15 +151,27 @@ export async function createOrderAction(
 
   // L'essai n'est autorisé qu'une seule fois par compte.
   const catalog = await loadGoldenottCatalog();
-  if (
-    isTrialPackage(catalog, offer.goldenott_package_id) &&
-    (await hasUsedTrial(user.id, trialPackageIds(catalog)))
-  ) {
+  const isTrial = isTrialPackage(catalog, offer.goldenott_package_id);
+  if (isTrial && (await hasUsedTrial(user.id, trialPackageIds(catalog)))) {
     return {
       fieldErrors: [
         "Vous avez déjà profité d'un essai. Cette offre est réservée aux nouveaux comptes.",
       ],
     };
+  }
+
+  // Anti-abus : un essai gratuit déjà honoré depuis cette IP bloque les
+  // comptes suivants créés uniquement pour en rejouer un (blocage
+  // définitif, indépendant du compte utilisé).
+  if (isTrial && offerPriceCents(offer, offer.included_screens || 1) === 0) {
+    const ip = await clientIp();
+    if (await trialBlockedForIp(ip)) {
+      return {
+        fieldErrors: [
+          "Cet essai gratuit a déjà été utilisé depuis votre connexion. Vous pouvez commander une offre payante normalement.",
+        ],
+      };
+    }
   }
 
   if (offer.kind === "mag") {
@@ -214,6 +229,20 @@ export async function createOrderAction(
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
+
+  // Offre à 0 € (ex. essai gratuit) : rien à payer, donc rien à envoyer au
+  // fournisseur de paiement. Stripe accepte un Checkout Session à 0 € (il
+  // finalise sans demander de carte), mais PayPal refuse catégoriquement
+  // les commandes à 0,00 € — on court-circuite donc les deux dans ce cas et
+  // on valide directement, quel que soit le moyen de paiement choisi.
+  if (chargeCents <= 0) {
+    await fulfillPaidOrder(orderId);
+    if (isTrial) {
+      await markTrialUsedByIp(await clientIp(), orderId);
+    }
+    revalidatePath("/profil");
+    redirect("/profil?commande=1");
+  }
 
   let checkoutUrl: string;
   try {
@@ -293,6 +322,13 @@ export async function createRenewalOrderAction(
     RETURNING id
   `) as unknown as { id: number }[];
   const orderId = rows[0].id;
+
+  // Cf. createOrderAction : rien à payer, on ne sollicite aucun fournisseur.
+  if (chargeCents <= 0) {
+    await fulfillPaidOrder(orderId);
+    revalidatePath("/profil");
+    redirect("/profil?commande=1");
+  }
 
   let checkoutUrl: string;
   try {
@@ -429,15 +465,17 @@ export async function approveOrderAction(
     catalog.packages.find((p) => p.id === order.package_id)?.isTrial,
   );
 
+  const { isAdult, templateId } = resolveProvisioningOptions(order, catalog);
+
   try {
     await provisionSubscription({
       userId: order.user_id,
       kind: order.kind,
       packageId: order.package_id,
       packageLabel: order.title,
-      templateId: order.template_id,
+      templateId,
       dnsDomainId: order.dns_domain_id,
-      isAdult: order.is_adult,
+      isAdult,
       isTrial,
       label,
       note: order.customer_note,

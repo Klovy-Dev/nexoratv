@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DISCORD_INVITE_URL } from "@/lib/community-links";
 
 export const metadata: Metadata = {
   title: "Support",
@@ -10,8 +11,6 @@ export const metadata: Metadata = {
 const WHATSAPP_NUMBER = "33651446869";
 const WHATSAPP_DISPLAY = "+33 6 51 44 68 69";
 const SUPPORT_EMAIL = "contact@nexoratv.fr";
-// TODO: remplacer par le vrai lien d'invitation permanent une fois le serveur créé.
-const DISCORD_INVITE = "https://discord.gg/nexoratv";
 
 export default function ContactPage() {
   return (
@@ -45,7 +44,7 @@ export default function ContactPage() {
               </p>
               <a
                 className="btn btn-primary"
-                href={DISCORD_INVITE}
+                href={DISCORD_INVITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginTop: 16 }}

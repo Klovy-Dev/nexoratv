@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
+  hasJoinedCommunity,
   ordersForUser,
   purgeExpiredTrialsAndRejected,
   referralInfo,
@@ -52,8 +54,20 @@ export default async function ProfilPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
-  await purgeExpiredTrialsAndRejected();
   const params = await searchParams;
+
+  // Étape obligatoire après achat : tant que le compte n'a pas confirmé
+  // avoir rejoint Discord ou Telegram, /profil redirige vers /rejoindre.
+  if (!(await hasJoinedCommunity(user.id))) {
+    const qs = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (typeof value === "string") qs.set(key, value);
+    }
+    const query = qs.toString();
+    redirect(`/rejoindre?next=${encodeURIComponent(`/profil${query ? `?${query}` : ""}`)}`);
+  }
+
+  await purgeExpiredTrialsAndRejected();
   const bienvenue = params.bienvenue;
   const commande = params.commande === "1";
   const tabParam = typeof params.onglet === "string" ? params.onglet : undefined;

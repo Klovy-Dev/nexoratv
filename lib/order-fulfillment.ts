@@ -8,6 +8,7 @@ import {
   extendSubscriptionLocal,
   prepareLineCredentials,
   provisionSubscription,
+  resolveProvisioningOptions,
 } from "@/lib/goldenott-provision";
 import { sendOrderAcceptedEmail, sendProvisioningFailedAlert } from "@/lib/order-mail";
 import { notifyOrderWebhook } from "@/lib/discord-webhook";
@@ -34,8 +35,24 @@ export function errMessages(err: unknown): string[] {
  * a déjà payé, rien n'est perdu.
  */
 export async function fulfillPaidOrder(orderId: number): Promise<void> {
+  // Verrou optimiste : bascule atomiquement 'awaiting_payment' → 'pending'.
+  // Un simple SELECT puis vérification du statut laisse une fenêtre de
+  // course entre deux déclencheurs concurrents pour le même paiement (ex.
+  // PayPal : le retour navigateur ET le webhook appellent tous les deux
+  // cette fonction, parfois à quelques millisecondes d'écart) — les deux
+  // liraient 'awaiting_payment' avant que l'un des deux ne l'ait changé, et
+  // provisionneraient chacun un abonnement pour le même paiement. La clause
+  // WHERE ci-dessous est appliquée atomiquement par Postgres : un seul des
+  // appels concurrents peut « gagner » la ligne.
+  const claimed = (await sql`
+    UPDATE iptv_orders SET status = 'pending', paid_at = COALESCE(paid_at, now())
+    WHERE id = ${orderId} AND status = 'awaiting_payment'
+    RETURNING id
+  `) as unknown as { id: number }[];
+  if (claimed.length === 0) return;
+
   const order = await orderById(orderId);
-  if (!order || order.status !== "awaiting_payment") return;
+  if (!order) return;
 
   if (order.renew_sub_id) {
     await fulfillRenewal(order);
@@ -118,6 +135,7 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
     catalog.packages.find((p) => p.id === order.package_id)?.isTrial,
   );
   const creds = order.kind === "line" ? prepareLineCredentials("", "") : undefined;
+  const { isAdult, templateId } = resolveProvisioningOptions(order, catalog);
 
   try {
     await provisionSubscription({
@@ -125,9 +143,9 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
       kind: order.kind,
       packageId: order.package_id,
       packageLabel: order.title,
-      templateId: order.template_id,
+      templateId,
       dnsDomainId: order.dns_domain_id,
-      isAdult: order.is_adult,
+      isAdult,
       isTrial,
       label: order.title,
       note: order.customer_note,

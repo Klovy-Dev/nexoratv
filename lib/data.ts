@@ -304,6 +304,31 @@ export async function hasUsedTrial(
   return order.length > 0;
 }
 
+/**
+ * Cette IP a-t-elle déjà profité d'un essai gratuit (sur n'importe quel
+ * compte) ? Sert à bloquer les comptes créés uniquement pour rejouer
+ * l'essai 24h depuis la même connexion.
+ */
+export async function trialBlockedForIp(ip: string): Promise<boolean> {
+  const rows = (await sql`
+    SELECT 1 FROM trial_ip_blocks WHERE ip = ${ip} LIMIT 1
+  `) as unknown as unknown[];
+  return rows.length > 0;
+}
+
+/**
+ * Marque cette IP comme ayant consommé un essai gratuit (appelé une fois la
+ * commande d'essai validée). Idempotent : ne touche pas au premier blocage
+ * déjà enregistré si l'IP est rejouée.
+ */
+export async function markTrialUsedByIp(ip: string, orderId: number): Promise<void> {
+  await sql`
+    INSERT INTO trial_ip_blocks (ip, first_order_id)
+    VALUES (${ip}, ${orderId})
+    ON CONFLICT (ip) DO NOTHING
+  `;
+}
+
 export async function allOrders(statusFilter?: string): Promise<OrderView[]> {
   if (statusFilter) {
     return (await sql`
@@ -476,6 +501,14 @@ export async function discordIdForUser(userId: number): Promise<string | null> {
     SELECT discord_id FROM users WHERE id = ${userId}
   `) as unknown as { discord_id: string | null }[];
   return rows[0]?.discord_id ?? null;
+}
+
+/** A-t-il déjà confirmé avoir rejoint Discord/Telegram (cf. /rejoindre) ? */
+export async function hasJoinedCommunity(userId: number): Promise<boolean> {
+  const rows = (await sql`
+    SELECT community_joined_at FROM users WHERE id = ${userId}
+  `) as unknown as { community_joined_at: string | null }[];
+  return rows[0]?.community_joined_at != null;
 }
 
 /** @returns false si ce compte Discord est déjà relié à un autre utilisateur. */

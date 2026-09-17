@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 14;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -318,6 +318,26 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+
+  /* ---------- Anti-abus essai gratuit 24 h (blocage par IP) ---------- */
+
+  // Une ligne est ajoutée dès qu'un essai gratuit est honoré depuis une IP
+  // donnée : bloque définitivement les comptes suivants créés depuis la même
+  // IP pour reprendre un essai. Déblocage manuel = DELETE sur cette table.
+  await raw`
+    CREATE TABLE IF NOT EXISTS trial_ip_blocks (
+      ip            TEXT PRIMARY KEY,
+      first_order_id INTEGER REFERENCES iptv_orders(id) ON DELETE SET NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+
+  /* ---------- Communauté (Discord / Telegram) obligatoire après achat ---------- */
+
+  // Posé quand le client confirme avoir rejoint Discord ou Telegram, sur la
+  // page /rejoindre affichée juste après sa première commande — tant que
+  // c'est NULL, /profil redirige vers /rejoindre (cf. app/profil/page.tsx).
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS community_joined_at TIMESTAMPTZ`;
 
   await raw`
     INSERT INTO app_meta (key, value)

@@ -3,12 +3,17 @@ import { revalidateTag } from "next/cache";
 import { sql } from "@/lib/db";
 import { encryptSecret, randomCode } from "@/lib/crypto";
 import { logGoldenottEvent } from "@/lib/data";
-import { isTrialPackage, loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import {
+  isTrialPackage,
+  loadGoldenottCatalog,
+  type GoldenottCatalog,
+} from "@/lib/goldenott-catalog";
 import {
   createSubscription,
   extendSubscription,
   getSubscription,
   GOLDENOTT_TAG,
+  GoldenottError,
   refundSubscription,
   type CreatedSubscription,
   type GoldenottKind,
@@ -52,6 +57,51 @@ export function validateLineCredentials(
     );
   }
   return errors;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Options « adulte » / « français uniquement » cochées à la commande */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Templates GoldenOTT dédiés aux commandes « uniquement le contenu français »
+ * — deux templates distincts sur le panel revendeur (recréés le 2026-09-17,
+ * en remplacement de l'ancien template unique "Only FR + -18" id 3533,
+ * supprimé — d'où la recherche par NOM plutôt que par id figé en dur : un
+ * id gravé dans le code casse silencieusement si le template est un jour
+ * recréé sur le panel) :
+ *   - "French" : chaînes/films/séries 100 % français, SANS adulte
+ *   - "Nexora" : chaînes/films/séries 100 % français, AVEC adulte
+ */
+const FRENCH_ONLY_TEMPLATE_NAME = "French";
+const FRENCH_ADULT_TEMPLATE_NAME = "Nexora";
+
+/**
+ * Traduit les options cochées par le client au moment de la commande
+ * (want_adult / want_french) en template + flag adulte à transmettre à
+ * GoldenOTT, en plus du réglage par défaut de l'offre.
+ */
+export function resolveProvisioningOptions(
+  order: {
+    is_adult: boolean;
+    want_adult: boolean;
+    want_french: boolean;
+    template_id: number | null;
+  },
+  catalog: GoldenottCatalog,
+): { isAdult: boolean; templateId: number | null } {
+  const isAdult = order.is_adult || order.want_adult;
+  if (!order.want_french) return { isAdult, templateId: order.template_id };
+
+  const wantedName = isAdult ? FRENCH_ADULT_TEMPLATE_NAME : FRENCH_ONLY_TEMPLATE_NAME;
+  const tpl = catalog.templates.find((t) => t.name === wantedName);
+  if (!tpl) {
+    console.error(
+      `[goldenott-provision] template "${wantedName}" introuvable dans le catalogue — ` +
+        `commande « français uniquement » provisionnée avec le template par défaut de l'offre.`,
+    );
+  }
+  return { isAdult, templateId: tpl?.id ?? order.template_id };
 }
 
 /* ------------------------------------------------------------------ */
@@ -124,14 +174,27 @@ export async function provisionSubscription(
       mac: opts.mac,
     });
   } catch (err) {
+    // Contexte de la requête ayant échoué : sans ça, un "Database error
+    // occurred" générique renvoyé par GoldenOTT ne dit pas lequel du
+    // package/template/domaine était en cause — l'admin devait rejouer une
+    // enquête manuelle à chaque occurrence.
+    const ctx =
+      `[pkg ${opts.packageId}` +
+      (opts.templateId ? ` · tpl ${opts.templateId}` : "") +
+      (opts.dnsDomainId ? ` · dom ${opts.dnsDomainId}` : "") +
+      `]`;
+    const rawMessage = err instanceof Error ? err.message : "échec de création";
+    const message = `${ctx} ${rawMessage}`;
     await logGoldenottEvent({
       actor: opts.actor,
       action: "create",
       kind: opts.kind,
       ok: false,
-      message: err instanceof Error ? err.message : "échec de création",
+      message,
     });
-    throw err;
+    throw err instanceof GoldenottError
+      ? new GoldenottError(message, err.status, err.fields)
+      : err;
   }
 
   // La création ne renvoie pas le lien du serveur (dns_link) ni le statut :

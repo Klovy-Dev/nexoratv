@@ -8,6 +8,7 @@ import {
   createSession,
   destroySession,
   hashPassword,
+  requireUser,
   verifyPassword,
 } from "@/lib/auth";
 import { userIdByReferralCode } from "@/lib/data";
@@ -275,4 +276,18 @@ export async function resetPasswordAction(
 export async function logoutAction(): Promise<void> {
   await destroySession();
   redirect("/?deconnexion=1");
+}
+
+/* ------------------------------------------------------------------ */
+/*  Communauté (Discord / Telegram) — obligatoire après achat          */
+/* ------------------------------------------------------------------ */
+
+/** Le client confirme avoir rejoint Discord ou Telegram, sur /rejoindre. */
+export async function joinCommunityAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  await sql`
+    UPDATE users SET community_joined_at = now()
+    WHERE id = ${user.id} AND community_joined_at IS NULL
+  `;
+  redirect(safePath(str(formData.get("next"))) ?? "/profil");
 }
