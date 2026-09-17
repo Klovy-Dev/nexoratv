@@ -42,6 +42,8 @@ export default function OrderPageForm({
     screenChoices.push(n);
   }
 
+  const isFree = total <= 0;
+
   return (
     <form action={action} className="panel order-form">
       <h2>Votre commande</h2>
@@ -120,7 +122,7 @@ export default function OrderPageForm({
         />
       </div>
 
-      {paypalEnabled && (
+      {paypalEnabled && !isFree && (
         <div className="form-group">
           <label>Moyen de paiement</label>
           <div className="order-options">
@@ -159,17 +161,33 @@ export default function OrderPageForm({
         <strong>{formatPrice(total)}</strong>
       </div>
 
-      <SubmitButton
-        className="btn btn-primary btn-block"
-        pendingLabel={
-          paymentMethod === "paypal" ? "Redirection vers PayPal…" : "Redirection vers Stripe…"
-        }
-      >
-        Payer {formatPrice(total)} {paymentMethod === "paypal" ? "avec PayPal" : "avec Stripe"}
-      </SubmitButton>
-      <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
-        🔒 Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
-      </p>
+      {isFree ? (
+        <>
+          <SubmitButton
+            className="btn btn-primary btn-block"
+            pendingLabel="Activation en cours…"
+          >
+            Activer mon essai gratuit
+          </SubmitButton>
+          <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
+            ✅ Aucun paiement requis — votre accès est activé immédiatement.
+          </p>
+        </>
+      ) : (
+        <>
+          <SubmitButton
+            className="btn btn-primary btn-block"
+            pendingLabel={
+              paymentMethod === "paypal" ? "Redirection vers PayPal…" : "Redirection vers Stripe…"
+            }
+          >
+            Payer {formatPrice(total)} {paymentMethod === "paypal" ? "avec PayPal" : "avec Stripe"}
+          </SubmitButton>
+          <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
+            🔒 Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
+          </p>
+        </>
+      )}
     </form>
   );
 }

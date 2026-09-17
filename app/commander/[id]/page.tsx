@@ -53,6 +53,7 @@ export default async function OrderStepPage({
     isTrialPackage(catalog, offer.goldenott_package_id) &&
     (await hasUsedTrial(user.id, trialPackageIds(catalog)));
   const referral = await referralInfo(user.id);
+  const isFreeOffer = offer.price_cents === 0;
 
   return (
     <section className="order-step">
@@ -63,7 +64,7 @@ export default async function OrderStepPage({
 
         <ol className="order-steps" aria-label="Étapes de la commande">
           <li className="done">Choix de la formule</li>
-          <li className="current">Paiement</li>
+          <li className="current">{isFreeOffer ? "Confirmation" : "Paiement"}</li>
           <li>Activation automatique</li>
         </ol>
 
@@ -98,7 +99,7 @@ export default async function OrderStepPage({
               </div>
             ) : (
               <>
-                {referral && referral.balance_cents > 0 && (
+                {!isFreeOffer && referral && referral.balance_cents > 0 && (
                   <div className="flash flash-success" style={{ marginBottom: 16 }}>
                     Vous avez {formatPrice(referral.balance_cents)} de crédit
                     parrainage — il sera déduit automatiquement de cette
@@ -122,11 +123,18 @@ export default async function OrderStepPage({
             )}
 
             <ul className="order-reassure">
+              {isFreeOffer ? (
+                <li>
+                  <span aria-hidden="true">✅</span> Aucun paiement requis pour cet essai
+                </li>
+              ) : (
+                <li>
+                  <span aria-hidden="true">🔒</span> Paiement sécurisé par Stripe
+                </li>
+              )}
               <li>
-                <span aria-hidden="true">🔒</span> Paiement sécurisé par Stripe
-              </li>
-              <li>
-                <span aria-hidden="true">⚡</span> Activation automatique après paiement
+                <span aria-hidden="true">⚡</span> Activation{" "}
+                {isFreeOffer ? "immédiate" : "automatique après paiement"}
               </li>
               <li>
                 <span aria-hidden="true">💬</span> Support si besoin d&apos;aide
