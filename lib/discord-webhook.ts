@@ -43,3 +43,7 @@ export function notifyOrderWebhook(embed: DiscordEmbed): Promise<void> {
 export function notifyReviewWebhook(embed: DiscordEmbed): Promise<void> {
   return postToWebhook(process.env.DISCORD_REVIEW_WEBHOOK_URL, embed);
 }
+
+export function notifyFeedbackWebhook(embed: DiscordEmbed): Promise<void> {
+  return postToWebhook(process.env.DISCORD_FEEDBACK_WEBHOOK_URL, embed);
+}

@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 15;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -338,6 +338,25 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   // page /rejoindre affichée juste après sa première commande — tant que
   // c'est NULL, /profil redirige vers /rejoindre (cf. app/profil/page.tsx).
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS community_joined_at TIMESTAMPTZ`;
+
+  /* ---------- Sondage client (page /sondage, hors navigation) ---------- */
+
+  // Formulaire libre type "Google Form" : avis + souhaits, accessible sans
+  // compte, non lié depuis les onglets du site (partagé en direct par lien).
+  await raw`
+    CREATE TABLE IF NOT EXISTS customer_feedback (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      name       TEXT NOT NULL DEFAULT '',
+      email      TEXT NOT NULL DEFAULT '',
+      rating     SMALLINT,
+      liked      TEXT NOT NULL DEFAULT '',
+      improve    TEXT NOT NULL DEFAULT '',
+      wanted     TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_customer_feedback_created ON customer_feedback (created_at DESC)`;
 
   await raw`
     INSERT INTO app_meta (key, value)
