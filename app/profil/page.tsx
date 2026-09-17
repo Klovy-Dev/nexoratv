@@ -405,7 +405,13 @@ export default async function ProfilPage({
 
         <ProfilTabs
           tabs={tabs}
-          initial={commande ? "commandes" : tabParam}
+          initial={
+            commande
+              ? subs.length > 0
+                ? "abonnements"
+                : "commandes"
+              : tabParam
+          }
         />
       </div>
     </section>
