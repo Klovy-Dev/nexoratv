@@ -7,7 +7,7 @@
  *
  * Repasser à `false` (et redéployer) dès que le problème est résolu.
  */
-export const ORDERS_DISABLED = true;
+export const ORDERS_DISABLED = false;
 
 export const ORDERS_DISABLED_MESSAGE =
   "Les commandes sont temporairement suspendues en raison d'un problème technique indépendant de notre volonté. Merci de réessayer un peu plus tard — contactez-nous si c'est urgent.";
