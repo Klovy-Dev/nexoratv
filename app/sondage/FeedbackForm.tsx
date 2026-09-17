@@ -60,18 +60,18 @@ export default function FeedbackForm({
 
         <div className="grid-2">
           <div className="form-group">
-            <label htmlFor="fb-name">Votre nom (optionnel)</label>
+            <label htmlFor="fb-name">Votre nom</label>
             <input
               id="fb-name"
               name="name"
               className="input"
               defaultValue={defaultName}
               maxLength={80}
-              placeholder="Anonyme si vide"
+              required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="fb-email">E-mail (optionnel)</label>
+            <label htmlFor="fb-email">E-mail</label>
             <input
               id="fb-email"
               name="email"
@@ -79,7 +79,7 @@ export default function FeedbackForm({
               className="input"
               defaultValue={defaultEmail}
               maxLength={120}
-              placeholder="Pour être recontacté"
+              required
             />
           </div>
         </div>
