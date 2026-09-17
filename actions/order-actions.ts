@@ -29,6 +29,7 @@ import {
 } from "@/lib/goldenott-provision";
 import { appOrigin } from "@/lib/mail";
 import { errMessages, fulfillPaidOrder } from "@/lib/order-fulfillment";
+import { ORDERS_DISABLED, ORDERS_DISABLED_MESSAGE } from "@/lib/orders-maintenance";
 import { createPaypalOrder, paypalConfigured, refundPaypalCapture } from "@/lib/paypal";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 import { isMac, normalizeMac, str } from "@/lib/validation";
@@ -129,6 +130,8 @@ export async function createOrderAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  if (ORDERS_DISABLED) return { fieldErrors: [ORDERS_DISABLED_MESSAGE] };
+
   const user = await requireUser();
 
   const paymentMethod = pickPaymentMethod(formData);
@@ -272,6 +275,8 @@ export async function createRenewalOrderAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  if (ORDERS_DISABLED) return { fieldErrors: [ORDERS_DISABLED_MESSAGE] };
+
   const user = await requireUser();
 
   const paymentMethod = pickPaymentMethod(formData);

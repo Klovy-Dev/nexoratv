@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { hasUsedTrial, listOffers, ordersForUser } from "@/lib/data";
 import { goldenottConfigured } from "@/lib/goldenott";
 import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
+import { ORDERS_DISABLED, ORDERS_DISABLED_MESSAGE } from "@/lib/orders-maintenance";
 import { formatPrice } from "@/lib/validation";
 import type { Offer, ProviderKind } from "@/lib/types";
 
@@ -26,6 +27,26 @@ export default async function CommanderPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const done = (await searchParams).commande === "1";
+
+  if (ORDERS_DISABLED) {
+    return (
+      <section className="page-hero">
+        <div className="container">
+          <span className="eyebrow">Abonnements</span>
+          <h1>Commandes temporairement suspendues</h1>
+          <p className="lead" style={{ marginInline: "auto" }}>
+            {ORDERS_DISABLED_MESSAGE}
+          </p>
+          <p style={{ marginTop: 20 }}>
+            <Link href="/contact" className="btn btn-primary">
+              Nous contacter
+            </Link>
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   const user = await getCurrentUser();
   const configured = goldenottConfigured();
   const offers = configured ? await listOffers(true) : [];

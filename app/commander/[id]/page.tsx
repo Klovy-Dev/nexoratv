@@ -6,6 +6,7 @@ import { hasUsedTrial, offerById, ordersForUser, referralInfo } from "@/lib/data
 import { goldenottConfigured } from "@/lib/goldenott";
 import { isTrialPackage, loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { paypalConfigured } from "@/lib/paypal";
+import { ORDERS_DISABLED } from "@/lib/orders-maintenance";
 import { formatPrice } from "@/lib/validation";
 import OrderPageForm from "./OrderPageForm";
 import type { ProviderKind } from "@/lib/types";
@@ -32,6 +33,8 @@ export default async function OrderStepPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  if (ORDERS_DISABLED) redirect("/commander");
+
   const id = Number((await params).id);
   const dest = `/commander/${id}`;
 
