@@ -82,13 +82,6 @@ export default async function OffersAdminPage({
               self-service nécessitent cette connexion.
             </p>
           </div>
-        ) : catalog.error ? (
-          <div className="panel">
-            <h2>Offres</h2>
-            <p className="flash flash-error">
-              GoldenOTT injoignable : {catalog.error}
-            </p>
-          </div>
         ) : (
           <>
             <p className="lead" style={{ marginBottom: 24 }}>
@@ -100,12 +93,25 @@ export default async function OffersAdminPage({
               , où le client peut les demander.
             </p>
 
-            <OfferForm
-              editing={editing}
-              packages={packages}
-              templates={templates}
-              domains={domains}
-            />
+            {catalog.error ? (
+              <div className="panel">
+                <p className="flash flash-error">
+                  GoldenOTT injoignable : {catalog.error}
+                </p>
+                <p className="muted" style={{ marginTop: 8 }}>
+                  Impossible de créer ou modifier une offre tant que le
+                  catalogue (forfaits, templates, domaines) n&apos;est pas
+                  accessible — mais la liste ci-dessous reste consultable.
+                </p>
+              </div>
+            ) : (
+              <OfferForm
+                editing={editing}
+                packages={packages}
+                templates={templates}
+                domains={domains}
+              />
+            )}
 
             <div className="panel">
               <h2>Offres existantes ({offers.length})</h2>
