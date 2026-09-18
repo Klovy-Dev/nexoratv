@@ -6,18 +6,22 @@ import {
   allUsers,
   pendingOrdersCount,
   purgeExpiredTrialsAndRejected,
+  referralInfo,
+  referralRewardsForUser,
   subscriptionsForUser,
   subscriptionById,
   userById,
 } from "@/lib/data";
 import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { KIND_LABEL } from "@/lib/goldenott";
-import { formatDate } from "@/lib/validation";
+import { formatDate, formatPrice } from "@/lib/validation";
 import {
   deleteSubscriptionAction,
   deleteUserAction,
   setRoleAction,
+  updateUserInfoAction,
 } from "@/actions/admin-actions";
+import EditUserForm from "./EditUserForm";
 import {
   syncAllSubscriptionsAction,
   syncUserSubscriptionsAction,
@@ -282,9 +286,11 @@ async function AdminUserDetail({
   meId: number;
   editId: number | null;
 }) {
-  const [subs, catalog] = await Promise.all([
+  const [subs, catalog, referral, referralRewards] = await Promise.all([
     subscriptionsForUser(target.id),
     loadGoldenottCatalog(),
+    referralInfo(target.id),
+    referralRewardsForUser(target.id),
   ]);
   const editing =
     editId != null
@@ -306,15 +312,42 @@ async function AdminUserDetail({
     : null;
 
   const hasGoldenottSub = subs.some((s) => s.provider === "goldenott");
+  const currentSub =
+    subs.find((s) => s.status === "active" && !s.expired) ?? subs[0] ?? null;
 
   return (
     <>
       <div className="panel">
         <h2>Client — {target.name}</h2>
-        <p className="muted" style={{ fontSize: "0.92rem" }}>
-          {target.email} · inscrit le {formatDate(target.created_at)} · rôle
-          actuel : <strong>{target.role}</strong>
-        </p>
+
+        <div className="sub-admin-grid" style={{ marginTop: 12, marginBottom: 18 }}>
+          <Field label="Nom">{target.name}</Field>
+          <Field label="E-mail">{target.email}</Field>
+          <Field label="Rôle">{target.role === "admin" ? "Admin" : "Client"}</Field>
+          <Field label="Inscrit le">{formatDate(target.created_at)}</Field>
+          <Field label="Crédit parrainage">
+            {formatPrice(referral?.balance_cents ?? 0)}
+          </Field>
+          <Field label="Code parrainage">{referral?.code ?? "—"}</Field>
+          <Field label="Filleuls récompensés">
+            {referralRewards.length > 0
+              ? `${referralRewards.length} (${formatPrice(referralRewards.reduce((sum, r) => sum + r.cents, 0))} au total)`
+              : "0"}
+          </Field>
+          <Field label="Abonnement en cours">
+            {currentSub
+              ? `${currentSub.label} — ${
+                  currentSub.status === "suspended"
+                    ? "suspendu"
+                    : currentSub.expired
+                      ? "expiré"
+                      : "actif"
+                }${currentSub.expires_at ? ` (jusqu'au ${formatDate(currentSub.expires_at)})` : ""}`
+              : "Aucun"}
+          </Field>
+        </div>
+
+        <EditUserForm userId={target.id} name={target.name} email={target.email} />
 
         <div className="table-actions" style={{ marginTop: 16 }}>
           <form action={setRoleAction} className="inline-form">

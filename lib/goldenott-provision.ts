@@ -64,22 +64,41 @@ export function validateLineCredentials(
 /* ------------------------------------------------------------------ */
 
 /**
- * Templates GoldenOTT dédiés aux commandes « uniquement le contenu français »
- * — deux templates distincts sur le panel revendeur (recréés le 2026-09-17,
- * en remplacement de l'ancien template unique "Only FR + -18" id 3533,
- * supprimé — d'où la recherche par NOM plutôt que par id figé en dur : un
- * id gravé dans le code casse silencieusement si le template est un jour
- * recréé sur le panel) :
- *   - "French" : chaînes/films/séries 100 % français, SANS adulte
- *   - "Nexora" : chaînes/films/séries 100 % français, AVEC adulte
+ * Templates GoldenOTT dédiés aux options cochées à la commande — recherchés
+ * par NOM plutôt que par id figé en dur (un id gravé dans le code casse
+ * silencieusement si le template est un jour recréé sur le panel) :
+ *   - "French"      : chaînes/films/séries 100 % français, SANS adulte
+ *                     (choisie quand « français uniquement » ET « sans
+ *                     adulte » sont cochées ensemble)
+ *   - "Nexora"       : chaînes/films/séries 100 % français, AVEC adulte
+ *   - "FRANCE-LIST"  : bouquet complet SANS adulte (choisie quand seule
+ *                     l'exclusion adulte est cochée, sans « français
+ *                     uniquement »)
  */
 const FRENCH_ONLY_TEMPLATE_NAME = "French";
 const FRENCH_ADULT_TEMPLATE_NAME = "Nexora";
+const NO_ADULT_TEMPLATE_NAME = "FRANCE-LIST";
+
+function findTemplateByName(
+  catalog: GoldenottCatalog,
+  name: string,
+  context: string,
+): number | null {
+  const tpl = catalog.templates.find((t) => t.name === name);
+  if (!tpl) {
+    console.error(
+      `[goldenott-provision] template "${name}" introuvable dans le catalogue — ` +
+        `${context} provisionnée avec le template par défaut de l'offre.`,
+    );
+    return null;
+  }
+  return tpl.id;
+}
 
 /**
  * Traduit les options cochées par le client au moment de la commande
- * (want_adult / want_french) en template + flag adulte à transmettre à
- * GoldenOTT, en plus du réglage par défaut de l'offre.
+ * (want_adult / want_french / no_adult) en template + flag adulte à
+ * transmettre à GoldenOTT, en plus du réglage par défaut de l'offre.
  */
 export function resolveProvisioningOptions(
   order: {
@@ -95,17 +114,23 @@ export function resolveProvisioningOptions(
   // is_adult/want_adult : une offre qui inclut les chaînes adultes par
   // défaut peut être provisionnée sans, si le client l'a demandé.
   const isAdult = order.no_adult ? false : order.is_adult || order.want_adult;
-  if (!order.want_french) return { isAdult, templateId: order.template_id };
 
-  const wantedName = isAdult ? FRENCH_ADULT_TEMPLATE_NAME : FRENCH_ONLY_TEMPLATE_NAME;
-  const tpl = catalog.templates.find((t) => t.name === wantedName);
-  if (!tpl) {
-    console.error(
-      `[goldenott-provision] template "${wantedName}" introuvable dans le catalogue — ` +
-        `commande « français uniquement » provisionnée avec le template par défaut de l'offre.`,
-    );
+  if (order.want_french) {
+    const wantedName = isAdult ? FRENCH_ADULT_TEMPLATE_NAME : FRENCH_ONLY_TEMPLATE_NAME;
+    const templateId =
+      findTemplateByName(catalog, wantedName, "commande « français uniquement »") ??
+      order.template_id;
+    return { isAdult, templateId };
   }
-  return { isAdult, templateId: tpl?.id ?? order.template_id };
+
+  if (order.no_adult) {
+    const templateId =
+      findTemplateByName(catalog, NO_ADULT_TEMPLATE_NAME, "commande « sans chaîne adulte »") ??
+      order.template_id;
+    return { isAdult, templateId };
+  }
+
+  return { isAdult, templateId: order.template_id };
 }
 
 /* ------------------------------------------------------------------ */

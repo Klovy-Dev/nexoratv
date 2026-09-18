@@ -76,46 +76,27 @@ export default function SubscriptionForm({
   editing: Editing | null;
   goldenott: GoldenottFormData | null;
 }) {
-  const canProvision = goldenott != null && goldenott.error == null && !editing;
-  const [mode, setMode] = useState<"manual" | "goldenott">(
-    canProvision ? "goldenott" : "manual",
-  );
+  const canProvision = goldenott != null && goldenott.error == null;
 
   return (
     <div className="panel">
       <div className="form-mode-head">
-        <h2>{editing ? "Modifier l'abonnement" : "Ajouter un abonnement"}</h2>
-        {canProvision && (
-          <div className="seg">
-            <button
-              type="button"
-              className={mode === "goldenott" ? "on" : ""}
-              onClick={() => setMode("goldenott")}
-            >
-              ⚡ Via GoldenOTT
-            </button>
-            <button
-              type="button"
-              className={mode === "manual" ? "on" : ""}
-              onClick={() => setMode("manual")}
-            >
-              ✍️ Saisie manuelle
-            </button>
-          </div>
-        )}
+        <h2>{editing ? "Modifier l'abonnement (local)" : "Ajouter un abonnement"}</h2>
       </div>
 
-      {goldenott?.error && !editing && (
-        <p className="form-note" style={{ color: "var(--warning)" }}>
-          GoldenOTT indisponible ({goldenott.error}) — seule la saisie manuelle
-          est possible.
-        </p>
-      )}
-
-      {mode === "goldenott" && canProvision ? (
+      {editing ? (
+        // La fiche locale (URL serveur / identifiants / statut stockés chez
+        // nous) reste modifiable manuellement, y compris pour un abonnement
+        // provisionné via GoldenOTT — utile pour corriger une valeur sans
+        // repasser par l'API revendeur.
+        <ManualForm userId={userId} editing={editing} />
+      ) : canProvision ? (
         <GoldenottForm userId={userId} data={goldenott!} />
       ) : (
-        <ManualForm userId={userId} editing={editing} />
+        <p className="form-note" style={{ color: "var(--warning)" }}>
+          GoldenOTT indisponible{goldenott?.error ? ` (${goldenott.error})` : ""}
+          — impossible d&apos;ajouter un nouvel abonnement pour le moment.
+        </p>
       )}
     </div>
   );

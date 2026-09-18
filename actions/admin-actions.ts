@@ -10,6 +10,39 @@ import { str } from "@/lib/validation";
 import type { FormState } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
+/*  Fiche client — nom / e-mail                                        */
+/* ------------------------------------------------------------------ */
+
+export async function updateUserInfoAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const userId = Number(formData.get("user_id")) || 0;
+  const name = str(formData.get("name")).slice(0, 120);
+  const email = str(formData.get("email")).toLowerCase().slice(0, 190);
+
+  const errors: string[] = [];
+  if (!name) errors.push("Le nom est requis.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push("Adresse e-mail invalide.");
+  }
+  if (errors.length > 0) return { fieldErrors: errors };
+
+  const conflict = (await sql`
+    SELECT 1 FROM users WHERE email = ${email} AND id != ${userId}
+  `) as unknown as unknown[];
+  if (conflict.length > 0) {
+    return { fieldErrors: ["Cette adresse e-mail est déjà utilisée par un autre compte."] };
+  }
+
+  await sql`UPDATE users SET name = ${name}, email = ${email} WHERE id = ${userId}`;
+  revalidatePath("/admin");
+  redirect(`/admin?user=${userId}&ok=1`);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Ajout / modification d'un abonnement                               */
 /* ------------------------------------------------------------------ */
 
