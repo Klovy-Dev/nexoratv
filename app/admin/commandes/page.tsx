@@ -139,12 +139,13 @@ function OrderCard({
             <span className="v">{order.mac}</span>
           </div>
         )}
-        {(order.want_adult || order.want_french) && (
+        {(order.want_adult || order.want_french || order.no_adult) && (
           <div className="sub-admin-field">
             <span className="k">Options demandées</span>
             <span className="v" style={{ fontFamily: "inherit" }}>
               {[
                 order.want_adult && "🔞 Chaînes adultes",
+                order.no_adult && "🚫 Sans chaîne adulte",
                 order.want_french && "🇫🇷 Contenu français uniquement",
               ]
                 .filter(Boolean)

@@ -18,6 +18,7 @@ export interface OrderStepOffer {
   allow_screens: boolean;
   extra_screen_cents: number;
   max_screens: number;
+  is_adult: boolean;
 }
 
 export default function OrderPageForm({
@@ -51,13 +52,26 @@ export default function OrderPageForm({
       <input type="hidden" name="offer_id" value={offer.id} />
 
       <div className="order-options">
-        <label className="order-option">
-          <input type="checkbox" name="want_adult" />
-          <span>
-            <strong>Inclure les chaînes adultes</strong>
-            <small>Bouquets réservés aux adultes (18+).</small>
-          </span>
-        </label>
+        {offer.is_adult ? (
+          <label className="order-option">
+            <input type="checkbox" name="no_adult" />
+            <span>
+              <strong>Exclure les chaînes adultes</strong>
+              <small>
+                Les bouquets adultes (18+) sont inclus par défaut — cochez
+                pour un abonnement sans contenu adulte.
+              </small>
+            </span>
+          </label>
+        ) : (
+          <label className="order-option">
+            <input type="checkbox" name="want_adult" />
+            <span>
+              <strong>Inclure les chaînes adultes</strong>
+              <small>Bouquets réservés aux adultes (18+).</small>
+            </span>
+          </label>
+        )}
         <label className="order-option">
           <input type="checkbox" name="want_french" />
           <span>

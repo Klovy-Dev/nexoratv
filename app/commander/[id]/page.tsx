@@ -119,6 +119,7 @@ export default async function OrderStepPage({
                     allow_screens: offer.allow_screens,
                     extra_screen_cents: offer.extra_screen_cents,
                     max_screens: offer.max_screens,
+                    is_adult: offer.is_adult,
                   }}
                   paypalEnabled={paypalConfigured()}
                 />
@@ -174,8 +175,12 @@ export default async function OrderStepPage({
                 </div>
               )}
               <div>
-                <dt>Contenu adulte</dt>
-                <dd>{offer.is_adult ? "Inclus" : "Non inclus"}</dd>
+                <dt>Chaîne adulte</dt>
+                <dd>
+                  {offer.is_adult
+                    ? "Incluse (désactivable ci-contre)"
+                    : "Non incluse"}
+                </dd>
               </div>
             </dl>
           </aside>

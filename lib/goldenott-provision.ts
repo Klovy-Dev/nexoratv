@@ -86,11 +86,15 @@ export function resolveProvisioningOptions(
     is_adult: boolean;
     want_adult: boolean;
     want_french: boolean;
+    no_adult: boolean;
     template_id: number | null;
   },
   catalog: GoldenottCatalog,
 ): { isAdult: boolean; templateId: number | null } {
-  const isAdult = order.is_adult || order.want_adult;
+  // no_adult (exclusion demandée par le client) est prioritaire sur
+  // is_adult/want_adult : une offre qui inclut les chaînes adultes par
+  // défaut peut être provisionnée sans, si le client l'a demandé.
+  const isAdult = order.no_adult ? false : order.is_adult || order.want_adult;
   if (!order.want_french) return { isAdult, templateId: order.template_id };
 
   const wantedName = isAdult ? FRENCH_ADULT_TEMPLATE_NAME : FRENCH_ONLY_TEMPLATE_NAME;

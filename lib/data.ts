@@ -463,16 +463,22 @@ export async function releaseReferralCredit(
 
 /**
  * Récompense le parrain d'un client à sa toute première commande payée —
- * jamais sur un renouvellement, ni sur un forfait d'essai gratuit. Sans
- * effet si ce filleul a déjà généré une récompense (index unique sur
- * `referred_user_id`, vérifié en base pour éviter toute course).
+ * jamais sur un renouvellement, ni sur un forfait d'essai gratuit, ni sur
+ * une offre de moins d'un an (`oneYearOrMore`, calculé par l'appelant à
+ * partir du catalogue GoldenOTT). Sans effet si ce filleul a déjà généré
+ * une récompense (index unique sur `referred_user_id`, vérifié en base
+ * pour éviter toute course).
  */
-export async function grantReferralReward(order: {
-  id: number;
-  user_id: number;
-  price_cents: number;
-}): Promise<void> {
+export async function grantReferralReward(
+  order: {
+    id: number;
+    user_id: number;
+    price_cents: number;
+  },
+  oneYearOrMore: boolean,
+): Promise<void> {
   if (order.price_cents <= 0) return;
+  if (!oneYearOrMore) return;
 
   const rows = (await sql`
     SELECT referred_by FROM users WHERE id = ${order.user_id}

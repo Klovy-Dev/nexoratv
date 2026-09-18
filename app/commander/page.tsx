@@ -207,7 +207,11 @@ function OfferCard({
             ? ` · jusqu'à ${offer.max_screens} (+${formatPrice(offer.extra_screen_cents)}/écran)`
             : ""}
         </li>
-        <li>{offer.is_adult ? "Bouquets adultes inclus" : "Sans contenu adulte"}</li>
+        <li>
+          {offer.is_adult
+            ? "Chaîne adulte incluse (désactivable à la commande)"
+            : "Sans chaîne adulte"}
+        </li>
       </ul>
 
       <div className="offer-cta">

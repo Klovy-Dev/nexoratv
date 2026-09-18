@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 15;
+const SCHEMA_VERSION = 16;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -180,6 +180,9 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   // l'admin, qui applique le bon template / réglage adulte au provisioning).
   await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_adult BOOLEAN NOT NULL DEFAULT false`;
   await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS want_french BOOLEAN NOT NULL DEFAULT false`;
+  // Le client peut à l'inverse EXCLURE les chaînes adultes déjà incluses
+  // dans l'offre (offer.is_adult = true) : coché → provisioning sans adulte.
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS no_adult BOOLEAN NOT NULL DEFAULT false`;
 
   /* ---------- Paiement par carte (Stripe) ---------- */
 

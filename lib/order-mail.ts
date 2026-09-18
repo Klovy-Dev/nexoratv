@@ -87,10 +87,16 @@ export async function sendProvisioningFailedAlert(
 /* ------------------------------------------------------------------ */
 
 export async function sendOrderAcceptedEmail(
-  info: OrderMailInfo & { subscriptionLabel: string },
+  info: OrderMailInfo & { subscriptionLabel: string; m3uUrl?: string | null },
 ): Promise<void> {
   try {
     const site = await appOrigin();
+    const m3uHtml = info.m3uUrl
+      ? `${p(`<span style="color:#828aa0;font-size:13px">Lien de playlist M3U (à coller dans votre lecteur IPTV) :</span>`)}${noteBox(
+          `<a href="${escapeHtml(info.m3uUrl)}" style="color:#7fb0f5;word-break:break-all">${escapeHtml(info.m3uUrl)}</a>`,
+        )}`
+      : "";
+    const m3uText = info.m3uUrl ? `\nLien M3U : ${info.m3uUrl}` : "";
     await sendEmail({
       to: info.customerEmail,
       subject: "Votre abonnement NexoraTV est actif",
@@ -102,11 +108,12 @@ export async function sendOrderAcceptedEmail(
           ${p(`Bonjour ${escapeHtml(info.customerName)},`)}
           ${p(`Bonne nouvelle : votre ${info.isRenewal ? "renouvellement" : "abonnement"} <strong>${escapeHtml(info.subscriptionLabel)}</strong> est activé.`)}
           ${p("Vos identifiants de connexion sont disponibles dans votre espace client.")}
+          ${m3uHtml}
           ${emailButton(`${site}/profil`, "Voir mes identifiants")}
           ${p(`<span style="color:#828aa0;font-size:13px">Besoin d'aide pour l'installation ? Consultez le <a href="${site}/tuto" style="color:#7fb0f5">tutoriel</a>.</span>`)}
         `,
       }),
-      text: `Bonjour ${info.customerName},\n\nVotre ${info.isRenewal ? "renouvellement" : "abonnement"} "${info.subscriptionLabel}" est activé.\nVos identifiants : ${site}/profil`,
+      text: `Bonjour ${info.customerName},\n\nVotre ${info.isRenewal ? "renouvellement" : "abonnement"} "${info.subscriptionLabel}" est activé.\nVos identifiants : ${site}/profil${m3uText}`,
     });
   } catch (err) {
     console.error("[order-mail] client 'acceptée' échec", err);

@@ -2,8 +2,8 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { grantReferralReward, orderById, subscriptionById } from "@/lib/data";
-import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
-import { GoldenottError } from "@/lib/goldenott";
+import { isOneYearOrMorePackage, loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import { GoldenottError, lineM3uUrl } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
   prepareLineCredentials,
@@ -121,6 +121,10 @@ async function fulfillRenewal(order: OrderView): Promise<void> {
     screens: order.max_connections,
     isRenewal: true,
     subscriptionLabel: sub.label,
+    m3uUrl:
+      sub.provider_kind === "line"
+        ? lineM3uUrl(sub.server_url, sub.username, sub.password)
+        : null,
   });
   await notifyOrderWebhook({
     title: '🔁 Renouvellement traité',
@@ -137,8 +141,9 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
   const creds = order.kind === "line" ? prepareLineCredentials("", "") : undefined;
   const { isAdult, templateId } = resolveProvisioningOptions(order, catalog);
 
+  let subscriptionId: number;
   try {
-    await provisionSubscription({
+    ({ subscriptionId } = await provisionSubscription({
       userId: order.user_id,
       kind: order.kind,
       packageId: order.package_id,
@@ -155,7 +160,7 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
       maxConnections: order.max_connections,
       mac: order.kind === "mag" ? order.mac ?? undefined : undefined,
       orderId: order.id,
-    });
+    }));
   } catch (err) {
     await markProvisioningFailed(
       order,
@@ -163,6 +168,8 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
     );
     return;
   }
+
+  const newSub = order.kind === "line" ? await subscriptionById(subscriptionId) : null;
 
   await sendOrderAcceptedEmail({
     customerName: order.user_name,
@@ -173,6 +180,9 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
     screens: order.max_connections,
     isRenewal: false,
     subscriptionLabel: order.title,
+    m3uUrl: newSub
+      ? lineM3uUrl(newSub.server_url, newSub.username, newSub.password)
+      : null,
   });
   await notifyOrderWebhook({
     title: '🛒 Nouvelle commande provisionnée',
@@ -182,7 +192,7 @@ async function fulfillNewOrder(order: OrderView): Promise<void> {
 
   // Parrainage : ne doit jamais faire échouer l'activation déjà réussie.
   try {
-    await grantReferralReward(order);
+    await grantReferralReward(order, isOneYearOrMorePackage(catalog, order.package_id));
   } catch (err) {
     console.error("[order-fulfillment] récompense de parrainage échouée :", err);
   }

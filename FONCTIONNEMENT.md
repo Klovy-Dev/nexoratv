@@ -127,10 +127,11 @@ Onglets : **Mes abonnements** (identifiants, échéance), **Mes commandes**
 - Un lien `/inscription?ref=CODE` enregistre `users.referred_by` sur le
   nouveau compte.
 - Dès que ce filleul voit sa **toute première commande payée** activée
-  (jamais sur un essai gratuit ni un renouvellement), le parrain reçoit
-  5 € de crédit (`grantReferralReward`, `lib/data.ts` — constante
-  `REFERRAL_REWARD_CENTS`). Une seule récompense par filleul (contrainte
-  unique en base).
+  (jamais sur un essai gratuit ni un renouvellement, et uniquement sur une
+  offre d'**au moins 1 an** — `isOneYearOrMorePackage`, `lib/goldenott-catalog.ts`),
+  le parrain reçoit 5 € de crédit (`grantReferralReward`, `lib/data.ts` —
+  constante `REFERRAL_REWARD_CENTS`). Une seule récompense par filleul
+  (contrainte unique en base).
 - Le crédit est appliqué **automatiquement** à la commande suivante du
   parrain (réservé à la création de la commande, restitué si elle est
   annulée / refusée / abandonnée). Au moins 1 € reste toujours à régler par

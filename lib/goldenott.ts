@@ -28,6 +28,21 @@ export const KIND_LABEL: Record<GoldenottKind, string> = {
   code: "Code d'activation",
 };
 
+/**
+ * Reconstruit l'URL de playlist M3U d'une ligne à partir du lien serveur
+ * (dns_link / server_url) et des identifiants — format Xtream standard
+ * exposé par GoldenOTT. Uniquement valable pour les abonnements "line".
+ */
+export function lineM3uUrl(
+  serverUrl: string,
+  username: string,
+  password: string,
+): string | null {
+  if (!serverUrl || !username || !password) return null;
+  const base = serverUrl.replace(/\/+$/, "");
+  return `${base}/get.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&type=m3u_plus&output=ts`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Configuration                                                      */
 /* ------------------------------------------------------------------ */
@@ -261,6 +276,8 @@ export interface GoldenottPackage {
   credits: number | null;
   /** ex. « 1 an », « 6 mois », « 24 heures » */
   durationLabel: string | null;
+  /** durée approximative en jours (mois = 30 j, an = 365 j) — pour comparer les forfaits entre eux */
+  durationDays: number | null;
   maxConnections: number | null;
   isTrial: boolean;
   isPaidTrial: boolean;
@@ -281,6 +298,21 @@ function durationLabel(n: unknown, unit: unknown): string | null {
   if (!count || !DURATION_FR[key]) return null;
   const [one, many] = DURATION_FR[key];
   return `${count} ${count > 1 ? many : one}`;
+}
+
+const DURATION_UNIT_DAYS: Record<string, number> = {
+  hours: 1 / 24,
+  days: 1,
+  weeks: 7,
+  months: 30,
+  years: 365,
+};
+
+function durationDays(n: unknown, unit: unknown): number | null {
+  const count = num(n);
+  const key = typeof unit === "string" ? unit : "";
+  if (!count || !DURATION_UNIT_DAYS[key]) return null;
+  return count * DURATION_UNIT_DAYS[key];
 }
 
 /** Récupère TOUS les packages accessibles (pagine automatiquement). */
@@ -311,6 +343,9 @@ export async function listPackages(): Promise<GoldenottPackage[]> {
         durationLabel: isTrial
           ? durationLabel(p.trial_duration, p.trial_duration_in)
           : durationLabel(p.official_duration, p.official_duration_in),
+        durationDays: isTrial
+          ? durationDays(p.trial_duration, p.trial_duration_in)
+          : durationDays(p.official_duration, p.official_duration_in),
         maxConnections: num(p.max_connections),
         isTrial,
         isPaidTrial: bool(p.is_paid_trial),

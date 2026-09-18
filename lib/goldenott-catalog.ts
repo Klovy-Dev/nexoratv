@@ -46,6 +46,19 @@ export function isTrialPackage(
   return Boolean(p && (p.isTrial || p.isPaidTrial));
 }
 
+/**
+ * Le forfait GoldenOTT `packageId` dure-t-il au moins un an (365 jours) ?
+ * Sert à réserver la récompense de parrainage aux abonnements longue durée.
+ */
+export function isOneYearOrMorePackage(
+  catalog: GoldenottCatalog,
+  packageId: number | null | undefined,
+): boolean {
+  if (packageId == null) return false;
+  const p = catalog.packages.find((x) => x.id === packageId);
+  return Boolean(p && p.durationDays != null && p.durationDays >= 365);
+}
+
 export const loadGoldenottCatalog = cache(async (): Promise<GoldenottCatalog> => {
   if (!goldenottConfigured()) {
     return {

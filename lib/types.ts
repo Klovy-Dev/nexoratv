@@ -120,6 +120,8 @@ export interface Order {
   want_adult: boolean;
   /** le client a coché « uniquement le contenu français » à la commande */
   want_french: boolean;
+  /** le client a coché « exclure les chaînes adultes » (offre is_adult=true) */
+  no_adult: boolean;
   mac: string | null;
   renew_sub_id: number | null;
   status: OrderStatus;

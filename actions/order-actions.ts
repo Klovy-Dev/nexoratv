@@ -16,6 +16,7 @@ import {
   trialBlockedForIp,
 } from "@/lib/data";
 import {
+  isOneYearOrMorePackage,
   isTrialPackage,
   loadGoldenottCatalog,
   trialPackageIds,
@@ -27,6 +28,7 @@ import {
   resolveProvisioningOptions,
   validateLineCredentials,
 } from "@/lib/goldenott-provision";
+import { lineM3uUrl } from "@/lib/goldenott";
 import { appOrigin } from "@/lib/mail";
 import { errMessages, fulfillPaidOrder } from "@/lib/order-fulfillment";
 import { ORDERS_DISABLED, ORDERS_DISABLED_MESSAGE } from "@/lib/orders-maintenance";
@@ -151,6 +153,9 @@ export async function createOrderAction(
   if (!offer || !offer.active) {
     return { fieldErrors: ["Cette offre n'est plus disponible."] };
   }
+  // Exclusion demandée par le client — n'a de sens que si l'offre inclut
+  // déjà les chaînes adultes par défaut.
+  const noAdult = offer.is_adult && formData.get("no_adult") === "on";
 
   // L'essai n'est autorisé qu'une seule fois par compte.
   const catalog = await loadGoldenottCatalog();
@@ -221,13 +226,13 @@ export async function createOrderAction(
   const rows = (await sql`
     INSERT INTO iptv_orders
       (user_id, offer_id, kind, title, price_cents, package_id, template_id,
-       dns_domain_id, max_connections, is_adult, want_adult, want_french, mac,
+       dns_domain_id, max_connections, is_adult, want_adult, want_french, no_adult, mac,
        customer_note, status, credit_applied_cents, payment_provider)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind}, ${offer.title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
        ${offer.dns_domain_id}, ${screens}, ${offer.is_adult}, ${wantAdult},
-       ${wantFrench}, ${offer.kind === "mag" ? mac : null}, ${customerNote},
+       ${wantFrench}, ${noAdult}, ${offer.kind === "mag" ? mac : null}, ${customerNote},
        'awaiting_payment', ${creditApplied}, ${paymentMethod})
     RETURNING id
   `) as unknown as { id: number }[];
@@ -447,6 +452,10 @@ export async function approveOrderAction(
       screens: order.max_connections,
       isRenewal: true,
       subscriptionLabel: sub.label,
+      m3uUrl:
+        sub.provider_kind === "line"
+          ? lineM3uUrl(sub.server_url, sub.username, sub.password)
+          : null,
     });
     revalidatePath("/admin/commandes");
     revalidatePath("/admin");
@@ -472,8 +481,9 @@ export async function approveOrderAction(
 
   const { isAdult, templateId } = resolveProvisioningOptions(order, catalog);
 
+  let provisioned: { subscriptionId: number };
   try {
-    await provisionSubscription({
+    provisioned = await provisionSubscription({
       userId: order.user_id,
       kind: order.kind,
       packageId: order.package_id,
@@ -502,6 +512,9 @@ export async function approveOrderAction(
     `;
   }
 
+  const newSub =
+    order.kind === "line" ? await subscriptionById(provisioned.subscriptionId) : null;
+
   await sendOrderAcceptedEmail({
     customerName: order.user_name,
     customerEmail: order.user_email,
@@ -511,10 +524,13 @@ export async function approveOrderAction(
     screens: order.max_connections,
     isRenewal: false,
     subscriptionLabel: label,
+    m3uUrl: newSub
+      ? lineM3uUrl(newSub.server_url, newSub.username, newSub.password)
+      : null,
   });
 
   try {
-    await grantReferralReward(order);
+    await grantReferralReward(order, isOneYearOrMorePackage(catalog, order.package_id));
   } catch (err) {
     console.error("[order-actions] récompense de parrainage échouée :", err);
   }

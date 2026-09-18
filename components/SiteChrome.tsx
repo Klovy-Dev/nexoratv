@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import PartnerBanner from "@/components/PartnerBanner";
 
 /**
  * Choisit la mise en page selon la route :
@@ -33,30 +34,34 @@ export default function SiteChrome({
 
   if (bare) {
     return (
-      <main className="auth-shell">
-        <aside className="auth-aside">
-          <Link href="/" className="auth-aside-brand">
-            Nexora<span>TV</span>
-          </Link>
-          <div className="auth-aside-body">
-            <h2>Le streaming nouvelle génération.</h2>
-            <ul>
-              <li>Des milliers de chaînes, films et séries en direct</li>
-              <li>Vos identifiants d&apos;abonnement réunis au même endroit</li>
-              <li>Compatible avec tous vos écrans, sans coupure</li>
-            </ul>
-          </div>
-          <p className="auth-aside-foot">
-            © {new Date().getFullYear()} NexoraTV
-          </p>
-        </aside>
-        <div className="auth-panel">{children}</div>
-      </main>
+      <>
+        <PartnerBanner />
+        <main className="auth-shell">
+          <aside className="auth-aside">
+            <Link href="/" className="auth-aside-brand">
+              Nexora<span>TV</span>
+            </Link>
+            <div className="auth-aside-body">
+              <h2>Le streaming nouvelle génération.</h2>
+              <ul>
+                <li>Des milliers de chaînes, films et séries en direct</li>
+                <li>Vos identifiants d&apos;abonnement réunis au même endroit</li>
+                <li>Compatible avec tous vos écrans, sans coupure</li>
+              </ul>
+            </div>
+            <p className="auth-aside-foot">
+              © {new Date().getFullYear()} NexoraTV
+            </p>
+          </aside>
+          <div className="auth-panel">{children}</div>
+        </main>
+      </>
     );
   }
 
   return (
     <>
+      <PartnerBanner />
       {header}
       <main>{children}</main>
       {footer}

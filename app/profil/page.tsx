@@ -12,6 +12,7 @@ import {
   subscriptionsForUser,
 } from "@/lib/data";
 import { appOrigin } from "@/lib/mail";
+import { lineM3uUrl } from "@/lib/goldenott";
 import {
   daysUntil,
   expiryLabel,
@@ -175,6 +176,22 @@ export default async function ProfilPage({
                       <SecretValue value={sub.password} />
                     </div>
                   )}
+                  {kind === "line" &&
+                    (() => {
+                      const m3u = lineM3uUrl(
+                        sub.server_url,
+                        sub.username,
+                        sub.password,
+                      );
+                      return (
+                        m3u && (
+                          <div className="cred-row">
+                            <span className="k">Lien M3U</span>
+                            <SecretValue value={m3u} />
+                          </div>
+                        )
+                      );
+                    })()}
                   {sub.screens && (
                     <div className="cred-row">
                       <span className="k">Écrans simultanés</span>
