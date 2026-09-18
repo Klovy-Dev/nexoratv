@@ -51,6 +51,13 @@ export function formatDate(iso: string | null): string {
   return d.toLocaleDateString("fr-FR");
 }
 
+export function formatDateTime(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.toLocaleDateString("fr-FR")} ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 /** Nombre de jours entiers d'ici la date (négatif si passée), null si invalide. */
 export function daysUntil(iso: string | null): number | null {
   if (!iso) return null;

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/auth";
+import { pendingOrdersCount } from "@/lib/data";
 import AdminSidebar from "./AdminSidebar";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const me = await requireAdmin();
+  const pending = await pendingOrdersCount();
 
   return (
     <div className="admin-shell">
@@ -21,7 +23,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </header>
 
       <div className="admin-shell-body">
-        <AdminSidebar />
+        <AdminSidebar pendingOrders={pending} />
         <main className="admin-shell-main">{children}</main>
       </div>
     </div>

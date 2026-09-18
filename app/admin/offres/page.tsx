@@ -6,6 +6,7 @@ import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { formatPrice } from "@/lib/validation";
 import { deleteOfferAction, toggleOfferAction } from "@/actions/offer-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import TableSearch from "@/components/TableSearch";
 import OfferForm from "./OfferForm";
 import type { DomainOption, PkgOption, TplOption } from "../SubscriptionForm";
 
@@ -110,7 +111,13 @@ export default async function OffersAdminPage({
               {offers.length === 0 ? (
                 <p className="muted">Aucune offre pour le moment.</p>
               ) : (
-                <div className="table-wrap">
+                <>
+                  <TableSearch
+                    placeholder="Rechercher une offre (titre)…"
+                    containerId="offers-table-body"
+                    rowSelector="tr"
+                  />
+                  <div className="table-wrap">
                   <table className="data">
                     <thead>
                       <tr>
@@ -118,13 +125,13 @@ export default async function OffersAdminPage({
                         <th>Prix</th><th>Écrans</th><th>Statut</th><th />
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="offers-table-body">
                       {offers.map((o) => {
                         const pkg = packages.find(
                           (p) => p.id === o.goldenott_package_id,
                         );
                         return (
-                          <tr key={o.id}>
+                          <tr key={o.id} data-search={o.title.toLowerCase()}>
                             <td>
                               <strong>{o.title}</strong>
                               {o.badge && (
@@ -192,7 +199,8 @@ export default async function OffersAdminPage({
                       })}
                     </tbody>
                   </table>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </>

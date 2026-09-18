@@ -654,6 +654,16 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .admin-sidebar a:hover { background: var(--surface-2); color: var(--text); }
 .admin-sidebar a.active { background: var(--accent-grad); color: #fff; }
+.admin-sidebar-badge {
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+}
 
 .admin-shell-main { flex: 1; min-width: 0; }
 .admin-shell-main section { padding: 32px 0 56px; }

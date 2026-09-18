@@ -5,6 +5,7 @@ import { listDevicePlaylists, devicePlaylistById } from "@/lib/data";
 import { formatDate } from "@/lib/validation";
 import { deleteDevicePlaylistAction } from "@/actions/device-playlist-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import TableSearch from "@/components/TableSearch";
 import DevicePlaylistForm from "./DevicePlaylistForm";
 
 export const metadata: Metadata = { title: "Playlists MAC — Administration" };
@@ -53,7 +54,13 @@ export default async function DevicePlaylistAdminPage({
           {playlists.length === 0 ? (
             <p className="muted">Aucune playlist assignée pour le moment.</p>
           ) : (
-            <div className="table-wrap">
+            <>
+              <TableSearch
+                placeholder="Rechercher une playlist (MAC, nom)…"
+                containerId="playlists-table-body"
+                rowSelector="tr"
+              />
+              <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
@@ -64,9 +71,9 @@ export default async function DevicePlaylistAdminPage({
                     <th />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="playlists-table-body">
                   {playlists.map((p) => (
-                    <tr key={p.id}>
+                    <tr key={p.id} data-search={`${p.mac} ${p.name}`.toLowerCase()}>
                       <td>
                         <code>{p.mac}</code>
                       </td>
@@ -107,7 +114,8 @@ export default async function DevicePlaylistAdminPage({
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

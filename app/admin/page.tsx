@@ -8,13 +8,14 @@ import {
   purgeExpiredTrialsAndRejected,
   referralInfo,
   referralRewardsForUser,
+  subscriptionsExpiringSoon,
   subscriptionsForUser,
   subscriptionById,
   userById,
 } from "@/lib/data";
 import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { KIND_LABEL } from "@/lib/goldenott";
-import { formatDate, formatPrice } from "@/lib/validation";
+import { daysUntil, expiryLabel, formatDate, formatPrice } from "@/lib/validation";
 import {
   deleteSubscriptionAction,
   deleteUserAction,
@@ -35,6 +36,7 @@ import SubscriptionForm, {
 import ProviderActions from "./ProviderActions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import CopyButton from "@/components/CopyButton";
+import TableSearch from "@/components/TableSearch";
 
 export const metadata: Metadata = { title: "Administration" };
 export const dynamic = "force-dynamic";
@@ -144,11 +146,12 @@ function toDomainOptions(
 /* ------------------------------------------------------------------ */
 
 async function AdminOverview() {
-  const [stats, users, catalog, pending] = await Promise.all([
+  const [stats, users, catalog, pending, expiringSoon] = await Promise.all([
     adminStats(),
     allUsers(),
     loadGoldenottCatalog(),
     pendingOrdersCount(),
+    subscriptionsExpiringSoon(14),
   ]);
 
   return (
@@ -216,12 +219,69 @@ async function AdminOverview() {
         </div>
       )}
 
+      {expiringSoon.length > 0 && (
+        <div className="panel">
+          <h2>Abonnements qui expirent bientôt ({expiringSoon.length})</h2>
+          <p className="muted" style={{ fontSize: "0.85rem", marginTop: -6, marginBottom: 14 }}>
+            Échéance dans les 14 prochains jours (ou déjà dépassée), triés du
+            plus urgent au moins urgent.
+          </p>
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Client</th><th>Abonnement</th><th>Échéance</th><th />
+                </tr>
+              </thead>
+              <tbody>
+                {expiringSoon.map((s) => {
+                  const left = daysUntil(s.expires_at);
+                  const over = left !== null && left < 0;
+                  return (
+                    <tr key={s.id}>
+                      <td>
+                        {s.user_name}{" "}
+                        <span className="muted" style={{ fontSize: "0.82rem" }}>
+                          · {s.user_email}
+                        </span>
+                      </td>
+                      <td>{s.label}</td>
+                      <td>
+                        {formatDate(s.expires_at)}{" "}
+                        <span className={`expiry-chip${over ? " over" : " soon"}`}>
+                          {expiryLabel(s.expires_at)}
+                        </span>
+                      </td>
+                      <td>
+                        <Link className="btn btn-ghost btn-sm" href={`/admin?user=${s.user_id}`}>
+                          Gérer
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="panel">
-        <h2>Clients inscrits</h2>
-        <p className="muted" style={{ fontSize: "0.85rem", marginTop: -6, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <h2 style={{ margin: 0 }}>Clients inscrits</h2>
+          <a href="/api/admin/export/clients" className="btn btn-ghost btn-sm">
+            ⬇ Exporter CSV
+          </a>
+        </div>
+        <p className="muted" style={{ fontSize: "0.85rem", marginTop: 6, marginBottom: 14 }}>
           Triés par abonnement le plus récent — le dernier client servi
           apparaît en premier.
         </p>
+        <TableSearch
+          placeholder="Rechercher un client (nom, e-mail)…"
+          containerId="clients-table-body"
+          rowSelector="tr"
+        />
         <div className="table-wrap">
           <table className="data">
             <thead>
@@ -230,9 +290,9 @@ async function AdminOverview() {
                 <th>Abonnements</th><th>Dernier abo.</th><th>Inscrit le</th><th />
               </tr>
             </thead>
-            <tbody>
+            <tbody id="clients-table-body">
               {users.map((u) => (
-                <tr key={u.id}>
+                <tr key={u.id} data-search={`${u.name} ${u.email}`.toLowerCase()}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
                   <td>

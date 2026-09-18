@@ -9,9 +9,10 @@ const LINKS = [
   { href: "/admin/offres", label: "Offres", icon: "🏷️" },
   { href: "/admin/playlist", label: "Playlists MAC", icon: "📺" },
   { href: "/admin/tuto", label: "Page Tuto", icon: "📖" },
+  { href: "/admin/journal", label: "Journal", icon: "📜" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ pendingOrders }: { pendingOrders: number }) {
   const pathname = usePathname();
 
   return (
@@ -23,6 +24,9 @@ export default function AdminSidebar() {
           <Link key={l.href} href={l.href} className={active ? "active" : ""}>
             <span aria-hidden="true">{l.icon}</span>
             {l.label}
+            {l.href === "/admin/commandes" && pendingOrders > 0 && (
+              <span className="admin-sidebar-badge">{pendingOrders}</span>
+            )}
           </Link>
         );
       })}

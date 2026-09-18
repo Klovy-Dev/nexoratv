@@ -388,6 +388,38 @@ export async function recentGoldenottEvents(limit = 30): Promise<GoldenottEvent[
   `) as unknown as GoldenottEvent[];
 }
 
+/* ---------- Abonnements qui expirent bientôt (tous clients) ---------- */
+
+export interface UpcomingExpirySubscription {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  label: string;
+  expires_at: string;
+  status: "active" | "suspended";
+}
+
+/**
+ * Abonnements actifs dont l'échéance tombe dans les `days` prochains jours
+ * (inclut ceux déjà expirés mais encore marqués actifs — les plus urgents à
+ * relancer), tous clients confondus, triés du plus proche au plus lointain.
+ */
+export async function subscriptionsExpiringSoon(
+  days = 14,
+): Promise<UpcomingExpirySubscription[]> {
+  return (await sql`
+    SELECT s.id, s.user_id, u.name AS user_name, u.email AS user_email,
+           s.label, s.expires_at::date AS expires_at, s.status
+    FROM subscriptions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.status = 'active'
+      AND s.expires_at IS NOT NULL
+      AND s.expires_at <= (CURRENT_DATE + ${days}::int)
+    ORDER BY s.expires_at ASC
+  `) as unknown as UpcomingExpirySubscription[];
+}
+
 /* ---------- Parrainage ---------- */
 
 /** Récompense créditée au parrain à la première commande payée d'un filleul. */

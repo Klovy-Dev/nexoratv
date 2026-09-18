@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { allOrders, purgeExpiredTrialsAndRejected } from "@/lib/data";
 import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { formatDate, formatPrice } from "@/lib/validation";
+import TableSearch from "@/components/TableSearch";
 import OrderDecision from "./OrderDecision";
 import type { OrderView, ProviderKind } from "@/lib/types";
 
@@ -64,6 +65,12 @@ export default async function OrdersAdminPage({
           </p>
         )}
 
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+          <a href="/api/admin/export/commandes" className="btn btn-ghost btn-sm">
+            ⬇ Exporter CSV
+          </a>
+        </div>
+
         <div className="panel">
           <h2>À traiter ({pending.length})</h2>
           {pending.length === 0 ? (
@@ -80,7 +87,12 @@ export default async function OrdersAdminPage({
         {done.length > 0 && (
           <div className="panel">
             <h2>Historique ({done.length})</h2>
-            <div className="sub-admin-list">
+            <TableSearch
+              placeholder="Rechercher (client, e-mail, offre)…"
+              containerId="orders-history-list"
+              rowSelector=".sub-admin-card"
+            />
+            <div className="sub-admin-list" id="orders-history-list">
               {done.map((o) => (
                 <OrderCard key={o.id} order={o} actionable={false} />
               ))}
@@ -101,7 +113,10 @@ function OrderCard({
 }) {
   const [cls, label] = STATUS_FR[order.status] ?? ["badge", order.status];
   return (
-    <div className="sub-admin-card">
+    <div
+      className="sub-admin-card"
+      data-search={`${order.title} ${order.user_name} ${order.user_email}`.toLowerCase()}
+    >
       <div className="sub-admin-top">
         <div>
           <strong>{order.title}</strong>
