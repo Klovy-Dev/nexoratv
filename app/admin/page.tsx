@@ -18,7 +18,10 @@ import {
   deleteUserAction,
   setRoleAction,
 } from "@/actions/admin-actions";
-import { syncUserSubscriptionsAction } from "@/actions/goldenott-actions";
+import {
+  syncAllSubscriptionsAction,
+  syncUserSubscriptionsAction,
+} from "@/actions/goldenott-actions";
 import SubscriptionForm, {
   type DomainOption,
   type GoldenottFormData,
@@ -38,6 +41,7 @@ const FLASH: Record<string, string> = {
   extend: "Abonnement prolongé sur GoldenOTT.",
   refund: "Remboursement effectué, abonnement suspendu.",
   sync: "Synchronisation terminée.",
+  "sync-all": "Synchronisation globale terminée.",
 };
 
 export default async function AdminPage({
@@ -54,6 +58,8 @@ export default async function AdminPage({
   const okParam = pick("ok");
   const errParam = pick("err");
   const creditParam = pick("credit");
+  const syncedParam = pick("synced");
+  const failedParam = pick("failed");
   const targetId = userParam ? Number(userParam) : 0;
   const target = targetId ? await userById(targetId) : null;
 
@@ -79,6 +85,8 @@ export default async function AdminPage({
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             {FLASH[okParam] ?? "Opération effectuée."}
             {creditParam && ` Crédit revendeur restant : ${creditParam}.`}
+            {okParam === "sync-all" &&
+              ` ${syncedParam ?? 0} synchronisé(s)${failedParam && failedParam !== "0" ? `, ${failedParam} échec(s)` : ""}.`}
           </div>
         )}
         {errParam && (
@@ -199,7 +207,17 @@ async function AdminOverview() {
             <Link href="/admin/offres" className="btn btn-ghost btn-sm">
               Gérer les offres
             </Link>
+            <form action={syncAllSubscriptionsAction} className="inline-form">
+              <button className="btn btn-ghost btn-sm">
+                ↻ Tout synchroniser
+              </button>
+            </form>
           </div>
+          <p className="hint" style={{ marginTop: 8 }}>
+            Rafraîchit statut, expiration et lien serveur (M3U) de tous les
+            abonnements GoldenOTT — peut prendre quelques instants selon le
+            nombre de clients.
+          </p>
         </div>
       )}
 

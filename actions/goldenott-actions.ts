@@ -216,3 +216,29 @@ export async function syncUserSubscriptionsAction(formData: FormData): Promise<v
   revalidatePath("/admin");
   redirect(`/admin?user=${userId}&ok=sync`);
 }
+
+/** Resynchronise TOUS les abonnements GoldenOTT, tous clients confondus
+ * (statut, expiration, lien serveur — donc le lien M3U affiché en profil). */
+export async function syncAllSubscriptionsAction(): Promise<void> {
+  const me = await requireAdmin();
+
+  const subs = (await sql`
+    SELECT id FROM subscriptions WHERE provider = 'goldenott'
+  `) as unknown as { id: number }[];
+
+  let synced = 0;
+  let failed = 0;
+  for (const { id } of subs) {
+    const sub = await subscriptionById(id);
+    if (!sub) continue;
+    try {
+      await syncSubscriptionLocal(sub, me.email);
+      synced++;
+    } catch {
+      failed++;
+    }
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?ok=sync-all&synced=${synced}&failed=${failed}`);
+}
