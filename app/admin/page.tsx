@@ -60,6 +60,7 @@ export default async function AdminPage({
   const creditParam = pick("credit");
   const syncedParam = pick("synced");
   const failedParam = pick("failed");
+  const errSampleParam = pick("err_sample");
   const targetId = userParam ? Number(userParam) : 0;
   const target = targetId ? await userById(targetId) : null;
 
@@ -87,6 +88,11 @@ export default async function AdminPage({
             {creditParam && ` Crédit revendeur restant : ${creditParam}.`}
             {okParam === "sync-all" &&
               ` ${syncedParam ?? 0} synchronisé(s)${failedParam && failedParam !== "0" ? `, ${failedParam} échec(s)` : ""}.`}
+          </div>
+        )}
+        {okParam === "sync-all" && failedParam && failedParam !== "0" && errSampleParam && (
+          <div className="flash flash-error" style={{ marginBottom: 20 }}>
+            Erreur la plus fréquente parmi les échecs : {errSampleParam}
           </div>
         )}
         {errParam && (

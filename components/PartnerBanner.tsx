@@ -8,10 +8,10 @@ export default function PartnerBanner() {
     >
       <span className="partner-banner-badge">Partenariat</span>
       <span className="partner-banner-text">
-        NexoraTV est fier partenaire de <strong>Klovy Dev</strong> — création
-        de sites web &amp; d&apos;applications sur mesure.
+        Besoin d&apos;un site ou d&apos;une application sur mesure ? Notre
+        partenaire <strong>Klovy Dev</strong> peut vous aider.
       </span>
-      <span className="partner-banner-cta">Découvrir klovy-dev.com →</span>
+      <span className="partner-banner-cta">klovy-dev.com →</span>
     </a>
   );
 }

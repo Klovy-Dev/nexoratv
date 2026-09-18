@@ -217,8 +217,16 @@ export async function syncUserSubscriptionsAction(formData: FormData): Promise<v
   redirect(`/admin?user=${userId}&ok=sync`);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /** Resynchronise TOUS les abonnements GoldenOTT, tous clients confondus
- * (statut, expiration, lien serveur — donc le lien M3U affiché en profil). */
+ * (statut, expiration, lien serveur — donc le lien M3U affiché en profil).
+ *
+ * Espace les appels de 300 ms et retente une fois chaque échec : GoldenOTT
+ * ne documente pas de limite de débit précise, mais enchaîner des dizaines
+ * d'appels sans délai déclenche des échecs (429 / timeouts) qui disparaissent
+ * en général au second essai.
+ */
 export async function syncAllSubscriptionsAction(): Promise<void> {
   const me = await requireAdmin();
 
@@ -228,17 +236,40 @@ export async function syncAllSubscriptionsAction(): Promise<void> {
 
   let synced = 0;
   let failed = 0;
+  const errorCounts = new Map<string, number>();
+
   for (const { id } of subs) {
     const sub = await subscriptionById(id);
     if (!sub) continue;
-    try {
-      await syncSubscriptionLocal(sub, me.email);
-      synced++;
-    } catch {
-      failed++;
+
+    let lastError: string | null = null;
+    let ok = false;
+    for (let attempt = 0; attempt < 2 && !ok; attempt++) {
+      if (attempt > 0) await sleep(800);
+      try {
+        await syncSubscriptionLocal(sub, me.email);
+        ok = true;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : "erreur inconnue";
+      }
     }
+
+    if (ok) {
+      synced++;
+    } else {
+      failed++;
+      const key = lastError ?? "erreur inconnue";
+      errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
+    }
+
+    await sleep(300);
   }
 
+  const topError = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const errorParam = topError
+    ? `&err_sample=${encodeURIComponent(`${topError[0]} (×${topError[1]})`)}`
+    : "";
+
   revalidatePath("/admin");
-  redirect(`/admin?ok=sync-all&synced=${synced}&failed=${failed}`);
+  redirect(`/admin?ok=sync-all&synced=${synced}&failed=${failed}${errorParam}`);
 }
