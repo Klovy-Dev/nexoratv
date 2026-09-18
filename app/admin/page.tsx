@@ -69,23 +69,8 @@ export default async function AdminPage({
   const target = targetId ? await userById(targetId) : null;
 
   return (
-    <section style={{ paddingTop: 56 }}>
+    <section>
       <div className="container">
-        <div className="admin-tabs">
-          <Link href="/admin" className={!target ? "active" : ""}>
-            Tous les clients
-          </Link>
-          <Link href="/admin/commandes">Commandes</Link>
-          <Link href="/admin/offres">Offres</Link>
-          <Link href="/admin/playlist">Playlists MAC</Link>
-          <Link href="/admin/tuto">Page Tuto</Link>
-          {target && (
-            <span className="admin-tabs-current active" style={{ padding: "9px 18px" }}>
-              {target.name}
-            </span>
-          )}
-        </div>
-
         {okParam && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             {FLASH[okParam] ?? "Opération effectuée."}

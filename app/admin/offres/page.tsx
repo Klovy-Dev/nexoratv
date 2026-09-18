@@ -57,16 +57,8 @@ export default async function OffersAdminPage({
   }));
 
   return (
-    <section style={{ paddingTop: 56 }}>
+    <section>
       <div className="container">
-        <div className="admin-tabs">
-          <Link href="/admin">Tous les clients</Link>
-          <Link href="/admin/commandes">Commandes</Link>
-          <Link href="/admin/offres" className="active">Offres</Link>
-          <Link href="/admin/playlist">Playlists MAC</Link>
-          <Link href="/admin/tuto">Page Tuto</Link>
-        </div>
-
         {ok && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             Offres mises à jour.

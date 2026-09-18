@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { saveDevicePlaylistAction } from "@/actions/device-playlist-actions";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import type { DevicePlaylist, FormState } from "@/lib/types";
@@ -17,8 +18,10 @@ export default function DevicePlaylistForm({
   const key = editing ? `edit-${editing.id}` : "new";
 
   return (
-    <div className="panel">
-      <h2>{editing ? "Modifier la playlist" : "Assigner une playlist à un MAC"}</h2>
+    <CollapsiblePanel
+      title={editing ? "Modifier la playlist" : "Assigner une playlist à un MAC"}
+      defaultOpen={Boolean(editing)}
+    >
       <FormErrors state={state} />
 
       <form action={action} key={key}>
@@ -96,6 +99,6 @@ export default function DevicePlaylistForm({
           {editing ? "Enregistrer" : "Ajouter"}
         </SubmitButton>
       </form>
-    </div>
+    </CollapsiblePanel>
   );
 }

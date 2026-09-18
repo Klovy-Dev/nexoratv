@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveOfferAction } from "@/actions/offer-actions";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import type { FormState, Offer, ProviderKind } from "@/lib/types";
@@ -42,8 +43,10 @@ export default function OfferForm({
   const key = editing ? `edit-${editing.id}` : "new";
 
   return (
-    <div className="panel">
-      <h2>{editing ? "Modifier l'offre" : "Nouvelle offre"}</h2>
+    <CollapsiblePanel
+      title={editing ? "Modifier l'offre" : "Nouvelle offre"}
+      defaultOpen={Boolean(editing)}
+    >
       <FormErrors state={state} />
 
       <form action={action} key={key}>
@@ -325,6 +328,6 @@ export default function OfferForm({
           )}
         </div>
       </form>
-    </div>
+    </CollapsiblePanel>
   );
 }

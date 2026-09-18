@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { saveTutoSectionAction } from "@/actions/tuto-actions";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -21,8 +22,10 @@ export default function TutoSectionForm({
   const key = editing ? `edit-${editing.id}` : "new";
 
   return (
-    <div className="panel">
-      <h2>{editing ? "Modifier la section" : "Ajouter une section"}</h2>
+    <CollapsiblePanel
+      title={editing ? "Modifier la section" : "Ajouter une section"}
+      defaultOpen={Boolean(editing)}
+    >
       <FormErrors state={state} />
 
       <form action={action} key={key}>
@@ -100,6 +103,6 @@ export default function TutoSectionForm({
           {editing ? "Enregistrer" : "Ajouter"}
         </SubmitButton>
       </form>
-    </div>
+    </CollapsiblePanel>
   );
 }

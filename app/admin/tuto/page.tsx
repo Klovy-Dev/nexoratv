@@ -26,16 +26,8 @@ export default async function TutoAdminPage({
   ]);
 
   return (
-    <section style={{ paddingTop: 56 }}>
+    <section>
       <div className="container">
-        <div className="admin-tabs">
-          <Link href="/admin">Tous les clients</Link>
-          <Link href="/admin/commandes">Commandes</Link>
-          <Link href="/admin/offres">Offres</Link>
-          <Link href="/admin/playlist">Playlists MAC</Link>
-          <Link href="/admin/tuto" className="active">Page Tuto</Link>
-        </div>
-
         {ok === "1" && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             Section enregistrée.

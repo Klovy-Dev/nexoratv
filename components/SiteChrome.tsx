@@ -31,6 +31,13 @@ export default function SiteChrome({
   const bare = BARE_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  // L'espace admin a sa propre coquille (header + sidebar, voir
+  // app/admin/layout.tsx) — pas de header/footer/bannière publics ici.
+  if (isAdmin) {
+    return <>{children}</>;
+  }
 
   if (bare) {
     return (

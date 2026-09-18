@@ -45,16 +45,8 @@ export default async function OrdersAdminPage({
   const done = orders.filter((o) => o.status !== "pending");
 
   return (
-    <section style={{ paddingTop: 56 }}>
+    <section>
       <div className="container">
-        <div className="admin-tabs">
-          <Link href="/admin">Tous les clients</Link>
-          <Link href="/admin/commandes" className="active">Commandes</Link>
-          <Link href="/admin/offres">Offres</Link>
-          <Link href="/admin/playlist">Playlists MAC</Link>
-          <Link href="/admin/tuto">Page Tuto</Link>
-        </div>
-
         {ok && (
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             Commande traitée.

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveSubscriptionAction } from "@/actions/admin-actions";
 import { provisionSubscriptionAction } from "@/actions/goldenott-actions";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import PasswordInput from "@/components/PasswordInput";
@@ -79,11 +80,10 @@ export default function SubscriptionForm({
   const canProvision = goldenott != null && goldenott.error == null;
 
   return (
-    <div className="panel">
-      <div className="form-mode-head">
-        <h2>{editing ? "Modifier l'abonnement (local)" : "Ajouter un abonnement"}</h2>
-      </div>
-
+    <CollapsiblePanel
+      title={editing ? "Modifier l'abonnement (local)" : "Ajouter un abonnement"}
+      defaultOpen={Boolean(editing)}
+    >
       {editing ? (
         // La fiche locale (URL serveur / identifiants / statut stockés chez
         // nous) reste modifiable manuellement, y compris pour un abonnement
@@ -98,7 +98,7 @@ export default function SubscriptionForm({
           — impossible d&apos;ajouter un nouvel abonnement pour le moment.
         </p>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
