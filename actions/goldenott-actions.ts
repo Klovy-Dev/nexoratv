@@ -219,13 +219,45 @@ export async function syncUserSubscriptionsAction(formData: FormData): Promise<v
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Une passe de synchro sur une liste d'ids, espacée pour rester sous le
+ * seuil de rate-limit GoldenOTT ("Too Many Attempts."). Renvoie les ids
+ * qui ont échoué avec leur dernier message d'erreur.
+ */
+async function syncBatch(
+  ids: number[],
+  actor: string,
+  errorCounts: Map<string, number>,
+): Promise<{ synced: number; failedIds: number[] }> {
+  let synced = 0;
+  const failedIds: number[] = [];
+  for (const id of ids) {
+    const sub = await subscriptionById(id);
+    if (!sub) continue;
+    try {
+      await syncSubscriptionLocal(sub, actor);
+      synced++;
+    } catch (err) {
+      failedIds.push(id);
+      const key = err instanceof Error ? err.message : "erreur inconnue";
+      errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
+    }
+    await sleep(1200);
+  }
+  return { synced, failedIds };
+}
+
 /** Resynchronise TOUS les abonnements GoldenOTT, tous clients confondus
  * (statut, expiration, lien serveur — donc le lien M3U affiché en profil).
  *
- * Espace les appels de 300 ms et retente une fois chaque échec : GoldenOTT
- * ne documente pas de limite de débit précise, mais enchaîner des dizaines
- * d'appels sans délai déclenche des échecs (429 / timeouts) qui disparaissent
- * en général au second essai.
+ * GoldenOTT limite le débit ("Too Many Attempts.") bien en-deçà de ce
+ * qu'on imaginait : un simple espacement ne suffit pas toujours. On
+ * espace donc largement les appels (1,2 s) et, si des échecs subsistent,
+ * on laisse la fenêtre de limitation se réinitialiser (15 s) avant de
+ * retenter une seule fois ce sous-ensemble — plutôt que de retenter
+ * chaque abonnement individuellement, ce qui ferait exploser la durée
+ * totale sans rien résoudre (le problème est le rythme global, pas un
+ * abonnement en particulier).
  */
 export async function syncAllSubscriptionsAction(): Promise<void> {
   const me = await requireAdmin();
@@ -234,35 +266,19 @@ export async function syncAllSubscriptionsAction(): Promise<void> {
     SELECT id FROM subscriptions WHERE provider = 'goldenott'
   `) as unknown as { id: number }[];
 
-  let synced = 0;
-  let failed = 0;
   const errorCounts = new Map<string, number>();
+  let synced = 0;
 
-  for (const { id } of subs) {
-    const sub = await subscriptionById(id);
-    if (!sub) continue;
+  const first = await syncBatch(subs.map((s) => s.id), me.email, errorCounts);
+  synced += first.synced;
+  let failedIds = first.failedIds;
 
-    let lastError: string | null = null;
-    let ok = false;
-    for (let attempt = 0; attempt < 2 && !ok; attempt++) {
-      if (attempt > 0) await sleep(800);
-      try {
-        await syncSubscriptionLocal(sub, me.email);
-        ok = true;
-      } catch (err) {
-        lastError = err instanceof Error ? err.message : "erreur inconnue";
-      }
-    }
-
-    if (ok) {
-      synced++;
-    } else {
-      failed++;
-      const key = lastError ?? "erreur inconnue";
-      errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
-    }
-
-    await sleep(300);
+  if (failedIds.length > 0) {
+    await sleep(15_000);
+    errorCounts.clear();
+    const retry = await syncBatch(failedIds, me.email, errorCounts);
+    synced += retry.synced;
+    failedIds = retry.failedIds;
   }
 
   const topError = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -271,5 +287,7 @@ export async function syncAllSubscriptionsAction(): Promise<void> {
     : "";
 
   revalidatePath("/admin");
-  redirect(`/admin?ok=sync-all&synced=${synced}&failed=${failed}${errorParam}`);
+  redirect(
+    `/admin?ok=sync-all&synced=${synced}&failed=${failedIds.length}${errorParam}`,
+  );
 }
