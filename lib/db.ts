@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 17;
+const SCHEMA_VERSION = 18;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -148,6 +148,12 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS badge TEXT NOT NULL DEFAULT ''`;
   // Domaine DNS GoldenOTT à assigner (NULL = domaine par défaut du compte).
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS dns_domain_id INTEGER`;
+  // Tarif dégressif par écran supplémentaire : extra_screen_cents = 1er écran
+  // en plus / palier de repli ; les paliers 2-4 sont NULL = « même prix que
+  // le palier précédent » (rétro-compatible avec les offres non modifiées).
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_2 INTEGER`;
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_3 INTEGER`;
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_4 INTEGER`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.

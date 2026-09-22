@@ -68,8 +68,14 @@ export interface Offer {
   included_screens: number;
   /** le client peut ajouter des écrans sur la page Commander */
   allow_screens: boolean;
-  /** supplément par écran au-delà des écrans inclus, en centimes */
+  /** supplément pour le 1er écran au-delà des écrans inclus, en centimes — sert aussi de palier de repli */
   extra_screen_cents: number;
+  /** supplément pour le 2e écran en plus ; NULL = même prix que le palier précédent */
+  extra_screen_cents_2: number | null;
+  /** supplément pour le 3e écran en plus ; NULL = même prix que le palier précédent */
+  extra_screen_cents_3: number | null;
+  /** supplément pour le 4e écran en plus ; NULL = même prix que le palier précédent */
+  extra_screen_cents_4: number | null;
   /** plafond d'écrans sélectionnables */
   max_screens: number;
   /** bandeau mis en avant sur /commander (ex. « Best Seller ») ; vide = aucun */
@@ -82,17 +88,54 @@ export interface Offer {
   created_at: string;
 }
 
+/**
+ * Prix du N-ième écran supplémentaire (N = 1 pour le 1er écran au-delà des
+ * écrans inclus, jusqu'à 4). Un palier NULL hérite du dernier palier défini
+ * avant lui, en repliant jusqu'à extra_screen_cents (palier 1, toujours
+ * défini) — donc une offre sans palier 2-4 renseigné reste au tarif plat.
+ */
+function extraScreenTierCents(
+  offer: Pick<
+    Offer,
+    "extra_screen_cents" | "extra_screen_cents_2" | "extra_screen_cents_3" | "extra_screen_cents_4"
+  >,
+  tier: number,
+): number {
+  const tiers = [
+    offer.extra_screen_cents,
+    offer.extra_screen_cents_2,
+    offer.extra_screen_cents_3,
+    offer.extra_screen_cents_4,
+  ];
+  const index = Math.min(tier, tiers.length) - 1;
+  for (let i = index; i >= 0; i--) {
+    const value = tiers[i];
+    if (value != null) return value;
+  }
+  return offer.extra_screen_cents;
+}
+
 /** Calcule le prix total d'une offre pour un nombre d'écrans donné. */
 export function offerPriceCents(
   offer: Pick<
     Offer,
-    "price_cents" | "included_screens" | "extra_screen_cents" | "allow_screens"
+    | "price_cents"
+    | "included_screens"
+    | "extra_screen_cents"
+    | "extra_screen_cents_2"
+    | "extra_screen_cents_3"
+    | "extra_screen_cents_4"
+    | "allow_screens"
   >,
   screens: number,
 ): number {
   if (!offer.allow_screens) return offer.price_cents;
   const extra = Math.max(0, screens - (offer.included_screens || 1));
-  return offer.price_cents + extra * offer.extra_screen_cents;
+  let total = offer.price_cents;
+  for (let tier = 1; tier <= extra; tier++) {
+    total += extraScreenTierCents(offer, tier);
+  }
+  return total;
 }
 
 export type PaymentProvider = "stripe" | "paypal";

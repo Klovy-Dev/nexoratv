@@ -119,6 +119,9 @@ export default async function OrderStepPage({
                     included_screens: offer.included_screens,
                     allow_screens: offer.allow_screens,
                     extra_screen_cents: offer.extra_screen_cents,
+                    extra_screen_cents_2: offer.extra_screen_cents_2,
+                    extra_screen_cents_3: offer.extra_screen_cents_3,
+                    extra_screen_cents_4: offer.extra_screen_cents_4,
                     max_screens: offer.max_screens,
                     is_adult: offer.is_adult,
                   }}
@@ -172,7 +175,7 @@ export default async function OrderStepPage({
               {offer.allow_screens && (
                 <div>
                   <dt>Écran en plus</dt>
-                  <dd>+{formatPrice(offer.extra_screen_cents)}</dd>
+                  <dd>à partir de +{formatPrice(offer.extra_screen_cents)}</dd>
                 </div>
               )}
               <div>

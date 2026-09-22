@@ -18,6 +18,9 @@ export interface OrderStepOffer {
   included_screens: number;
   allow_screens: boolean;
   extra_screen_cents: number;
+  extra_screen_cents_2: number | null;
+  extra_screen_cents_3: number | null;
+  extra_screen_cents_4: number | null;
   max_screens: number;
   is_adult: boolean;
 }
@@ -98,14 +101,14 @@ export default function OrderPageForm({
               <option key={n} value={n}>
                 {n} écran{n > 1 ? "s" : ""}
                 {n > (offer.included_screens || 1)
-                  ? ` — +${formatPrice((n - (offer.included_screens || 1)) * offer.extra_screen_cents)}`
+                  ? ` — +${formatPrice(offerPriceCents(offer, n) - offerPriceCents(offer, offer.included_screens || 1))}`
                   : " — inclus"}
               </option>
             ))}
           </select>
           <p className="hint">
-            {formatPrice(offer.extra_screen_cents)} par écran au-delà de{" "}
-            {offer.included_screens}.
+            Tarif dégressif par écran au-delà de {offer.included_screens} — à
+            partir de {formatPrice(offer.extra_screen_cents)}.
           </p>
         </div>
       )}

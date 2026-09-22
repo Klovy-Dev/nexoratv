@@ -204,7 +204,7 @@ function OfferCard({
         <li>
           {offer.included_screens} écran{offer.included_screens > 1 ? "s" : ""} inclus
           {offer.allow_screens
-            ? ` · jusqu'à ${offer.max_screens} (+${formatPrice(offer.extra_screen_cents)}/écran)`
+            ? ` · jusqu'à ${offer.max_screens} (à partir de +${formatPrice(offer.extra_screen_cents)}/écran)`
             : ""}
         </li>
         <li>

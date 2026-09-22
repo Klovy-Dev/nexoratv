@@ -219,20 +219,7 @@ export default function OfferForm({
               Le client choisit son nombre d&apos;écrans sur la page Commander
             </label>
             {allowScreens && (
-              <div className="grid-2">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="of-extra">Supplément par écran en plus (€)</label>
-                  <input
-                    id="of-extra"
-                    name="extra_screen_price"
-                    className="input"
-                    inputMode="decimal"
-                    defaultValue={
-                      editing ? (editing.extra_screen_cents / 100).toFixed(2) : "3"
-                    }
-                    placeholder="3"
-                  />
-                </div>
+              <>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="of-maxscreens">Écrans maximum</label>
                   <input
@@ -245,7 +232,74 @@ export default function OfferForm({
                     defaultValue={editing?.max_screens ?? 5}
                   />
                 </div>
-              </div>
+                <div className="grid-2">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="of-extra">1er écran supplémentaire (€)</label>
+                    <input
+                      id="of-extra"
+                      name="extra_screen_price"
+                      className="input"
+                      inputMode="decimal"
+                      defaultValue={
+                        editing ? (editing.extra_screen_cents / 100).toFixed(2) : "3"
+                      }
+                      placeholder="3"
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="of-extra2">2e écran supplémentaire (€)</label>
+                    <input
+                      id="of-extra2"
+                      name="extra_screen_price_2"
+                      className="input"
+                      inputMode="decimal"
+                      defaultValue={
+                        editing?.extra_screen_cents_2 != null
+                          ? (editing.extra_screen_cents_2 / 100).toFixed(2)
+                          : ""
+                      }
+                      placeholder="idem palier précédent"
+                    />
+                  </div>
+                </div>
+                <div className="grid-2">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="of-extra3">3e écran supplémentaire (€)</label>
+                    <input
+                      id="of-extra3"
+                      name="extra_screen_price_3"
+                      className="input"
+                      inputMode="decimal"
+                      defaultValue={
+                        editing?.extra_screen_cents_3 != null
+                          ? (editing.extra_screen_cents_3 / 100).toFixed(2)
+                          : ""
+                      }
+                      placeholder="idem palier précédent"
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="of-extra4">4e écran supplémentaire (€)</label>
+                    <input
+                      id="of-extra4"
+                      name="extra_screen_price_4"
+                      className="input"
+                      inputMode="decimal"
+                      defaultValue={
+                        editing?.extra_screen_cents_4 != null
+                          ? (editing.extra_screen_cents_4 / 100).toFixed(2)
+                          : ""
+                      }
+                      placeholder="idem palier précédent"
+                    />
+                  </div>
+                </div>
+                <p className="hint">
+                  Tarif dégressif : laissez un champ vide pour reprendre le
+                  prix du palier précédent (ex. si seul le 1er est rempli,
+                  tous les écrans en plus sont au même prix, comme avant).
+                </p>
+              </>
             )}
           </div>
         )}
