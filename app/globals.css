@@ -672,30 +672,80 @@ table.data tbody tr:hover { background: var(--surface); }
 .admin-shell-main { flex: 1; width: 100%; min-width: 0; }
 .admin-shell-main section { padding: 32px 0 56px; }
 
+/* ---------- Menu admin (tiroir) — téléphone/tablette ---------- */
+.admin-mobile-bar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8, 9, 13, 0.92);
+  backdrop-filter: blur(14px);
+  position: sticky;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  z-index: 90;
+}
+/* .burger est display:none par défaut, réactivé seulement à 720px pour
+   le site public — l'admin a son propre seuil (880px), d'où l'override. */
+.admin-mobile-bar .burger { display: flex; position: relative; }
+.admin-burger-dot {
+  position: absolute; top: 2px; right: 0;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger);
+}
+.admin-mobile-bar-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.98rem; font-weight: 700;
+}
+
+.admin-nav-drawer {
+  display: none;
+  position: fixed;
+  top: 64px; left: 0; right: 0;
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  flex-direction: column;
+  padding: 8px 0 env(safe-area-inset-bottom);
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.admin-nav-drawer.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.admin-nav-drawer a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 20px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.admin-nav-drawer a.active { color: var(--text); background: var(--surface-2); }
+.admin-nav-drawer .admin-sidebar-badge { margin-left: auto; }
+
+.admin-nav-backdrop {
+  position: fixed;
+  inset: 64px 0 0 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 95;
+}
+
 @media (max-width: 880px) {
   .admin-shell-body { flex-direction: column; width: 100%; }
-  .admin-sidebar {
-    position: sticky;
-    top: 64px;
-    left: 0;
-    z-index: 90;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    flex-direction: row;
-    /* La colonne desktop fixe align-self:flex-start (dimensionné au
-       contenu) — on l'annule ici sinon la barre d'onglets mobile se
-       réduit à la largeur de son contenu au lieu de remplir l'écran. */
-    align-self: stretch;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 10px 12px;
-    background: rgba(8, 9, 13, 0.92);
-    backdrop-filter: blur(14px);
-  }
-  .admin-sidebar a { white-space: nowrap; flex-shrink: 0; }
+  .admin-sidebar { display: none; }
+  .admin-mobile-bar { display: flex; }
+  .admin-nav-drawer { display: flex; }
   .admin-shell-email { display: none; }
 }
 
@@ -704,8 +754,7 @@ table.data tbody tr:hover { background: var(--surface); }
   .admin-shell-brand { font-size: 0.92rem; gap: 6px; }
   .admin-shell-brand em { display: none; }
   .admin-shell-back-label { display: none; }
-  .admin-sidebar { padding: 8px 10px; gap: 2px; }
-  .admin-sidebar a { padding: 9px 12px; font-size: 0.88rem; }
+  .admin-mobile-bar { padding: 10px 14px; }
 }
 
 @media (max-width: 720px) {
