@@ -612,6 +612,7 @@ table.data tbody tr:hover { background: var(--surface); }
   background: rgba(8, 9, 13, 0.85);
   backdrop-filter: blur(14px);
 }
+.admin-shell-header .btn { flex-shrink: 0; }
 .admin-shell-brand {
   display: flex;
   align-items: baseline;
@@ -671,17 +672,47 @@ table.data tbody tr:hover { background: var(--surface); }
 @media (max-width: 880px) {
   .admin-shell-body { flex-direction: column; }
   .admin-sidebar {
-    position: static;
+    position: sticky;
+    top: 64px;
+    z-index: 90;
     width: auto;
     height: auto;
     flex-direction: row;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-right: none;
     border-bottom: 1px solid var(--border);
     padding: 10px 12px;
+    background: rgba(8, 9, 13, 0.92);
+    backdrop-filter: blur(14px);
   }
-  .admin-sidebar a { white-space: nowrap; }
+  .admin-sidebar a { white-space: nowrap; flex-shrink: 0; }
   .admin-shell-email { display: none; }
+}
+
+@media (max-width: 540px) {
+  .admin-shell-header { padding-inline: 14px; gap: 10px; }
+  .admin-shell-brand { font-size: 0.92rem; gap: 6px; }
+  .admin-shell-brand em { display: none; }
+  .admin-shell-back-label { display: none; }
+  .admin-sidebar { padding: 8px 10px; gap: 2px; }
+  .admin-sidebar a { padding: 9px 12px; font-size: 0.88rem; }
+}
+
+@media (max-width: 720px) {
+  /* Empêche le zoom automatique iOS au focus (police < 16px) */
+  .input, .select, .textarea { font-size: 16px; }
+  /* Cibles tactiles plus confortables pour les actions admin denses */
+  .btn-sm { padding: 10px 16px; min-height: 40px; }
+  .panel { padding: 20px; }
+  .stat { padding: 18px; }
+  .sub-admin-card { padding: 16px; }
+  table.data th, table.data td { padding: 12px; }
+}
+
+@media (max-width: 480px) {
+  .container { padding-inline: 16px; }
+  .panel { padding: 16px; }
 }
 
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }

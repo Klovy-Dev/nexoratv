@@ -16,8 +16,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </Link>
         <div className="admin-shell-user">
           <span className="admin-shell-email">{me.email}</span>
-          <Link href="/" className="btn btn-ghost btn-sm">
-            ← Retour au site
+          <Link href="/" className="btn btn-ghost btn-sm" aria-label="Retour au site">
+            <span aria-hidden="true">←</span>
+            <span className="admin-shell-back-label">Retour au site</span>
           </Link>
         </div>
       </header>
