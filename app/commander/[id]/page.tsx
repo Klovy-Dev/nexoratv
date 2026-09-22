@@ -10,6 +10,7 @@ import { ORDERS_DISABLED } from "@/lib/orders-maintenance";
 import { formatPrice } from "@/lib/validation";
 import OrderPageForm from "./OrderPageForm";
 import type { ProviderKind } from "@/lib/types";
+import { CheckIcon, LockIcon, BoltIcon, ChatIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -129,19 +130,19 @@ export default async function OrderStepPage({
             <ul className="order-reassure">
               {isFreeOffer ? (
                 <li>
-                  <span aria-hidden="true">✅</span> Aucun paiement requis pour cet essai
+                  <CheckIcon size={16} /> Aucun paiement requis pour cet essai
                 </li>
               ) : (
                 <li>
-                  <span aria-hidden="true">🔒</span> Paiement sécurisé par Stripe
+                  <LockIcon size={16} /> Paiement sécurisé par Stripe
                 </li>
               )}
               <li>
-                <span aria-hidden="true">⚡</span> Activation{" "}
+                <BoltIcon size={16} /> Activation{" "}
                 {isFreeOffer ? "immédiate" : "automatique après paiement"}
               </li>
               <li>
-                <span aria-hidden="true">💬</span> Support si besoin d&apos;aide
+                <ChatIcon size={16} /> Support si besoin d&apos;aide
               </li>
             </ul>
           </div>

@@ -1,13 +1,21 @@
 import Link from "next/link";
+import {
+  TvIcon,
+  BoltIcon,
+  MonitorIcon,
+  FilmIcon,
+  LockIcon,
+  ChatIcon,
+} from "@/components/icons";
 
 const FEATURES = [
-  ["📺", "Catalogue immense", "Chaînes internationales, sport, cinéma, jeunesse et documentaires réunis dans une seule application."],
-  ["⚡", "Zapping instantané", "Serveurs optimisés et anti-freeze pour un démarrage des flux en moins d'une seconde."],
-  ["🖥️", "Multi-appareils", "Smart TV, Android, iOS, Fire Stick, box et ordinateur : votre compte vous suit partout."],
-  ["🎬", "VOD & replay", "Des milliers de films et séries à la demande, mis à jour chaque semaine."],
-  ["🔒", "Connexion stable", "Infrastructure redondée avec compatibilité VPN pour une lecture fiable en toutes circonstances."],
-  ["💬", "Support réactif", "Une équipe joignable 7j/7 par messagerie pour vous accompagner à chaque étape."],
-];
+  [TvIcon, "Catalogue immense", "Chaînes internationales, sport, cinéma, jeunesse et documentaires réunis dans une seule application."],
+  [BoltIcon, "Zapping instantané", "Serveurs optimisés et anti-freeze pour un démarrage des flux en moins d'une seconde."],
+  [MonitorIcon, "Multi-appareils", "Smart TV, Android, iOS, Fire Stick, box et ordinateur : votre compte vous suit partout."],
+  [FilmIcon, "VOD & replay", "Des milliers de films et séries à la demande, mis à jour chaque semaine."],
+  [LockIcon, "Connexion stable", "Infrastructure redondée avec compatibilité VPN pour une lecture fiable en toutes circonstances."],
+  [ChatIcon, "Support réactif", "Une équipe joignable 7j/7 par messagerie pour vous accompagner à chaque étape."],
+] as const;
 
 const STEPS = [
   ["1", "Créez votre compte", "Inscrivez-vous en une minute et choisissez la formule qui vous convient."],
@@ -57,9 +65,11 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid">
-            {FEATURES.map(([icon, title, text]) => (
+            {FEATURES.map(([Icon, title, text]) => (
               <div className="card reveal" key={title}>
-                <div className="card-icon">{icon}</div>
+                <div className="card-icon">
+                  <Icon />
+                </div>
                 <h3>{title}</h3>
                 <p>{text}</p>
               </div>

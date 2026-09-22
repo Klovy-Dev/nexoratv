@@ -6,6 +6,7 @@ import FormErrors from "@/components/FormErrors";
 import SubmitButton from "@/components/SubmitButton";
 import { formatPrice } from "@/lib/validation";
 import { offerPriceCents, type FormState } from "@/lib/types";
+import { LockIcon } from "@/components/icons";
 
 const initial: FormState = {};
 
@@ -197,8 +198,11 @@ export default function OrderPageForm({
           >
             Payer {formatPrice(total)} {paymentMethod === "paypal" ? "avec PayPal" : "avec Stripe"}
           </SubmitButton>
-          <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>
-            🔒 Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
+          <p
+            className="hint"
+            style={{ textAlign: "center", marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+          >
+            <LockIcon size={14} /> Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
           </p>
         </>
       )}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DISCORD_INVITE_URL } from "@/lib/community-links";
+import { GameControllerIcon, ChatIcon, MailIcon, TrashIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Support",
@@ -32,8 +33,8 @@ export default function ContactPage() {
         <div className="container">
           <div className="grid">
             <div className="card">
-              <div className="card-icon" aria-hidden="true">
-                🎮
+              <div className="card-icon">
+                <GameControllerIcon />
               </div>
               <h3>Communauté Discord</h3>
               <p>
@@ -53,8 +54,8 @@ export default function ContactPage() {
             </div>
 
             <div className="card">
-              <div className="card-icon" aria-hidden="true">
-                💬
+              <div className="card-icon">
+                <ChatIcon />
               </div>
               <h3>Support Telegram</h3>
               <p>
@@ -74,8 +75,8 @@ export default function ContactPage() {
             </div>
 
             <div className="card">
-              <div className="card-icon" aria-hidden="true">
-                ✉️
+              <div className="card-icon">
+                <MailIcon />
               </div>
               <h3>Demandes écrites &amp; questions légales</h3>
               <p>
@@ -96,8 +97,8 @@ export default function ContactPage() {
             </div>
 
             <div className="card">
-              <div className="card-icon" aria-hidden="true">
-                🗑️
+              <div className="card-icon">
+                <TrashIcon />
               </div>
               <h3>Supprimer mon compte</h3>
               <p>

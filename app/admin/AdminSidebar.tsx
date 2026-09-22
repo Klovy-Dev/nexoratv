@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { UsersIcon, ReceiptIcon, TagIcon, TvIcon, BookIcon, LogIcon } from "@/components/icons";
 
 const LINKS = [
-  { href: "/admin", label: "Clients", icon: "👥" },
-  { href: "/admin/commandes", label: "Commandes", icon: "🧾" },
-  { href: "/admin/offres", label: "Offres", icon: "🏷️" },
-  { href: "/admin/playlist", label: "Playlists MAC", icon: "📺" },
-  { href: "/admin/tuto", label: "Page Tuto", icon: "📖" },
-  { href: "/admin/journal", label: "Journal", icon: "📜" },
+  { href: "/admin", label: "Clients", icon: UsersIcon },
+  { href: "/admin/commandes", label: "Commandes", icon: ReceiptIcon },
+  { href: "/admin/offres", label: "Offres", icon: TagIcon },
+  { href: "/admin/playlist", label: "Playlists MAC", icon: TvIcon },
+  { href: "/admin/tuto", label: "Page Tuto", icon: BookIcon },
+  { href: "/admin/journal", label: "Journal", icon: LogIcon },
 ];
 
 export default function AdminSidebar({ pendingOrders }: { pendingOrders: number }) {
@@ -29,9 +30,10 @@ export default function AdminSidebar({ pendingOrders }: { pendingOrders: number 
 
   const renderLink = (l: (typeof LINKS)[number]) => {
     const active = isActive(l.href);
+    const Icon = l.icon;
     return (
       <Link key={l.href} href={l.href} className={active ? "active" : ""} onClick={close}>
-        <span aria-hidden="true">{l.icon}</span>
+        <Icon size={18} />
         {l.label}
         {l.href === "/admin/commandes" && pendingOrders > 0 && (
           <span className="admin-sidebar-badge">{pendingOrders}</span>
@@ -64,7 +66,7 @@ export default function AdminSidebar({ pendingOrders }: { pendingOrders: number 
         <span className="admin-mobile-bar-label">
           {current ? (
             <>
-              <span aria-hidden="true">{current.icon}</span> {current.label}
+              <current.icon size={16} /> {current.label}
             </>
           ) : (
             "Menu"
