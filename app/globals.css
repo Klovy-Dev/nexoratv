@@ -584,12 +584,13 @@ table.data tbody tr:hover { background: var(--surface); }
 .collapsible-body { margin-top: 18px; }
 
 .admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-.admin-tabs a {
+.admin-tabs a, .admin-tabs button {
   padding: 9px 18px; border-radius: 999px;
   font-size: 0.88rem; font-weight: 600;
   border: 1px solid var(--border); color: var(--text-muted);
+  background: none; font-family: inherit; cursor: pointer;
 }
-.admin-tabs a.active { background: var(--accent-grad); color: #0b0c0f; border-color: transparent; }
+.admin-tabs a.active, .admin-tabs button.active { background: var(--accent-grad); color: #0b0c0f; border-color: transparent; }
 
 /* ---------- Dashboard admin (header + sidebar dédiés) ---------- */
 .admin-shell {
