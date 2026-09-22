@@ -7,6 +7,8 @@ import {
   LockIcon,
   ChatIcon,
 } from "@/components/icons";
+import { listReviews, reviewStats } from "@/lib/data";
+import { formatDate, initials } from "@/lib/validation";
 
 const FEATURES = [
   [TvIcon, "Catalogue immense", "Chaînes internationales, sport, cinéma, jeunesse et documentaires réunis dans une seule application."],
@@ -17,13 +19,15 @@ const FEATURES = [
   [ChatIcon, "Support réactif", "Une équipe joignable 7j/7 par messagerie pour vous accompagner à chaque étape."],
 ] as const;
 
-const STEPS = [
-  ["1", "Créez votre compte", "Inscrivez-vous en une minute et choisissez la formule qui vous convient."],
-  ["2", "Installez l'application", "Téléchargez NexoraTV sur votre appareil en quelques minutes. Aucune compétence technique requise."],
-  ["3", "Profitez", "Retrouvez vos identifiants sur votre profil, connectez-vous et lancez votre premier programme."],
-];
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [reviews, stats] = await Promise.all([listReviews(), reviewStats()]);
+  const highlighted = [...reviews]
+    .sort((a, b) => b.rating - a.rating || +new Date(b.created_at) - +new Date(a.created_at))
+    .slice(0, 3);
+  const rounded = Math.round(stats.average);
+
   return (
     <>
       <section className="hero">
@@ -78,28 +82,46 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section style={{ background: "var(--bg-soft)" }}>
-        <div className="container">
-          <div className="section-head reveal">
-            <span className="eyebrow">En 3 étapes</span>
-            <h2>Installé en moins de 5 minutes</h2>
+      {highlighted.length > 0 && (
+        <section style={{ background: "var(--bg-soft)" }}>
+          <div className="container">
+            <div className="section-head reveal">
+              <span className="eyebrow">Ils utilisent NexoraTV</span>
+              <h2>La confiance de notre communauté</h2>
+              <p className="stars" style={{ fontSize: "1.3rem", margin: "6px 0" }}>
+                {"★".repeat(rounded)}
+                {"☆".repeat(5 - rounded)}
+              </p>
+              <p className="lead">
+                {stats.average.toFixed(1).replace(".", ",")} / 5 sur {stats.count} avis
+              </p>
+            </div>
+            <div className="reviews-grid">
+              {highlighted.map((r) => (
+                <article className="review reveal" key={r.id}>
+                  <div className="review-head">
+                    <div className="avatar">{initials(r.name)}</div>
+                    <div>
+                      <div className="who">{r.name}</div>
+                      <div className="when">{formatDate(r.created_at)}</div>
+                    </div>
+                  </div>
+                  <div className="stars">
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </div>
+                  <p>{r.body}</p>
+                </article>
+              ))}
+            </div>
+            <div className="center mt-40 reveal">
+              <Link href="/avis" className="btn btn-ghost">
+                Voir tous les avis →
+              </Link>
+            </div>
           </div>
-          <div className="grid">
-            {STEPS.map(([num, title, text]) => (
-              <div className="card reveal" key={num}>
-                <div className="card-icon">{num}</div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            ))}
-          </div>
-          <div className="center mt-40 reveal">
-            <Link href="/telecharger" className="btn btn-ghost">
-              Voir comment installer l&apos;app →
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section>
         <div className="container">

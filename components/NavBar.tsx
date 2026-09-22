@@ -6,17 +6,20 @@ import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth-actions";
 import { initials } from "@/lib/validation";
 import type { User } from "@/lib/types";
+import { DISCORD_INVITE_URL, TELEGRAM_INVITE_URL } from "@/lib/community-links";
 
 const LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/commander", label: "Commander" },
   { href: "/avis", label: "Avis" },
-  { href: "/telecharger", label: "Télécharger" },
+  { href: "/contact", label: "Contact" },
 ];
 
-const MORE_LINKS = [
-  { href: "/tuto", label: "Tuto" },
-  { href: "/contact", label: "Contact" },
+const MORE_LINKS = [{ href: "/tuto", label: "Tuto" }];
+
+const SOCIAL_LINKS = [
+  { href: DISCORD_INVITE_URL, label: "Discord" },
+  { href: TELEGRAM_INVITE_URL, label: "Telegram" },
 ];
 
 export default function NavBar({ user }: { user: User | null }) {
@@ -88,6 +91,12 @@ export default function NavBar({ user }: { user: User | null }) {
                   >
                     {l.label}
                   </Link>
+                ))}
+                <span className="nav-more-menu-sep">Réseaux sociaux</span>
+                {SOCIAL_LINKS.map((l) => (
+                  <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer">
+                    {l.label}
+                  </a>
                 ))}
               </div>
             </li>
@@ -174,6 +183,12 @@ export default function NavBar({ user }: { user: User | null }) {
               >
                 {l.label}
               </Link>
+            ))}
+            <span className="nav-drawer-sep">Réseaux sociaux</span>
+            {SOCIAL_LINKS.map((l) => (
+              <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" onClick={close}>
+                {l.label}
+              </a>
             ))}
           </nav>
 

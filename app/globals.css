@@ -1780,6 +1780,15 @@ table.data tbody tr:hover { background: var(--surface); }
   font-size: 0.88rem; color: var(--text-muted);
 }
 .nav-more-menu a:hover, .nav-more-menu a.active { background: var(--surface-2); color: var(--text); }
+.nav-more-menu-sep {
+  display: block;
+  margin: 6px 0 4px;
+  padding: 8px 10px 2px;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted);
+}
 
 .nav-drawer-sep {
   padding: 16px 24px 6px; font-size: 0.72rem; font-weight: 700;
