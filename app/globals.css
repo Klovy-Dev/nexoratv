@@ -602,11 +602,13 @@ table.data tbody tr:hover { background: var(--surface); }
 .admin-shell-header {
   position: sticky;
   top: 0;
+  left: 0;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  width: 100%;
   height: 64px;
   padding-inline: 20px;
   border-bottom: 1px solid var(--border);
@@ -667,18 +669,24 @@ table.data tbody tr:hover { background: var(--surface); }
   border-radius: 999px;
 }
 
-.admin-shell-main { flex: 1; min-width: 0; }
+.admin-shell-main { flex: 1; width: 100%; min-width: 0; }
 .admin-shell-main section { padding: 32px 0 56px; }
 
 @media (max-width: 880px) {
-  .admin-shell-body { flex-direction: column; }
+  .admin-shell-body { flex-direction: column; width: 100%; }
   .admin-sidebar {
     position: sticky;
     top: 64px;
+    left: 0;
     z-index: 90;
-    width: auto;
+    width: 100%;
+    max-width: 100%;
     height: auto;
     flex-direction: row;
+    /* La colonne desktop fixe align-self:flex-start (dimensionné au
+       contenu) — on l'annule ici sinon la barre d'onglets mobile se
+       réduit à la largeur de son contenu au lieu de remplir l'écran. */
+    align-self: stretch;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-right: none;
