@@ -1795,6 +1795,23 @@ table.data tbody tr:hover { background: var(--surface); }
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
 }
 
+.nav-drawer-group { border-top: 1px solid var(--border); }
+.nav-drawer-group summary {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; font-size: 0.96rem; font-weight: 600; color: var(--text);
+  cursor: pointer; list-style: none;
+}
+.nav-drawer-group summary::-webkit-details-marker { display: none; }
+.nav-drawer-group-chevron {
+  color: var(--text-muted); font-size: 0.8rem; transition: transform 0.2s ease;
+}
+.nav-drawer-group[open] .nav-drawer-group-chevron { transform: rotate(180deg); }
+.nav-drawer-group-body { display: flex; flex-direction: column; padding-bottom: 8px; }
+.nav-drawer-group-body a {
+  padding: 12px 24px 12px 36px; font-size: 0.94rem; color: var(--text-muted); font-weight: 500;
+}
+.nav-drawer-group-body a.active { color: var(--text); background: var(--surface-2); }
+
 /* ==========================================================================
    Onglets du profil
    ========================================================================== */

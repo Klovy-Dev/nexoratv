@@ -173,23 +173,37 @@ export default function NavBar({ user }: { user: User | null }) {
                 {l.label}
               </Link>
             ))}
-            <span className="nav-drawer-sep">Autres</span>
-            {MORE_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={isActive(l.href) ? "active" : ""}
-                onClick={close}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <span className="nav-drawer-sep">Réseaux sociaux</span>
-            {SOCIAL_LINKS.map((l) => (
-              <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" onClick={close}>
-                {l.label}
-              </a>
-            ))}
+            <details className="nav-drawer-group">
+              <summary>
+                Autres
+                <span className="nav-drawer-group-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div className="nav-drawer-group-body">
+                {MORE_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={isActive(l.href) ? "active" : ""}
+                    onClick={close}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </details>
+            <details className="nav-drawer-group">
+              <summary>
+                Réseaux sociaux
+                <span className="nav-drawer-group-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div className="nav-drawer-group-body">
+                {SOCIAL_LINKS.map((l) => (
+                  <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" onClick={close}>
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            </details>
           </nav>
 
           <div className="nav-drawer-account">
