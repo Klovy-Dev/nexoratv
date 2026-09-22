@@ -122,28 +122,41 @@ export default async function CommanderPage({
                 </div>
               )}
 
-              {groups.map(([kind, list]) => (
-                <div key={kind} style={{ marginBottom: 44 }}>
-                  {groups.length > 1 && (
-                    <h2 style={{ fontSize: "1.4rem", marginBottom: 18 }}>
-                      {KIND_FR[kind]}
-                    </h2>
-                  )}
-                  <div className="offer-grid">
-                    {list.map((offer) => (
-                      <OfferCard
-                        key={offer.id}
-                        offer={offer}
-                        loggedIn={Boolean(user)}
-                        alreadyPending={pendingOfferIds.has(offer.id)}
-                        trialLocked={
-                          trialUsed && trialIds.has(offer.goldenott_package_id)
-                        }
-                      />
+              {groups.map(([kind, list]) => {
+                const durationGroups = groupByDuration(list);
+                const showDurationHeads = list.length > 1;
+                return (
+                  <div key={kind} style={{ marginBottom: 44 }}>
+                    {groups.length > 1 && (
+                      <h2 style={{ fontSize: "1.4rem", marginBottom: 18 }}>
+                        {KIND_FR[kind]}
+                      </h2>
+                    )}
+                    {durationGroups.map(([duration, durationOffers]) => (
+                      <div key={duration || "_"} style={{ marginBottom: 28 }}>
+                        {showDurationHeads && duration && (
+                          <h3 style={{ fontSize: "1.05rem", marginBottom: 14, color: "var(--text-muted)" }}>
+                            {duration}
+                          </h3>
+                        )}
+                        <div className="offer-grid">
+                          {durationOffers.map((offer) => (
+                            <OfferCard
+                              key={offer.id}
+                              offer={offer}
+                              loggedIn={Boolean(user)}
+                              alreadyPending={pendingOfferIds.has(offer.id)}
+                              trialLocked={
+                                trialUsed && trialIds.has(offer.goldenott_package_id)
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </>
           )}
         </div>
@@ -163,6 +176,27 @@ function groupByKind(offers: Offer[]): [ProviderKind, Offer[]][] {
     list.sort((a, b) => a.price_cents - b.price_cents || a.id - b.id);
   }
   return [...map.entries()];
+}
+
+/**
+ * À l'intérieur d'un type d'offre, regroupe par durée (ex. plusieurs formats
+ * d'écrans pour un même « 12 mois ») pour éviter que le tri global par prix
+ * n'entremêle les durées entre elles. Groupes de durée triés par leur offre
+ * la moins chère ; offres à l'intérieur triées par prix croissant.
+ */
+function groupByDuration(offers: Offer[]): [string, Offer[]][] {
+  const map = new Map<string, Offer[]>();
+  for (const o of offers) {
+    const key = o.duration_label || "";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(o);
+  }
+  const groups = [...map.entries()];
+  for (const [, list] of groups) {
+    list.sort((a, b) => a.price_cents - b.price_cents || a.id - b.id);
+  }
+  groups.sort((a, b) => (a[1][0]?.price_cents ?? 0) - (b[1][0]?.price_cents ?? 0));
+  return groups;
 }
 
 function OfferCard({
