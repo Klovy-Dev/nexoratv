@@ -153,6 +153,17 @@ export function CheckIcon({ size = 24, className }: Props) {
   );
 }
 
+export function ChartIcon({ size = 24, className }: Props) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="6" y="13" width="3.2" height="7" />
+      <rect x="10.4" y="8" width="3.2" height="12" />
+      <rect x="14.8" y="4" width="3.2" height="16" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ size = 24, className }: Props) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>

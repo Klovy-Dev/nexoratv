@@ -3,7 +3,10 @@ import { sql } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
 import { isExpired } from "@/lib/validation";
 import type {
+  AccountingSummary,
+  CreditPurchase,
   DevicePlaylist,
+  Expense,
   TutoSection,
   Offer,
   Order,
@@ -743,4 +746,104 @@ export async function logGoldenottEvent(e: {
   } catch {
     /* le journal ne doit jamais faire échouer l'action principale */
   }
+}
+
+/* ---------- Comptabilité ---------- */
+
+// `credits` est NUMERIC en base : postgres.js le renvoie en string par
+// défaut, d'où le cast explicite ::float8 (précision suffisante, ce n'est
+// qu'une quantité de crédits, pas un montant en euros).
+export async function listCreditPurchases(): Promise<CreditPurchase[]> {
+  return (await sql`
+    SELECT id, purchased_at, credits::float8 AS credits, total_price_cents, note, created_by, created_at
+    FROM credit_purchases ORDER BY purchased_at DESC, id DESC
+  `) as unknown as CreditPurchase[];
+}
+
+export async function creditPurchaseById(id: number): Promise<CreditPurchase | null> {
+  const rows = (await sql`
+    SELECT id, purchased_at, credits::float8 AS credits, total_price_cents, note, created_by, created_at
+    FROM credit_purchases WHERE id = ${id}
+  `) as unknown as CreditPurchase[];
+  return rows[0] ?? null;
+}
+
+export async function listExpenses(): Promise<Expense[]> {
+  return (await sql`
+    SELECT * FROM expenses ORDER BY expense_date DESC, id DESC
+  `) as unknown as Expense[];
+}
+
+export async function expenseById(id: number): Promise<Expense | null> {
+  const rows = (await sql`
+    SELECT * FROM expenses WHERE id = ${id}
+  `) as unknown as Expense[];
+  return rows[0] ?? null;
+}
+
+export async function creditPurchasesForPeriod(from: string, to: string): Promise<CreditPurchase[]> {
+  return (await sql`
+    SELECT id, purchased_at, credits::float8 AS credits, total_price_cents, note, created_by, created_at
+    FROM credit_purchases WHERE purchased_at BETWEEN ${from} AND ${to} ORDER BY purchased_at
+  `) as unknown as CreditPurchase[];
+}
+
+export async function expensesForPeriod(from: string, to: string): Promise<Expense[]> {
+  return (await sql`
+    SELECT * FROM expenses WHERE expense_date BETWEEN ${from} AND ${to} ORDER BY expense_date
+  `) as unknown as Expense[];
+}
+
+/** Commandes honorées et payées sur la période — pour le détail de l'export comptable. */
+export async function fulfilledOrdersForPeriod(
+  from: string,
+  to: string,
+): Promise<{ id: number; title: string; price_cents: number; payment_provider: string; paid_at: string }[]> {
+  return (await sql`
+    SELECT id, title, price_cents, payment_provider, paid_at
+    FROM iptv_orders
+    WHERE status = 'fulfilled' AND paid_at IS NOT NULL AND paid_at::date BETWEEN ${from} AND ${to}
+    ORDER BY paid_at
+  `) as unknown as { id: number; title: string; price_cents: number; payment_provider: string; paid_at: string }[];
+}
+
+/**
+ * CA / coûts / marge sur une période [from, to] (dates incluses).
+ * Revenu = commandes honorées, sur leur date de paiement réelle (paid_at).
+ * Coûts = achats de crédits fournisseur + dépenses diverses sur la période.
+ */
+export async function accountingSummary(from: string, to: string): Promise<AccountingSummary> {
+  const [revenue, credits, expensesRow] = await Promise.all([
+    sql`
+      SELECT COUNT(*)::int AS n, COALESCE(SUM(price_cents), 0)::int AS cents
+      FROM iptv_orders
+      WHERE status = 'fulfilled'
+        AND paid_at IS NOT NULL
+        AND paid_at::date BETWEEN ${from} AND ${to}
+    ` as unknown as Promise<{ n: number; cents: number }[]>,
+    sql`
+      SELECT COALESCE(SUM(total_price_cents), 0)::int AS cents
+      FROM credit_purchases
+      WHERE purchased_at BETWEEN ${from} AND ${to}
+    ` as unknown as Promise<{ cents: number }[]>,
+    sql`
+      SELECT COALESCE(SUM(amount_cents), 0)::int AS cents
+      FROM expenses
+      WHERE expense_date BETWEEN ${from} AND ${to}
+    ` as unknown as Promise<{ cents: number }[]>,
+  ]);
+
+  const revenueCents = revenue[0]?.cents ?? 0;
+  const creditCostCents = credits[0]?.cents ?? 0;
+  const expenseCents = expensesRow[0]?.cents ?? 0;
+  const costCents = creditCostCents + expenseCents;
+
+  return {
+    revenueCents,
+    creditCostCents,
+    expenseCents,
+    costCents,
+    marginCents: revenueCents - costCents,
+    orderCount: revenue[0]?.n ?? 0,
+  };
 }

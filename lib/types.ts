@@ -218,3 +218,36 @@ export interface DevicePlaylist {
   created_at: string;
   updated_at: string;
 }
+
+/** Achat de crédits fournisseur — cf. /admin/comptabilite/credits. */
+export interface CreditPurchase {
+  id: number;
+  purchased_at: string;
+  credits: number;
+  total_price_cents: number;
+  note: string;
+  created_by: number | null;
+  created_at: string;
+}
+
+/** Dépense diverse (hébergement, pub, remboursement...) — cf. /admin/comptabilite/depenses. */
+export interface Expense {
+  id: number;
+  expense_date: string;
+  label: string;
+  category: string;
+  amount_cents: number;
+  note: string;
+  created_by: number | null;
+  created_at: string;
+}
+
+/** Résumé CA / coûts / marge sur une période — cf. /admin/comptabilite. */
+export interface AccountingSummary {
+  revenueCents: number;
+  creditCostCents: number;
+  expenseCents: number;
+  costCents: number;
+  marginCents: number;
+  orderCount: number;
+}

@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 16;
+const SCHEMA_VERSION = 17;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -360,6 +360,39 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_customer_feedback_created ON customer_feedback (created_at DESC)`;
+
+  /* ---------- Comptabilité (admin) ---------- */
+
+  // Achats de crédits auprès du fournisseur IPTV (1 crédit = 1 an de ligne,
+  // cf. app/admin/comptabilite) : sert de base au calcul du coût réel et de
+  // la marge, en face du chiffre d'affaires des commandes.
+  await raw`
+    CREATE TABLE IF NOT EXISTS credit_purchases (
+      id                SERIAL PRIMARY KEY,
+      purchased_at      DATE NOT NULL DEFAULT CURRENT_DATE,
+      credits           NUMERIC(10,2) NOT NULL,
+      total_price_cents INTEGER NOT NULL,
+      note              TEXT NOT NULL DEFAULT '',
+      created_by        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_credit_purchases_date ON credit_purchases (purchased_at DESC)`;
+
+  // Autres dépenses (hébergement, pub, outils, remboursements...).
+  await raw`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id           SERIAL PRIMARY KEY,
+      expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      label        TEXT NOT NULL,
+      category     TEXT NOT NULL DEFAULT '',
+      amount_cents INTEGER NOT NULL,
+      note         TEXT NOT NULL DEFAULT '',
+      created_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses (expense_date DESC)`;
 
   await raw`
     INSERT INTO app_meta (key, value)
