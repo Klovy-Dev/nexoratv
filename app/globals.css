@@ -597,6 +597,7 @@ table.data tbody tr:hover { background: var(--surface); }
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  touch-action: manipulation;
 }
 .admin-shell-header {
   position: sticky;

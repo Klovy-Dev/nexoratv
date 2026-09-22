@@ -1,8 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { Viewport } from "next";
 import { requireAdmin } from "@/lib/auth";
 import { pendingOrdersCount } from "@/lib/data";
 import AdminSidebar from "./AdminSidebar";
+
+// Panel admin = outil interne (pas du contenu public) : on bloque le
+// pinch-to-zoom pour un rendu proche d'une appli native sur téléphone.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const me = await requireAdmin();
