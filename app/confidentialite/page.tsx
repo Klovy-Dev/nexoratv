@@ -39,6 +39,13 @@ export default function ConfidentialitePage() {
           <strong>Support</strong> : contenu des messages adressés via le
           formulaire de contact.
         </li>
+        <li>
+          <strong>Mesure d&apos;audience</strong> : pages consultées et heure de
+          visite, associées à un identifiant anonyme calculé à partir de
+          l&apos;adresse IP et du navigateur, renouvelé chaque jour et non
+          réversible. Aucun cookie n&apos;est déposé et l&apos;adresse IP
+          n&apos;est pas conservée.
+        </li>
       </ul>
 
       <h2>3. Finalités et bases légales</h2>
@@ -47,6 +54,7 @@ export default function ConfidentialitePage() {
         <li>Fourniture des identifiants d&apos;abonnement — exécution du contrat.</li>
         <li>Sécurité du service et prévention de la fraude — intérêt légitime.</li>
         <li>Réponse aux demandes de support — intérêt légitime.</li>
+        <li>Statistiques de fréquentation du site — intérêt légitime.</li>
         <li>Obligations légales et comptables — obligation légale.</li>
       </ul>
 
@@ -55,6 +63,7 @@ export default function ConfidentialitePage() {
         <li>Données de compte : durée de vie du compte, puis suppression sous 12 mois.</li>
         <li>Journaux de connexion : 12 mois maximum.</li>
         <li>Messages de support : 24 mois maximum.</li>
+        <li>Statistiques de fréquentation : 6 mois maximum.</li>
       </ul>
 
       <h2>5. Destinataires</h2>

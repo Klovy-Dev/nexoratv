@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 19;
+const SCHEMA_VERSION = 20;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -402,6 +402,21 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses (expense_date DESC)`;
+
+  /* ---------- Mesure d'audience (dashboard admin) ---------- */
+
+  // Une ligne par page vue. `visitor` est un hachage quotidien (IP + UA + jour
+  // + secret) : compte les visiteurs uniques sans cookie ni donnée
+  // identifiante. Purgé au-delà de 180 jours (cron).
+  await raw`
+    CREATE TABLE IF NOT EXISTS page_views (
+      id         BIGSERIAL PRIMARY KEY,
+      path       TEXT NOT NULL,
+      visitor    TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await raw`CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views (created_at DESC)`;
 
   await raw`
     INSERT INTO app_meta (key, value)

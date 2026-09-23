@@ -782,6 +782,69 @@ table.data tbody tr:hover { background: var(--surface); }
 .stat strong { display: block; font-size: 1.8rem; }
 .stat span { color: var(--text-muted); font-size: 0.85rem; }
 
+/* ---------- Dashboard admin ---------- */
+.dash-kpi { display: flex; flex-direction: column; gap: 4px; }
+.dash-kpi .dash-kpi-label { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+.dash-kpi strong { font-size: 2rem; line-height: 1.1; }
+.dash-kpi .dash-kpi-sub { font-size: 0.78rem; }
+.dash-trend { font-size: 0.8rem; color: var(--text-muted); }
+.dash-trend.up { color: var(--success); }
+.dash-trend.down { color: var(--danger); }
+a.dash-now { color: inherit; text-decoration: none; transition: border-color 0.2s var(--ease); }
+a.dash-now:hover { border-color: var(--accent); }
+
+.dash-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.dash-chart {
+  margin: 0; padding: 16px; background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.dash-chart figcaption {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 0.88rem; font-weight: 600; margin-bottom: 12px;
+}
+.dash-chart figcaption .muted { font-weight: 400; font-size: 0.8rem; }
+.dash-plot { position: relative; padding-top: 16px; }
+.dash-max { position: absolute; top: 0; left: 0; font-size: 0.72rem; color: var(--text-muted); }
+.dash-bars {
+  display: flex; align-items: flex-end; gap: 2px; height: 110px;
+  border-top: 1px dashed var(--border); border-bottom: 1px solid var(--border);
+}
+.dash-col {
+  position: relative; flex: 1; height: 100%;
+  display: flex; align-items: flex-end; outline: none; cursor: default;
+}
+.dash-bar {
+  width: 100%; min-height: 0; background: var(--accent);
+  border-radius: 4px 4px 0 0; opacity: 0.85; transition: opacity 0.15s;
+}
+.dash-col:hover .dash-bar, .dash-col:focus-visible .dash-bar { opacity: 1; }
+.dash-col:hover::after, .dash-col:focus-visible::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); white-space: nowrap; z-index: 2;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; pointer-events: none;
+}
+.dash-col:first-child:hover::after, .dash-col:first-child:focus-visible::after { left: 0; transform: none; }
+.dash-col:last-child:hover::after, .dash-col:last-child:focus-visible::after { left: auto; right: 0; transform: none; }
+.dash-axis {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 0.72rem; color: var(--text-muted);
+}
+.dash-details { margin-top: 18px; }
+.dash-details summary { cursor: pointer; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px; }
+
+.dash-top { list-style: none; display: grid; gap: 8px; }
+.dash-top li {
+  position: relative; display: flex; justify-content: space-between; gap: 12px;
+  padding: 8px 12px; border-radius: 8px; overflow: hidden;
+}
+.dash-top code { position: relative; z-index: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-top strong { position: relative; z-index: 1; }
+.dash-top-bar {
+  position: absolute; inset: 0 auto 0 0; background: rgba(var(--accent-rgb), 0.14);
+  border-radius: 8px;
+}
+
 /* ---------- Contenu légal ---------- */
 .legal { max-width: 780px; margin-inline: auto; }
 .legal h2 { font-size: 1.4rem; margin: 40px 0 14px; }

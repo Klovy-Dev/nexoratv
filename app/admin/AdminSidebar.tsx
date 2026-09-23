@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { UsersIcon, ReceiptIcon, TagIcon, TvIcon, BookIcon, LogIcon, ChartIcon } from "@/components/icons";
+import { BoltIcon, UsersIcon, ReceiptIcon, TagIcon, TvIcon, BookIcon, LogIcon, ChartIcon } from "@/components/icons";
 
 const LINKS = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: BoltIcon },
   { href: "/admin", label: "Clients", icon: UsersIcon },
   { href: "/admin/commandes", label: "Commandes", icon: ReceiptIcon },
   { href: "/admin/offres", label: "Offres", icon: TagIcon },

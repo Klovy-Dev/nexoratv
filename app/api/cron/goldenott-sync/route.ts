@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { purgeExpiredTrialsAndRejected, subscriptionById } from "@/lib/data";
 import { syncSubscriptionLocal } from "@/lib/goldenott-provision";
 import { goldenottConfigured } from "@/lib/goldenott";
+import { purgeOldPageViews } from "@/lib/dashboard";
 import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 
 /**
@@ -25,6 +26,8 @@ export async function GET(req: Request): Promise<Response> {
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  await purgeOldPageViews();
 
   if (!goldenottConfigured()) {
     await purgeExpiredTrialsAndRejected();

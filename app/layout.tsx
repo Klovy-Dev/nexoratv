@@ -6,6 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteChrome from "@/components/SiteChrome";
 import RevealInit from "@/components/RevealInit";
 import RouteProgress from "@/components/RouteProgress";
+import VisitTracker from "@/components/VisitTracker";
 
 const displayFont = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -65,6 +66,7 @@ export default function RootLayout({
           {children}
         </SiteChrome>
         <RevealInit />
+        <VisitTracker />
       </body>
     </html>
   );
