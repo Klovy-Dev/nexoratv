@@ -95,9 +95,20 @@ export async function allUsers(): Promise<UserRow[]> {
  *   - les commandes refusées sont supprimées (le refus est notifié par
  *     e-mail, on ne garde pas d'historique) ;
  *   - les abonnements d'essai 24 h sont supprimés dès qu'ils expirent.
+ * `trialPackageIds` (forfaits d'essai du catalogue GoldenOTT) permet de
+ * rattraper les essais enregistrés à tort comme abonnements normaux.
  */
-export async function purgeExpiredTrialsAndRejected(): Promise<void> {
+export async function purgeExpiredTrialsAndRejected(
+  trialPackageIds: number[] = [],
+): Promise<void> {
   try {
+    if (trialPackageIds.length > 0) {
+      await sql`
+        UPDATE subscriptions SET is_trial = true
+        WHERE is_trial = false AND provider = 'goldenott'
+          AND package_id = ANY(${trialPackageIds})
+      `;
+    }
     await sql`DELETE FROM iptv_orders WHERE status = 'rejected'`;
     // Sessions Stripe abandonnées (client reparti sans payer) : on libère
     // l'offre après 2 h pour ne pas bloquer une nouvelle tentative. Le crédit
@@ -114,11 +125,17 @@ export async function purgeExpiredTrialsAndRejected(): Promise<void> {
       DELETE FROM iptv_orders
       WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
     `;
+    // expires_at n'a qu'une précision au jour : un essai 24 h expire le
+    // lendemain de sa création. On le purge dès ce jour-là, une fois ses
+    // 24 h écoulées, sans attendre le surlendemain.
     await sql`
       DELETE FROM subscriptions
       WHERE is_trial = true
         AND expires_at IS NOT NULL
-        AND expires_at < CURRENT_DATE
+        AND (
+          expires_at < CURRENT_DATE
+          OR (expires_at = CURRENT_DATE AND created_at < now() - interval '24 hours')
+        )
     `;
   } catch {
     /* le nettoyage ne doit jamais bloquer l'affichage */

@@ -475,9 +475,7 @@ export async function approveOrderAction(
 
   // Un forfait d'essai (24 h) donne un abonnement jetable, purgé à l'expiration.
   const catalog = await loadGoldenottCatalog();
-  const isTrial = Boolean(
-    catalog.packages.find((p) => p.id === order.package_id)?.isTrial,
-  );
+  const isTrial = isTrialPackage(catalog, order.package_id);
 
   const { isAdult, templateId } = resolveProvisioningOptions(order, catalog);
 

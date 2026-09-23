@@ -255,7 +255,7 @@ export async function provisionSubscription(
       (${opts.userId}, ${opts.label}, ${serverUrl}, ${displayUser},
        ${encryptSecret(displayPass)}, ${created.expiresAt}, 'active',
        ${opts.note ?? ""}, ${created.maxConnections ?? opts.maxConnections ?? null},
-       ${opts.isTrial ?? false},
+       ${opts.isTrial ?? isTrialPackage(await loadGoldenottCatalog(), opts.packageId)},
        'goldenott', ${opts.kind}, ${String(created.id)}, ${opts.packageId},
        ${opts.packageLabel ?? null}, ${providerStatus}, ${created.mac ?? null},
        ${created.qrUrl}, ${opts.dnsDomainId ?? null}, ${opts.dnsDomainLabel ?? null},

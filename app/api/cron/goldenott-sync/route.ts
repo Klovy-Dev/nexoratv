@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { purgeExpiredTrialsAndRejected, subscriptionById } from "@/lib/data";
 import { syncSubscriptionLocal } from "@/lib/goldenott-provision";
 import { goldenottConfigured } from "@/lib/goldenott";
+import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 
 /**
  * Synchronisation planifiée des abonnements GoldenOTT.
@@ -25,11 +26,12 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  await purgeExpiredTrialsAndRejected();
-
   if (!goldenottConfigured()) {
+    await purgeExpiredTrialsAndRejected();
     return NextResponse.json({ error: "goldenott not configured" }, { status: 503 });
   }
+
+  await purgeExpiredTrialsAndRejected(trialPackageIds(await loadGoldenottCatalog()));
 
   const rows = (await sql`
     SELECT id FROM subscriptions

@@ -13,7 +13,7 @@ import {
   subscriptionById,
   userById,
 } from "@/lib/data";
-import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { KIND_LABEL } from "@/lib/goldenott";
 import { daysUntil, expiryLabel, formatDate, formatPrice } from "@/lib/validation";
 import {
@@ -56,7 +56,7 @@ export default async function AdminPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const me = await requireAdmin();
-  await purgeExpiredTrialsAndRejected();
+  await purgeExpiredTrialsAndRejected(trialPackageIds(await loadGoldenottCatalog()));
   const params = await searchParams;
   const pick = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : "");
   const userParam = pick("user");
