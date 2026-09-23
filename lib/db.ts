@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 18;
+const SCHEMA_VERSION = 19;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -154,6 +154,9 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_2 INTEGER`;
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_3 INTEGER`;
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS extra_screen_cents_4 INTEGER`;
+  // Prix barré affiché à côté du prix réel (NULL = aucun). Doit correspondre à
+  // un prix réellement pratiqué (art. L112-1-1 code de la consommation).
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS compare_at_cents INTEGER`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.

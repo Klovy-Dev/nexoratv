@@ -185,6 +185,28 @@ export default function OfferForm({
             <p className="hint">Tarif pour le nombre d&apos;écrans inclus.</p>
           </div>
           <div className="form-group">
+            <label htmlFor="of-compare">Prix barré (optionnel)</label>
+            <input
+              id="of-compare"
+              name="compare_at_price"
+              className="input"
+              inputMode="decimal"
+              defaultValue={
+                editing?.compare_at_cents != null
+                  ? (editing.compare_at_cents / 100).toFixed(2)
+                  : ""
+              }
+              placeholder="aucun"
+            />
+            <p className="hint">
+              Affiché barré à côté du prix. Doit être un prix réellement
+              pratiqué dans les 30 derniers jours (code de la consommation).
+            </p>
+          </div>
+        </div>
+
+        <div className="grid-2">
+          <div className="form-group">
             <label htmlFor="of-included">Écrans inclus</label>
             <input
               id="of-included"

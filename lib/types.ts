@@ -78,6 +78,8 @@ export interface Offer {
   extra_screen_cents_4: number | null;
   /** plafond d'écrans sélectionnables */
   max_screens: number;
+  /** prix barré affiché à côté du prix réel ; NULL = aucun */
+  compare_at_cents: number | null;
   /** bandeau mis en avant sur /commander (ex. « Best Seller ») ; vide = aucun */
   badge: string;
   /** @deprecated remplacé par included_screens — conservé pour compat DB */

@@ -62,6 +62,7 @@ export async function saveOfferAction(
     Math.max(includedScreens, Number(formData.get("max_screens")) || 5),
   );
   const extraScreenCents = priceToCents(str(formData.get("extra_screen_price"))) ?? 300;
+  const compareAt = priceToCentsOrNull(str(formData.get("compare_at_price")));
   const tier2 = priceToCentsOrNull(str(formData.get("extra_screen_price_2")));
   const tier3 = priceToCentsOrNull(str(formData.get("extra_screen_price_3")));
   const tier4 = priceToCentsOrNull(str(formData.get("extra_screen_price_4")));
@@ -70,11 +71,16 @@ export async function saveOfferAction(
   if (!packageId) errors.push("Sélectionnez un forfait GoldenOTT.");
   if (!title) errors.push("Le titre commercial est requis.");
   if (priceCents === null) errors.push("Prix invalide.");
+  if (compareAt === undefined) errors.push("Prix barré invalide.");
+  if (compareAt != null && priceCents != null && compareAt <= priceCents) {
+    errors.push("Le prix barré doit être supérieur au prix de vente.");
+  }
   if (tier2 === undefined) errors.push("Prix du 2e écran supplémentaire invalide.");
   if (tier3 === undefined) errors.push("Prix du 3e écran supplémentaire invalide.");
   if (tier4 === undefined) errors.push("Prix du 4e écran supplémentaire invalide.");
   if (errors.length > 0) return { fieldErrors: errors };
 
+  const compareAtCents = compareAt ?? null;
   const extraScreenCents2 = tier2 ?? null;
   const extraScreenCents3 = tier3 ?? null;
   const extraScreenCents4 = tier4 ?? null;
@@ -90,7 +96,7 @@ export async function saveOfferAction(
         included_screens = ${includedScreens}, allow_screens = ${allowScreens},
         extra_screen_cents = ${extraScreenCents}, max_screens = ${maxScreens},
         extra_screen_cents_2 = ${extraScreenCents2}, extra_screen_cents_3 = ${extraScreenCents3},
-        extra_screen_cents_4 = ${extraScreenCents4},
+        extra_screen_cents_4 = ${extraScreenCents4}, compare_at_cents = ${compareAtCents},
         is_adult = ${isAdult}, active = ${active}, sort = ${sort}
       WHERE id = ${offerId}
     `;
@@ -100,14 +106,14 @@ export async function saveOfferAction(
         (kind, goldenott_package_id, goldenott_template_id, dns_domain_id, title,
          tagline, duration_label, badge, price_cents, max_connections,
          included_screens, allow_screens, extra_screen_cents, max_screens,
-         extra_screen_cents_2, extra_screen_cents_3, extra_screen_cents_4,
+         extra_screen_cents_2, extra_screen_cents_3, extra_screen_cents_4, compare_at_cents,
          is_adult, active, sort)
       VALUES
         (${kind}, ${packageId}, ${templateId}, ${dnsDomainId}, ${title}, ${tagline},
          ${durationLabel}, ${badge}, ${priceCents}, ${includedScreens}, ${includedScreens},
          ${allowScreens}, ${extraScreenCents}, ${maxScreens},
-         ${extraScreenCents2}, ${extraScreenCents3}, ${extraScreenCents4}, ${isAdult},
-         ${active}, ${sort})
+         ${extraScreenCents2}, ${extraScreenCents3}, ${extraScreenCents4}, ${compareAtCents},
+         ${isAdult}, ${active}, ${sort})
     `;
   }
 

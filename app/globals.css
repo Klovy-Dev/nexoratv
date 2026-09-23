@@ -1479,89 +1479,196 @@ table.data tbody tr:hover { background: var(--surface); }
 }
 .order-decision { margin-top: 14px; }
 
-/* ---- Grille d'offres (page Commander) ---- */
-.offer-grid {
+/* ==========================================================================
+   Page Commander — sélecteurs + cartes de formules
+   ========================================================================== */
+
+/* Sélecteur principal (Formules normales / Autres formules) : contrôle
+   segmenté centré, chaque segment porte un libellé + une précision. */
+.plan-switch {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 22px;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  width: fit-content;
+  min-width: min(100%, 460px);
+  margin: 0 auto 36px;
+  padding: 5px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.plan-switch button {
+  display: grid;
+  gap: 1px;
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.plan-switch button:hover { color: var(--text); }
+.plan-switch button strong { font-size: 0.95rem; font-weight: 700; }
+.plan-switch button small { font-size: 0.76rem; opacity: 0.8; }
+.plan-switch button[aria-selected="true"] {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 6px 18px -8px rgba(0, 0, 0, 0.8);
+}
+.plan-switch button[aria-selected="true"] small { color: var(--accent); opacity: 1; }
+
+/* Sélecteur de durée (secondaire) */
+.plan-durations {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 34px;
+}
+.plan-durations button {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.plan-durations button:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.2); }
+.plan-durations button[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.plan-kind-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+.plan-kind-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.plan-section + .plan-section { margin-top: 56px; }
+
+/* Colonnes de largeur bornée, centrées : 2 ou 3 cartes ne s'étirent pas
+   sur toute la page, 6 cartes passent sur deux rangées alignées. */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 300px));
+  justify-content: center;
+  gap: 20px;
   padding-top: 14px;
 }
-.offer-card {
+
+.plan-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 26px 24px 24px;
   transition: transform 0.3s var(--ease), border-color 0.3s;
 }
-.offer-card:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), 0.5); }
-
-/* Essai déjà utilisé : offre grisée, non commandable */
-.offer-card--locked { opacity: 0.55; }
-.offer-card--locked:hover { transform: none; border-color: var(--border); }
-
-/* Offre mise en avant (champ « Bandeau » rempli) */
-.offer-card--featured {
+.plan-card:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.18); }
+.plan-card--featured {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 18px 50px -18px rgba(var(--accent-rgb), 0.5);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.07), transparent 42%), var(--surface);
+  box-shadow: 0 0 0 1px var(--accent), 0 24px 60px -28px rgba(var(--accent-rgb), 0.55);
 }
-.offer-ribbon {
+.plan-card--featured:hover { border-color: var(--accent); }
+.plan-card--locked { opacity: 0.55; }
+.plan-card--locked:hover { transform: none; border-color: var(--border); }
+
+.plan-ribbon {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--accent-grad);
+  left: 24px;
+  transform: translateY(-50%);
+  background: var(--accent);
   color: #0b0c0f;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 6px 16px;
+  padding: 5px 12px;
   border-radius: 999px;
   white-space: nowrap;
-  box-shadow: 0 8px 20px -6px rgba(var(--accent-rgb), 0.8);
 }
-.offer-card-head h3 { font-size: 1.2rem; }
-.offer-tagline { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
-.offer-price {
+
+.plan-meta {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-}
-.offer-price strong {
-  font-size: 1.9rem;
-  color: var(--accent);
-}
-.offer-price span { color: var(--text-muted); font-size: 0.9rem; }
-.offer-feats { list-style: none; display: grid; gap: 9px; }
-.offer-feats li {
-  position: relative;
-  padding-left: 24px;
-  font-size: 0.9rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
-.offer-feats li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--success);
-  font-weight: 700;
+.plan-duration {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
-.offer-cta { margin-top: auto; }
-.offer-from {
+.plan-head h3 { font-size: 1.35rem; }
+.plan-tagline { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; line-height: 1.5; }
+
+.plan-price {
+  margin: 22px 0;
+  padding: 18px 0;
+  border-block: 1px solid var(--border);
+}
+.plan-from {
   display: block;
-  width: 100%;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
+  margin-bottom: 2px;
 }
+.plan-amount { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.plan-amount strong {
+  font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
+  font-size: 2.3rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.plan-amount del { color: var(--text-muted); font-size: 1rem; text-decoration-thickness: 1px; }
+.plan-period { display: block; margin-top: 4px; font-size: 0.86rem; color: var(--text-muted); }
+.plan-period b { color: var(--text); font-weight: 600; }
+
+.plan-feats { list-style: none; display: grid; gap: 11px; margin-bottom: 26px; }
+.plan-feats li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.plan-feats svg { margin-top: 1px; color: var(--accent); }
+.plan-feats li strong { color: var(--text); font-weight: 600; }
+
+.plan-cta { margin-top: auto; }
+.plan-cta .flash { margin: 0; font-size: 0.85rem; }
+
+
 /* ==========================================================================
    Étape de commande — /commander/[id]
    ========================================================================== */
@@ -1741,6 +1848,39 @@ table.data tbody tr:hover { background: var(--surface); }
   .order-step { padding: 48px 0 72px; }
   .order-layout { grid-template-columns: 1fr; gap: 20px; }
   .order-recap { position: static; order: -1; }
+}
+
+/* ---------- Commander sur mobile : cartes compactes + défilement latéral ----------
+   Chaque grille devient une rangée qui se fait glisser au doigt (scroll-snap),
+   la carte suivante dépasse volontairement pour signaler le geste. */
+@media (max-width: 720px) {
+  .page-hero { padding: 72px 0 28px; }
+
+  .plan-switch { width: 100%; min-width: 0; margin-bottom: 24px; }
+  .plan-switch button { padding: 9px 8px; }
+  .plan-switch button strong { font-size: 0.88rem; }
+  .plan-durations { margin-bottom: 20px; }
+  .plan-durations button { padding: 7px 14px; font-size: 0.84rem; }
+
+  .plan-grid {
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 24px 6px;
+    margin-inline: -24px;
+    scroll-padding-inline: 24px;
+  }
+  .plan-grid > * { flex: 0 0 82%; scroll-snap-align: start; }
+  .plan-card { padding: 22px 18px 18px; border-radius: var(--radius-sm); }
+  .plan-card:hover { transform: none; }
+  .plan-head h3 { font-size: 1.15rem; }
+  .plan-price { margin: 16px 0; padding: 14px 0; }
+  .plan-amount strong { font-size: 1.9rem; }
+  .plan-feats { gap: 8px; margin-bottom: 18px; }
+  .plan-feats li { font-size: 0.84rem; }
 }
 
 @media (max-width: 720px) {
