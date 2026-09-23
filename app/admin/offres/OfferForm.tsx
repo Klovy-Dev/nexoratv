@@ -44,7 +44,7 @@ export default function OfferForm({
 
   return (
     <CollapsiblePanel
-      title={editing ? "Modifier l'offre" : "Nouvelle offre"}
+      title={editing ? `Modifier « ${editing.title} »` : "Nouvelle offre"}
       defaultOpen={Boolean(editing)}
     >
       <FormErrors state={state} />

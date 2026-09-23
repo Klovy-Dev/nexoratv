@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
-import { listOffers, offerById } from "@/lib/data";
-import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import { redirect } from "next/navigation";
+import { listOffers } from "@/lib/data";
 import { formatPrice } from "@/lib/validation";
 import { deleteOfferAction, toggleOfferAction } from "@/actions/offer-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import TableSearch from "@/components/TableSearch";
 import OfferForm from "./OfferForm";
-import type { DomainOption, PkgOption, TplOption } from "../SubscriptionForm";
+import { loadOfferCatalog } from "./catalog-options";
 
 export const metadata: Metadata = { title: "Offres — Administration" };
 export const dynamic = "force-dynamic";
@@ -26,36 +26,12 @@ export default async function OffersAdminPage({
 }) {
   await requireAdmin();
   const params = await searchParams;
-  const editId =
-    typeof params.edit === "string" ? Number(params.edit) : null;
+  // Ancien lien « ?edit=ID » : la modification a désormais sa propre page.
+  if (typeof params.edit === "string") redirect(`/admin/offres/${params.edit}`);
   const ok = params.ok === "1";
 
-  const [offers, catalog] = await Promise.all([
-    listOffers(),
-    loadGoldenottCatalog(),
-  ]);
-  const editing = editId ? await offerById(editId) : null;
-
-  const packages: PkgOption[] = catalog.packages.map((p) => ({
-    id: p.id,
-    name: p.name,
-    credits: p.credits,
-    durationLabel: p.durationLabel,
-    maxConnections: p.maxConnections,
-    isTrial: p.isTrial,
-  }));
-  const templates: TplOption[] = catalog.templates.map((t) => ({
-    id: t.id,
-    name: t.name,
-    scope: t.scope,
-  }));
-  const domains: DomainOption[] = catalog.domains.map((d) => ({
-    id: d.id,
-    domain: d.domain,
-    forBypass: d.forBypass,
-    forTv: d.forTv,
-    isDefault: d.isDefault,
-  }));
+  const [offers, catalog] = await Promise.all([listOffers(), loadOfferCatalog()]);
+  const { packages, templates, domains } = catalog;
 
   return (
     <section>
@@ -99,7 +75,7 @@ export default async function OffersAdminPage({
               </div>
             ) : (
               <OfferForm
-                editing={editing}
+                editing={null}
                 packages={packages}
                 templates={templates}
                 domains={domains}
@@ -174,7 +150,7 @@ export default async function OffersAdminPage({
                             <td className="table-actions">
                               <Link
                                 className="btn btn-ghost btn-sm"
-                                href={`/admin/offres?edit=${o.id}`}
+                                href={`/admin/offres/${o.id}`}
                               >
                                 Modifier
                               </Link>
