@@ -11,7 +11,13 @@ import type { FormState } from "@/lib/types";
 
 const initial: FormState = {};
 
-export default function RegisterForm({ refCode }: { refCode?: string }) {
+export default function RegisterForm({
+  refCode,
+  contestCode,
+}: {
+  refCode?: string;
+  contestCode?: string;
+}) {
   const [state, action] = useActionState(registerAction, initial);
 
   return (
@@ -92,6 +98,7 @@ export default function RegisterForm({ refCode }: { refCode?: string }) {
         </div>
 
         {refCode && <input type="hidden" name="ref" value={refCode} />}
+        {contestCode && <input type="hidden" name="concours" value={contestCode} />}
 
         {/* Honeypot anti-bot */}
         <div style={{ position: "absolute", left: "-9999px" }} aria-hidden="true">

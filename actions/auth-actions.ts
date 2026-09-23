@@ -12,6 +12,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { userIdByReferralCode } from "@/lib/data";
+import { userIdByContestCode } from "@/lib/contest";
 import { appOrigin, resetEmailHtml, sendEmail } from "@/lib/mail";
 import {
   LOGIN_LOCKOUT_MINUTES,
@@ -54,6 +55,7 @@ export async function registerAction(
   const accepted = formData.get("accept") === "on";
   const honeypot = str(formData.get("website"));
   const refCode = str(formData.get("ref"));
+  const contestRef = str(formData.get("concours"));
 
   const errors: string[] = [];
   if (honeypot) errors.push("Requête invalide.");
@@ -73,11 +75,14 @@ export async function registerAction(
   // Un compte parrain valide (jamais soi-même, impossible à ce stade) : la
   // récompense n'est créditée que plus tard, à la première commande payée.
   const referredBy = refCode ? await userIdByReferralCode(refCode) : null;
+  // Lien du concours de parrainage (lib/contest.ts) : aucun crédit, sert
+  // uniquement au classement.
+  const contestReferredBy = contestRef ? await userIdByContestCode(contestRef) : null;
 
   const hash = await hashPassword(password);
   const inserted = (await sql`
-    INSERT INTO users (name, email, password_hash, role, referred_by)
-    VALUES (${name}, ${email}, ${hash}, 'client', ${referredBy})
+    INSERT INTO users (name, email, password_hash, role, referred_by, contest_referred_by)
+    VALUES (${name}, ${email}, ${hash}, 'client', ${referredBy}, ${contestReferredBy})
     RETURNING id, name, email, role, created_at
   `) as unknown as {
     id: number;

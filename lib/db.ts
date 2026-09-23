@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 20;
+const SCHEMA_VERSION = 21;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -279,6 +279,10 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT`;
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id) ON DELETE SET NULL`;
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_balance_cents INTEGER NOT NULL DEFAULT 0`;
+  // Concours de parrainage (lib/contest.ts) : compte ayant partagé le lien
+  // concours utilisé à l'inscription. Distinct de referred_by (aucun crédit).
+  await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS contest_referred_by INTEGER REFERENCES users(id) ON DELETE SET NULL`;
+  await raw`CREATE INDEX IF NOT EXISTS idx_users_contest_referred_by ON users (contest_referred_by)`;
   // Comptes déjà existants : on leur attribue un code déterministe basé sur
   // leur id (court, unique, aucune collision possible).
   await raw`UPDATE users SET referral_code = 'NX' || UPPER(to_hex(id)) WHERE referral_code IS NULL`;

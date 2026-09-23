@@ -782,6 +782,27 @@ table.data tbody tr:hover { background: var(--surface); }
 .stat strong { display: block; font-size: 1.8rem; }
 .stat span { color: var(--text-muted); font-size: 0.85rem; }
 
+/* ---------- Concours de parrainage ---------- */
+.contest-rank { font-family: var(--font-display); font-weight: 700; min-width: 2.2em; color: var(--text-muted); }
+.contest-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.contest-admin-list { display: grid; gap: 10px; }
+.contest-admin-row {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-soft); padding: 12px 14px;
+}
+.contest-admin-row summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; cursor: pointer;
+}
+.contest-admin-row[open] summary { margin-bottom: 12px; }
+.contest-score { white-space: nowrap; }
+.contest-top { list-style: none; display: grid; gap: 6px; }
+.contest-top li {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-soft);
+}
+.contest-top li:nth-child(-n+3) .contest-rank { color: var(--accent); }
+.contest-top li.me { border-color: var(--accent); }
+
 /* ---------- Dashboard admin ---------- */
 .dash-kpi { display: flex; flex-direction: column; gap: 4px; }
 .dash-kpi .dash-kpi-label { color: var(--text); font-weight: 600; font-size: 0.9rem; }

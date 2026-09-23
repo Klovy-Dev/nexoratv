@@ -27,6 +27,8 @@ import PasswordForm from "./PasswordForm";
 import DiscordLinkCard from "./DiscordLinkCard";
 import { discordIdForUser } from "@/lib/data";
 import ProfilTabs, { type ProfilTab } from "./ProfilTabs";
+import ContestPanel from "./ContestPanel";
+import { contestPhase } from "@/lib/contest";
 import { cancelOrderAction, resumeOrderPaymentAction } from "@/actions/order-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import SubmitButton from "@/components/SubmitButton";
@@ -377,6 +379,19 @@ export default async function ProfilPage({
       content: ordersPanel,
     },
     { id: "parrainage", label: "Parrainage", content: referralPanel },
+    // Visible par les clients à partir du lancement ; l'admin le voit avant
+    // pour vérifier.
+    ...(contestPhase() === "active" ||
+    contestPhase() === "ended" ||
+    (user.role === "admin" && contestPhase() === "upcoming")
+      ? [
+          {
+            id: "concours",
+            label: "Concours",
+            content: <ContestPanel userId={user.id} origin={origin} />,
+          },
+        ]
+      : []),
     { id: "compte", label: "Paramètres du compte", content: accountPanel },
   ];
 
