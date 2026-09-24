@@ -85,6 +85,29 @@ pré-remplit le parrainage (voir §7).
   `stripe_webhook_events`), marque la commande payée (`paid_at`,
   `stripe_payment_intent_id`), puis appelle `fulfillPaidOrder`.
 
+### Paiement (Bitcoin, ajouté 2026-09)
+`lib/bitcoin.ts`. Paiement on-chain direct sur l'adresse NexoraTV (constante
+`DEFAULT_ADDRESS`, surchargeable par `BITCOIN_ADDRESS` ; `BITCOIN_DISABLED=1`
+masque l'option). Aucune clé privée côté serveur.
+- À la commande, le prix est converti au cours EUR de mempool.space en un
+  montant **exact en satoshis, unique** parmi les commandes BTC ouvertes
+  (`btc_amount_sats`) : c'est lui qui rattache une transaction à sa
+  commande, l'adresse étant partagée. Montant garanti 60 min, recalculé
+  ensuite si rien n'a été reçu.
+- Page client `/profil/bitcoin/[id]` (QR code BIP21, adresse, montant) qui
+  interroge `/api/bitcoin/status` toutes les 20 s. Transaction vue en
+  mempool → `btc_txid` ; commande payée après **1 confirmation** →
+  `fulfillPaidOrder`.
+- Détection aussi à l'ouverture de `/profil`, de `/admin/commandes` et au
+  cron quotidien (`sweepBitcoinOrders`).
+- Montant différent (frais déduits par une plateforme…) : le client déclare
+  son txid (accepté si ≥ 99 % du montant), ou l'admin confirme à la main
+  dans `/admin/commandes` (section « Paiements Bitcoin en attente »).
+- Commande BTC non payée purgée après 24 h (jamais si une transaction est
+  repérée). Refus d'une commande BTC payée : **pas de remboursement
+  automatique**, le client est invité par e-mail à donner une adresse de
+  remboursement.
+
 ### Activation automatique
 `lib/order-fulfillment.ts::fulfillPaidOrder` :
 - **Nouvel abonnement** → `provisionSubscription` (GoldenOTT) crée la ligne

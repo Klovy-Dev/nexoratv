@@ -125,11 +125,13 @@ export async function sendOrderAcceptedEmail(
 /* ------------------------------------------------------------------ */
 
 export async function sendOrderRejectedEmail(
-  info: OrderMailInfo & { reason: string; refunded: boolean },
+  info: OrderMailInfo & { reason: string; refunded: boolean; bitcoinRefund?: boolean },
 ): Promise<void> {
-  const moneyNote = info.refunded
-    ? "Vous avez été débité(e) mais serez intégralement remboursé(e) sous quelques jours."
-    : "Aucun montant n'a été prélevé.";
+  const moneyNote = info.bitcoinRefund
+    ? "Votre paiement en bitcoin vous sera intégralement remboursé : répondez à cet e-mail en indiquant l'adresse Bitcoin sur laquelle le recevoir."
+    : info.refunded
+      ? "Vous avez été débité(e) mais serez intégralement remboursé(e) sous quelques jours."
+      : "Aucun montant n'a été prélevé.";
   try {
     const site = await appOrigin();
     await sendEmail({

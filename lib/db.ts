@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 22;
+const SCHEMA_VERSION = 23;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -435,6 +435,17 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
       PRIMARY KEY (subscription_id, expires_at, kind)
     )
   `;
+
+  /* ---------- Paiement Bitcoin (on-chain, adresse fixe) ---------- */
+
+  // Montant exact en satoshis figé à la commande (unique parmi les commandes
+  // BTC ouvertes : c'est lui qui permet de reconnaître le paiement sur une
+  // adresse partagée), cours EUR utilisé, et transaction retenue.
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS btc_amount_sats INTEGER`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS btc_rate_eur INTEGER`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS btc_quoted_at TIMESTAMPTZ`;
+  await raw`ALTER TABLE iptv_orders ADD COLUMN IF NOT EXISTS btc_txid TEXT`;
+  await raw`CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_btc_txid ON iptv_orders (btc_txid) WHERE btc_txid IS NOT NULL`;
 
   await raw`
     INSERT INTO app_meta (key, value)

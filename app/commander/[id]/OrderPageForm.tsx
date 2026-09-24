@@ -28,13 +28,15 @@ export interface OrderStepOffer {
 export default function OrderPageForm({
   offer,
   paypalEnabled,
+  bitcoinEnabled,
 }: {
   offer: OrderStepOffer;
   paypalEnabled: boolean;
+  bitcoinEnabled: boolean;
 }) {
   const [state, action] = useActionState(createOrderAction, initial);
   const [screens, setScreens] = useState<number>(offer.included_screens || 1);
-  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">("stripe");
+  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal" | "bitcoin">("stripe");
 
   const showScreens = offer.kind === "line" && offer.allow_screens;
   const total = useMemo(
@@ -140,7 +142,7 @@ export default function OrderPageForm({
         />
       </div>
 
-      {paypalEnabled && !isFree && (
+      {(paypalEnabled || bitcoinEnabled) && !isFree && (
         <div className="form-group">
           <label>Moyen de paiement</label>
           <div className="order-options">
@@ -157,19 +159,36 @@ export default function OrderPageForm({
                 <small>Visa, Mastercard… via Stripe.</small>
               </span>
             </label>
-            <label className="order-option">
-              <input
-                type="radio"
-                name="payment_method"
-                value="paypal"
-                checked={paymentMethod === "paypal"}
-                onChange={() => setPaymentMethod("paypal")}
-              />
-              <span>
-                <strong>PayPal</strong>
-                <small>Compte PayPal ou carte via PayPal.</small>
-              </span>
-            </label>
+            {paypalEnabled && (
+              <label className="order-option">
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="paypal"
+                  checked={paymentMethod === "paypal"}
+                  onChange={() => setPaymentMethod("paypal")}
+                />
+                <span>
+                  <strong>PayPal</strong>
+                  <small>Compte PayPal ou carte via PayPal.</small>
+                </span>
+              </label>
+            )}
+            {bitcoinEnabled && (
+              <label className="order-option">
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="bitcoin"
+                  checked={paymentMethod === "bitcoin"}
+                  onChange={() => setPaymentMethod("bitcoin")}
+                />
+                <span>
+                  <strong>Bitcoin</strong>
+                  <small>Depuis votre portefeuille BTC, activation après 1 confirmation.</small>
+                </span>
+              </label>
+            )}
           </div>
         </div>
       )}
@@ -196,16 +215,28 @@ export default function OrderPageForm({
           <SubmitButton
             className="btn btn-primary btn-block"
             pendingLabel={
-              paymentMethod === "paypal" ? "Redirection vers PayPal…" : "Redirection vers Stripe…"
+              paymentMethod === "paypal"
+                ? "Redirection vers PayPal…"
+                : paymentMethod === "bitcoin"
+                  ? "Calcul du montant en BTC…"
+                  : "Redirection vers Stripe…"
             }
           >
-            Payer {formatPrice(total)} {paymentMethod === "paypal" ? "avec PayPal" : "avec Stripe"}
+            Payer {formatPrice(total)}{" "}
+            {paymentMethod === "paypal"
+              ? "avec PayPal"
+              : paymentMethod === "bitcoin"
+                ? "en Bitcoin"
+                : "avec Stripe"}
           </SubmitButton>
           <p
             className="hint"
             style={{ textAlign: "center", marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            <LockIcon size={14} /> Paiement sécurisé, traité par {paymentMethod === "paypal" ? "PayPal" : "Stripe"}.
+            <LockIcon size={14} />{" "}
+            {paymentMethod === "bitcoin"
+              ? "Paiement direct en Bitcoin, sans intermédiaire."
+              : `Paiement sécurisé, traité par ${paymentMethod === "paypal" ? "PayPal" : "Stripe"}.`}
           </p>
         </>
       )}

@@ -140,7 +140,7 @@ export function offerPriceCents(
   return total;
 }
 
-export type PaymentProvider = "stripe" | "paypal";
+export type PaymentProvider = "stripe" | "paypal" | "bitcoin";
 
 export type OrderStatus =
   | "awaiting_payment"
@@ -181,7 +181,14 @@ export interface Order {
   /** identifiant de la commande PayPal (Orders v2) ouverte pour cette commande */
   paypal_order_id: string | null;
   paypal_capture_id: string | null;
-  /** horodatage de la confirmation de paiement (Stripe ou PayPal) */
+  /** Bitcoin : montant exact attendu (satoshis), unique parmi les commandes ouvertes */
+  btc_amount_sats: number | null;
+  /** Bitcoin : cours BTC/EUR (euros entiers) utilisé pour le montant */
+  btc_rate_eur: number | null;
+  btc_quoted_at: string | null;
+  /** Bitcoin : transaction reconnue (vue en mempool ou confirmée) */
+  btc_txid: string | null;
+  /** horodatage de la confirmation de paiement (Stripe, PayPal ou Bitcoin) */
   paid_at: string | null;
   /** crédit de parrainage déduit du prix affiché, réservé sur cette commande */
   credit_applied_cents: number;

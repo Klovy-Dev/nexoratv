@@ -6,6 +6,9 @@ import { loadGoldenottCatalog } from "@/lib/goldenott-catalog";
 import { formatDate, formatPrice } from "@/lib/validation";
 import TableSearch from "@/components/TableSearch";
 import OrderDecision from "./OrderDecision";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import { confirmBitcoinPaymentAction } from "@/actions/order-actions";
+import { mempoolAddressUrl, mempoolTxUrl, satsToBtc, sweepBitcoinOrders } from "@/lib/bitcoin";
 import type { OrderView, ProviderKind } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Commandes — Administration" };
@@ -15,6 +18,12 @@ const KIND_FR: Record<ProviderKind, string> = {
   line: "Ligne M3U",
   mag: "Boîtier MAG",
   code: "Code d'activation",
+};
+
+const PROVIDER_FR: Record<string, string> = {
+  stripe: "Stripe",
+  paypal: "PayPal",
+  bitcoin: "Bitcoin",
 };
 
 const STATUS_FR: Record<string, [string, string]> = {
@@ -30,6 +39,7 @@ export default async function OrdersAdminPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin();
+  await sweepBitcoinOrders();
   await purgeExpiredTrialsAndRejected();
   const ok = (await searchParams).ok === "1";
 
@@ -41,6 +51,11 @@ export default async function OrdersAdminPage({
   // Les commandes 'awaiting_payment' (session Stripe ouverte, pas encore
   // payée) ne nécessitent aucune action admin : purgées après 2 h si
   // abandonnées, sinon elles deviennent 'pending' (payées) automatiquement.
+  // Exception : les commandes Bitcoin, qui peuvent demander une confirmation
+  // manuelle (montant envoyé différent du montant exact demandé).
+  const btcAwaiting = allOrdersList.filter(
+    (o) => o.status === "awaiting_payment" && o.payment_provider === "bitcoin",
+  );
   const orders = allOrdersList.filter((o) => o.status !== "awaiting_payment");
   const pending = orders.filter((o) => o.status === "pending");
   const done = orders.filter((o) => o.status !== "pending");
@@ -84,6 +99,76 @@ export default async function OrdersAdminPage({
           )}
         </div>
 
+        {btcAwaiting.length > 0 && (
+          <div className="panel">
+            <h2>Paiements Bitcoin en attente ({btcAwaiting.length})</h2>
+            <p className="muted" style={{ marginBottom: 12 }}>
+              Détectés et activés automatiquement dès 1 confirmation. Confirmez
+              à la main uniquement un paiement vérifié sur{" "}
+              <a href={mempoolAddressUrl()} target="_blank" rel="noreferrer">
+                mempool.space
+              </a>{" "}
+              mais non reconnu (montant différent). Non payées, elles sont
+              supprimées après 24 h.
+            </p>
+            <div className="sub-admin-list">
+              {btcAwaiting.map((o) => (
+                <div className="sub-admin-card" key={o.id}>
+                  <div className="sub-admin-top">
+                    <div>
+                      <strong>{o.title}</strong>
+                      <div className="muted" style={{ fontSize: "0.82rem" }}>
+                        {o.user_name} · {o.user_email} · commandé le{" "}
+                        {formatDate(o.created_at)}
+                      </div>
+                    </div>
+                    <span className="badge badge-suspended">
+                      {o.btc_txid ? "Tx vue — non confirmée" : "En attente"}
+                    </span>
+                  </div>
+                  <div className="sub-admin-grid">
+                    <div className="sub-admin-field">
+                      <span className="k">Montant attendu</span>
+                      <span className="v">
+                        {o.btc_amount_sats ? `${satsToBtc(Number(o.btc_amount_sats))} BTC` : "—"} ·{" "}
+                        {formatPrice(o.price_cents - o.credit_applied_cents)}
+                      </span>
+                    </div>
+                    {o.btc_txid && (
+                      <div className="sub-admin-field">
+                        <span className="k">Transaction</span>
+                        <span className="v">
+                          <a href={mempoolTxUrl(o.btc_txid)} target="_blank" rel="noreferrer">
+                            {o.btc_txid.slice(0, 16)}…
+                          </a>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <form action={confirmBitcoinPaymentAction} className="inline-form" style={{ gap: 8, marginTop: 12 }}>
+                    <input type="hidden" name="order_id" value={o.id} />
+                    {!o.btc_txid && (
+                      <input
+                        name="txid"
+                        className="input"
+                        placeholder="txid (facultatif)"
+                        autoComplete="off"
+                        style={{ maxWidth: 320 }}
+                      />
+                    )}
+                    <ConfirmSubmit
+                      className="btn btn-ghost btn-sm"
+                      confirm="Confirmer que ce paiement Bitcoin a bien été reçu ? L'abonnement sera activé."
+                    >
+                      Confirmer le paiement reçu
+                    </ConfirmSubmit>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {done.length > 0 && (
           <div className="panel">
             <h2>Historique ({done.length})</h2>
@@ -126,6 +211,7 @@ function OrderCard({
               ? ` · ${order.max_connections} écran${order.max_connections > 1 ? "s" : ""}`
               : ""}{" "}
             · {order.renew_sub_id ? "renouvellement" : "nouvel abonnement"} ·
+            {PROVIDER_FR[order.payment_provider] ?? order.payment_provider} ·
             commandé le {formatDate(order.created_at)}
           </div>
         </div>
@@ -174,6 +260,19 @@ function OrderCard({
           <div className="sub-admin-field">
             <span className="k">Note admin</span>
             <span className="v">{order.admin_note}</span>
+          </div>
+        )}
+        {order.btc_txid && (
+          <div className="sub-admin-field">
+            <span className="k">Transaction BTC</span>
+            <span className="v">
+              <a href={mempoolTxUrl(order.btc_txid)} target="_blank" rel="noreferrer">
+                {order.btc_txid.slice(0, 16)}…
+              </a>
+              {actionable && (
+                <span className="muted"> · un refus ne rembourse pas automatiquement (renvoi manuel)</span>
+              )}
+            </span>
           </div>
         )}
         {order.subscription_id && (

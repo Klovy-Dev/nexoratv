@@ -6,6 +6,7 @@ import { hasUsedTrial, offerById, ordersForUser, referralInfo } from "@/lib/data
 import { goldenottConfigured } from "@/lib/goldenott";
 import { isTrialPackage, loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 import { paypalConfigured } from "@/lib/paypal";
+import { bitcoinConfigured } from "@/lib/bitcoin";
 import { ORDERS_DISABLED } from "@/lib/orders-maintenance";
 import { formatPrice } from "@/lib/validation";
 import OrderPageForm from "./OrderPageForm";
@@ -107,7 +108,7 @@ export default async function OrderStepPage({
                   <div className="flash flash-success" style={{ marginBottom: 16 }}>
                     Vous avez {formatPrice(referral.balance_cents)} de crédit
                     parrainage — il sera déduit automatiquement de cette
-                    commande (1 € minimum reste à régler par carte).
+                    commande (1 € minimum reste à régler).
                   </div>
                 )}
                 <OrderPageForm
@@ -126,6 +127,7 @@ export default async function OrderStepPage({
                     is_adult: offer.is_adult,
                   }}
                   paypalEnabled={paypalConfigured()}
+                  bitcoinEnabled={bitcoinConfigured()}
                 />
               </>
             )}

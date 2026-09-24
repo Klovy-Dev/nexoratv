@@ -12,6 +12,7 @@ import {
   subscriptionsForUser,
 } from "@/lib/data";
 import { appOrigin } from "@/lib/mail";
+import { sweepBitcoinOrders } from "@/lib/bitcoin";
 import { lineM3uUrl } from "@/lib/goldenott";
 import {
   daysUntil,
@@ -70,6 +71,7 @@ export default async function ProfilPage({
     redirect(`/rejoindre?next=${encodeURIComponent(`/profil${query ? `?${query}` : ""}`)}`);
   }
 
+  await sweepBitcoinOrders(user.id);
   await purgeExpiredTrialsAndRejected();
   const bienvenue = params.bienvenue;
   const commande = params.commande === "1";
@@ -244,6 +246,13 @@ export default async function ProfilPage({
                     vous recevrez un e-mail dès qu&apos;elle est prête.
                   </span>
                 )}
+                {o.status === "awaiting_payment" && o.payment_provider === "bitcoin" && (
+                  <span className="order-track-reason">
+                    {o.btc_txid
+                      ? "Paiement Bitcoin détecté — en attente de confirmation sur la blockchain, activation automatique."
+                      : "Paiement en Bitcoin — en attente de votre transaction."}
+                  </span>
+                )}
                 {o.status === "rejected" && o.admin_note && (
                   <span className="order-track-reason">
                     Motif : {o.admin_note}
@@ -259,11 +268,11 @@ export default async function ProfilPage({
                       className="btn btn-primary btn-sm"
                       pendingLabel="Redirection…"
                     >
-                      Payer maintenant
+                      {o.btc_txid ? "Suivre le paiement" : "Payer maintenant"}
                     </SubmitButton>
                   </form>
                 )}
-                {o.status === "awaiting_payment" && (
+                {o.status === "awaiting_payment" && !o.btc_txid && (
                   <form action={cancelOrderAction} className="inline-form">
                     <input type="hidden" name="order_id" value={o.id} />
                     <ConfirmSubmit

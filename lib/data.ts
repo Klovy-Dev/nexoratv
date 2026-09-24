@@ -113,18 +113,23 @@ export async function purgeExpiredTrialsAndRejected(
     // Sessions Stripe abandonnées (client reparti sans payer) : on libère
     // l'offre après 2 h pour ne pas bloquer une nouvelle tentative. Le crédit
     // de parrainage réservé dessus doit d'abord être restitué au client.
+    // Bitcoin : 24 h (le client paie depuis son portefeuille, puis attend une
+    // confirmation), et jamais tant qu'une transaction est repérée.
     const abandoned = (await sql`
-      SELECT user_id, credit_applied_cents FROM iptv_orders
-      WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
-        AND credit_applied_cents > 0
+      DELETE FROM iptv_orders
+      WHERE status = 'awaiting_payment'
+        AND (
+          (payment_provider <> 'bitcoin' AND created_at < now() - interval '2 hours')
+          OR (payment_provider = 'bitcoin' AND btc_txid IS NULL
+              AND created_at < now() - interval '24 hours')
+        )
+      RETURNING user_id, credit_applied_cents
     `) as unknown as { user_id: number; credit_applied_cents: number }[];
     for (const o of abandoned) {
-      await releaseReferralCredit(o.user_id, o.credit_applied_cents);
+      if (o.credit_applied_cents > 0) {
+        await releaseReferralCredit(o.user_id, o.credit_applied_cents);
+      }
     }
-    await sql`
-      DELETE FROM iptv_orders
-      WHERE status = 'awaiting_payment' AND created_at < now() - interval '2 hours'
-    `;
     // expires_at n'a qu'une précision au jour : un essai 24 h expire le
     // lendemain de sa création. On le purge dès ce jour-là, une fois ses
     // 24 h écoulées, sans attendre le surlendemain.

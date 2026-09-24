@@ -33,6 +33,7 @@ import { appOrigin } from "@/lib/mail";
 import { errMessages, fulfillPaidOrder } from "@/lib/order-fulfillment";
 import { ORDERS_DISABLED, ORDERS_DISABLED_MESSAGE } from "@/lib/orders-maintenance";
 import { createPaypalOrder, paypalConfigured, refundPaypalCapture } from "@/lib/paypal";
+import { bitcoinConfigured, claimBitcoinTxid, quoteBitcoinOrder } from "@/lib/bitcoin";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 import { isMac, normalizeMac, str } from "@/lib/validation";
 import { sendOrderAcceptedEmail, sendOrderRejectedEmail } from "@/lib/order-mail";
@@ -108,11 +109,31 @@ async function createPaypalCheckout(opts: {
   return created.approveUrl;
 }
 
+/**
+ * Bitcoin : fixe le montant en satoshis (si pas déjà fait) et renvoie la
+ * page de paiement interne (adresse, montant exact, QR code).
+ */
+async function createBitcoinCheckout(opts: {
+  orderId: number;
+  priceCents: number;
+}): Promise<string> {
+  const rows = (await sql`
+    SELECT btc_amount_sats FROM iptv_orders WHERE id = ${opts.orderId}
+  `) as unknown as { btc_amount_sats: number | null }[];
+  if (!rows[0]?.btc_amount_sats) {
+    await quoteBitcoinOrder(opts.orderId, opts.priceCents);
+  }
+  return `/profil/bitcoin/${opts.orderId}`;
+}
+
 /** Choisit et vérifie le moyen de paiement soumis par le client. */
 function pickPaymentMethod(formData: FormData): PaymentProvider | null {
-  const method = str(formData.get("payment_method")) === "paypal" ? "paypal" : "stripe";
+  const raw = str(formData.get("payment_method"));
+  const method: PaymentProvider =
+    raw === "paypal" ? "paypal" : raw === "bitcoin" ? "bitcoin" : "stripe";
   if (method === "stripe" && !stripeConfigured()) return null;
   if (method === "paypal" && !paypalConfigured()) return null;
+  if (method === "bitcoin" && !bitcoinConfigured()) return null;
   return method;
 }
 
@@ -120,6 +141,7 @@ async function openCheckout(
   method: PaymentProvider,
   opts: { orderId: number; userEmail: string; title: string; priceCents: number; cancelPath: string },
 ): Promise<string> {
+  if (method === "bitcoin") return createBitcoinCheckout(opts);
   return method === "paypal" ? createPaypalCheckout(opts) : createCheckoutSession(opts);
 }
 
@@ -400,6 +422,7 @@ export async function cancelOrderAction(formData: FormData): Promise<void> {
   const rows = (await sql`
     UPDATE iptv_orders SET status = 'cancelled', decided_at = now()
     WHERE id = ${orderId} AND user_id = ${user.id} AND status = 'awaiting_payment'
+      AND btc_txid IS NULL
     RETURNING credit_applied_cents
   `) as unknown as { credit_applied_cents: number }[];
   if (rows[0]?.credit_applied_cents) {
@@ -410,9 +433,69 @@ export async function cancelOrderAction(formData: FormData): Promise<void> {
   redirect("/profil");
 }
 
+/**
+ * Bitcoin : le client déclare l'identifiant de sa transaction (utile s'il a
+ * envoyé un montant légèrement différent du montant exact demandé).
+ */
+export async function submitBitcoinTxidAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser();
+  const orderId = Number(formData.get("order_id")) || 0;
+  const order = await orderById(orderId);
+  if (
+    !order ||
+    order.user_id !== user.id ||
+    order.payment_provider !== "bitcoin" ||
+    order.status !== "awaiting_payment"
+  ) {
+    return { fieldErrors: ["Commande introuvable ou déjà réglée."] };
+  }
+
+  let result;
+  try {
+    result = await claimBitcoinTxid(order, str(formData.get("txid")));
+  } catch {
+    return { fieldErrors: ["Vérification impossible pour le moment, réessayez dans un instant."] };
+  }
+  if (result.state === "error") return { fieldErrors: [result.message] };
+  if (result.state === "paid") {
+    revalidatePath("/profil");
+    redirect("/profil?commande=1");
+  }
+  revalidatePath(`/profil/bitcoin/${orderId}`);
+  return {};
+}
+
 /* ================================================================== */
 /*  CÔTÉ ADMIN                                                          */
 /* ================================================================== */
+
+/**
+ * L'admin confirme à la main une commande Bitcoin dont il a constaté le
+ * paiement (montant non reconnu automatiquement…) → activation normale.
+ */
+export async function confirmBitcoinPaymentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const orderId = Number(formData.get("order_id")) || 0;
+  const txid = str(formData.get("txid")).toLowerCase();
+
+  const rows = (await sql`
+    UPDATE iptv_orders
+    SET paid_at = COALESCE(paid_at, now()),
+        btc_txid = COALESCE(${/^[0-9a-f]{64}$/.test(txid) ? txid : null}, btc_txid)
+    WHERE id = ${orderId} AND payment_provider = 'bitcoin' AND status = 'awaiting_payment'
+    RETURNING id
+  `) as unknown as { id: number }[];
+  if (rows.length > 0) {
+    await fulfillPaidOrder(orderId);
+  }
+
+  revalidatePath("/admin/commandes");
+  revalidatePath("/admin");
+  redirect("/admin/commandes?ok=1");
+}
 
 /** L'admin valide une commande → provisioning GoldenOTT. */
 export async function approveOrderAction(
@@ -559,10 +642,13 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
     if (order.credit_applied_cents) {
       await releaseReferralCredit(order.user_id, order.credit_applied_cents);
     }
+    // Bitcoin : aucun remboursement automatique possible (pas d'intermédiaire,
+    // adresse de retour inconnue) — l'admin rembourse à la main.
+    const bitcoinPaid = order.payment_provider === "bitcoin" && Boolean(order.paid_at);
     const hadPayment =
       order.payment_provider === "paypal"
         ? Boolean(order.paypal_capture_id)
-        : Boolean(order.stripe_payment_intent_id);
+        : order.payment_provider === "stripe" && Boolean(order.stripe_payment_intent_id);
     if (hadPayment) {
       try {
         if (order.payment_provider === "paypal") {
@@ -590,6 +676,7 @@ export async function rejectOrderAction(formData: FormData): Promise<void> {
       isRenewal: Boolean(order.renew_sub_id),
       reason: adminNote,
       refunded: hadPayment,
+      bitcoinRefund: bitcoinPaid,
     });
   }
 

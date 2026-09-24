@@ -42,7 +42,12 @@ export async function GET(req: NextRequest): Promise<Response> {
       type: "Revenu",
       label: o.title,
       amount: (o.price_cents / 100).toFixed(2),
-      detail: o.payment_provider === "paypal" ? "PayPal" : "Stripe",
+      detail:
+        o.payment_provider === "paypal"
+          ? "PayPal"
+          : o.payment_provider === "bitcoin"
+            ? "Bitcoin"
+            : "Stripe",
     })),
     ...purchases.map((p) => ({
       sortKey: +new Date(p.purchased_at),

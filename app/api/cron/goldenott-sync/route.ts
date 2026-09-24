@@ -4,6 +4,7 @@ import { purgeExpiredTrialsAndRejected, subscriptionById } from "@/lib/data";
 import { syncSubscriptionLocal } from "@/lib/goldenott-provision";
 import { goldenottConfigured } from "@/lib/goldenott";
 import { purgeOldPageViews } from "@/lib/dashboard";
+import { sweepBitcoinOrders } from "@/lib/bitcoin";
 import { loadGoldenottCatalog, trialPackageIds } from "@/lib/goldenott-catalog";
 
 /**
@@ -28,6 +29,10 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   await purgeOldPageViews();
+  // Filet de sécurité : paiements Bitcoin confirmés alors que ni le client
+  // ni l'admin n'avaient de page ouverte. Avant la purge (qui épargne les
+  // commandes dont la transaction a été repérée).
+  await sweepBitcoinOrders();
 
   if (!goldenottConfigured()) {
     await purgeExpiredTrialsAndRejected();
