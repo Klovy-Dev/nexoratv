@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteChrome from "@/components/SiteChrome";
 import RevealInit from "@/components/RevealInit";
+import MotionFx from "@/components/MotionFx";
 import RouteProgress from "@/components/RouteProgress";
 import VisitTracker from "@/components/VisitTracker";
 
@@ -66,6 +67,7 @@ export default function RootLayout({
           {children}
         </SiteChrome>
         <RevealInit />
+        <MotionFx />
         <VisitTracker />
       </body>
     </html>
