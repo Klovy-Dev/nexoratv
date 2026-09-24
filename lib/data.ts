@@ -440,6 +440,108 @@ export async function subscriptionsExpiringSoon(
   `) as unknown as UpcomingExpirySubscription[];
 }
 
+/* ---------- Rappels d'échéance par e-mail ---------- */
+
+/**
+ * Deux rappels par échéance : `j5` (reste 2 à 5 jours) et `j1` (reste 0 à
+ * 1 jour). Les fenêtres couvrent un cron manqué ou un abonnement créé avec
+ * moins de 5 jours restants.
+ */
+export type ExpiryReminderKind = "j5" | "j1";
+
+const REMINDER_WINDOW: Record<ExpiryReminderKind, [number, number]> = {
+  j5: [2, 5],
+  j1: [0, 1],
+};
+
+export interface ExpiryReminderTarget {
+  subscriptionId: number;
+  userName: string;
+  userEmail: string;
+  label: string;
+  expiresAt: string;
+  daysLeft: number;
+}
+
+/**
+ * Abonnements payants actifs dans la fenêtre du rappel `kind`, pas encore
+ * rappelés pour cette échéance, et sans renouvellement payé en attente.
+ */
+export async function subscriptionsDueForExpiryReminder(
+  kind: ExpiryReminderKind,
+): Promise<ExpiryReminderTarget[]> {
+  const [min, max] = REMINDER_WINDOW[kind];
+  const rows = (await sql`
+    SELECT s.id, u.name, u.email, s.label, s.expires_at,
+           (s.expires_at::date - CURRENT_DATE)::int AS days_left
+    FROM subscriptions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.status = 'active'
+      AND s.is_trial = false
+      AND s.expires_at IS NOT NULL
+      AND s.expires_at::date BETWEEN CURRENT_DATE + ${min}::int AND CURRENT_DATE + ${max}::int
+      AND NOT EXISTS (
+        SELECT 1 FROM expiry_reminders r
+        WHERE r.subscription_id = s.id
+          AND r.expires_at = s.expires_at::date
+          AND r.kind = ${kind}
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM iptv_orders o
+        WHERE o.renew_sub_id = s.id AND o.status = 'pending'
+      )
+    ORDER BY s.expires_at ASC
+  `) as unknown as {
+    id: number;
+    name: string;
+    email: string;
+    label: string;
+    expires_at: unknown;
+    days_left: number;
+  }[];
+
+  return rows.map((r) => ({
+    subscriptionId: r.id,
+    userName: r.name,
+    userEmail: r.email,
+    label: r.label,
+    expiresAt: toDateString(r.expires_at) ?? String(r.expires_at),
+    daysLeft: r.days_left,
+  }));
+}
+
+/**
+ * Réserve l'envoi d'un rappel. Renvoie `false` si déjà réservé (exécution
+ * concurrente) : dans ce cas, ne rien envoyer.
+ */
+export async function claimExpiryReminder(
+  subscriptionId: number,
+  expiresAt: string,
+  kind: ExpiryReminderKind,
+): Promise<boolean> {
+  const rows = await sql`
+    INSERT INTO expiry_reminders (subscription_id, expires_at, kind)
+    VALUES (${subscriptionId}, ${expiresAt}::date, ${kind})
+    ON CONFLICT DO NOTHING
+    RETURNING subscription_id
+  `;
+  return rows.length > 0;
+}
+
+/** Annule une réservation (envoi échoué) pour réessayer au prochain cron. */
+export async function releaseExpiryReminder(
+  subscriptionId: number,
+  expiresAt: string,
+  kind: ExpiryReminderKind,
+): Promise<void> {
+  await sql`
+    DELETE FROM expiry_reminders
+    WHERE subscription_id = ${subscriptionId}
+      AND expires_at = ${expiresAt}::date
+      AND kind = ${kind}
+  `;
+}
+
 /* ---------- Parrainage ---------- */
 
 /** Récompense créditée au parrain à la première commande payée d'un filleul. */

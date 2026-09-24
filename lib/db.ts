@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 21;
+const SCHEMA_VERSION = 22;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
@@ -421,6 +421,20 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
   await raw`CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views (created_at DESC)`;
+
+  /* ---------- Rappels d'échéance par e-mail ---------- */
+
+  // Un rappel envoyé = une ligne. La clé inclut l'échéance : après un
+  // renouvellement (nouvelle date), les rappels repartent pour le cycle suivant.
+  await raw`
+    CREATE TABLE IF NOT EXISTS expiry_reminders (
+      subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+      expires_at      DATE NOT NULL,
+      kind            TEXT NOT NULL,
+      sent_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (subscription_id, expires_at, kind)
+    )
+  `;
 
   await raw`
     INSERT INTO app_meta (key, value)

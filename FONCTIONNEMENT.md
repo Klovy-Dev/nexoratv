@@ -119,6 +119,12 @@ Onglets : **Mes abonnements** (identifiants, échéance), **Mes commandes**
   `vercel.json` → `/api/cron/goldenott-sync`) qui reprend le statut réel de
   chaque abonnement GoldenOTT (jusqu'à 200 par exécution, les plus anciens
   d'abord) et purge les commandes/essais expirés.
+- **Rappels d'échéance par e-mail** : cron quotidien (8h UTC,
+  `/api/cron/expiry-reminders`, `lib/expiry-mail.ts`). Un mail à J-5 (fenêtre
+  2-5 jours restants) puis un dernier à J-1 (0-1 jour), abonnements payants
+  actifs uniquement (pas les essais), sauté si un renouvellement payé est en
+  attente. Dédoublonnage par échéance dans `expiry_reminders` : après un
+  renouvellement, les rappels repartent pour la nouvelle date.
 
 ## 7. Parrainage (ajouté 2026-09)
 
