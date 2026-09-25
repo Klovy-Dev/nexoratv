@@ -30,8 +30,14 @@ export default function MotionFx() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!finePointer.matches || reduced.matches) return;
 
+    // Les rectangles sont mesurés une seule fois à l'entrée dans l'élément
+    // (puis après un scroll / redimensionnement), jamais à chaque frame :
+    // mesurer après avoir écrit des styles forçait un recalcul de mise en page,
+    // et mesurer une carte déjà inclinée faisait trembler l'effet.
     let tiltEl: HTMLElement | null = null;
+    let tiltRect: DOMRect | null = null;
     let magnetEl: HTMLElement | null = null;
+    let magnetRect: DOMRect | null = null;
     let last: PointerEvent | null = null;
     let frame = 0;
 
@@ -41,30 +47,38 @@ export default function MotionFx() {
       if (!e) return;
       const target = e.target instanceof Element ? e.target : null;
 
+      // Lectures d'abord…
       const tilt = target?.closest<HTMLElement>(TILT) ?? null;
       if (tilt !== tiltEl) {
         clear(tiltEl, TILT_VARS);
         tiltEl = tilt;
+        tiltRect = null;
       }
-      if (tilt) {
-        const r = tilt.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width;
-        const y = (e.clientY - r.top) / r.height;
+      if (tilt && !tiltRect) tiltRect = tilt.getBoundingClientRect();
+
+      let magnet = target?.closest<HTMLElement>(MAGNET) ?? null;
+      if (magnet?.matches(":disabled")) magnet = null;
+      if (magnet !== magnetEl) {
+        clear(magnetEl, MAGNET_VARS);
+        magnetEl = magnet;
+        magnetRect = null;
+      }
+      if (magnet && !magnetRect) magnetRect = magnet.getBoundingClientRect();
+
+      // …puis écritures.
+      if (tilt && tiltRect) {
+        const x = Math.min(Math.max((e.clientX - tiltRect.left) / tiltRect.width, 0), 1);
+        const y = Math.min(Math.max((e.clientY - tiltRect.top) / tiltRect.height, 0), 1);
         tilt.style.setProperty("--ry", `${((x - 0.5) * 2 * MAX_TILT_DEG).toFixed(2)}deg`);
         tilt.style.setProperty("--rx", `${((0.5 - y) * 2 * MAX_TILT_DEG).toFixed(2)}deg`);
         tilt.style.setProperty("--mx", `${(x * 100).toFixed(1)}%`);
         tilt.style.setProperty("--my", `${(y * 100).toFixed(1)}%`);
       }
-
-      const magnet = target?.closest<HTMLElement>(MAGNET) ?? null;
-      if (magnet !== magnetEl) {
-        clear(magnetEl, MAGNET_VARS);
-        magnetEl = magnet;
-      }
-      if (magnet && !magnet.matches(":disabled")) {
-        const r = magnet.getBoundingClientRect();
-        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-        const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+      if (magnet && magnetRect) {
+        const cx = magnetRect.left + magnetRect.width / 2;
+        const cy = magnetRect.top + magnetRect.height / 2;
+        const dx = Math.min(Math.max((e.clientX - cx) / (magnetRect.width / 2), -1), 1);
+        const dy = Math.min(Math.max((e.clientY - cy) / (magnetRect.height / 2), -1), 1);
         magnet.style.setProperty("--tx", `${(dx * MAX_PULL_PX).toFixed(1)}px`);
         magnet.style.setProperty("--ty", `${(dy * MAX_PULL_PX * 0.6).toFixed(1)}px`);
       }
@@ -75,17 +89,25 @@ export default function MotionFx() {
       last = e;
       if (!frame) frame = requestAnimationFrame(apply);
     };
+    const invalidate = () => {
+      tiltRect = magnetRect = null;
+    };
     const onLeave = () => {
       clear(tiltEl, TILT_VARS);
       clear(magnetEl, MAGNET_VARS);
       tiltEl = magnetEl = null;
+      invalidate();
     };
 
     document.addEventListener("pointermove", onMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
+    window.addEventListener("scroll", invalidate, { passive: true });
+    window.addEventListener("resize", invalidate, { passive: true });
     return () => {
       document.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("scroll", invalidate);
+      window.removeEventListener("resize", invalidate);
       if (frame) cancelAnimationFrame(frame);
       onLeave();
     };

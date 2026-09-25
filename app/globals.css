@@ -2123,7 +2123,7 @@ a.dash-now:hover { border-color: var(--accent); }
 .btn {
   translate: var(--tx, 0) var(--ty, 0);
   transition:
-    transform 0.25s var(--ease), translate 0.35s var(--ease),
+    transform 0.25s var(--ease), translate 0.2s var(--ease),
     box-shadow 0.25s var(--ease), background 0.25s, border-color 0.25s, color 0.25s;
 }
 .btn:hover { transform: translateY(-3px) scale(1.02); }
@@ -2147,22 +2147,37 @@ a.dash-now:hover { border-color: var(--accent); }
 .copy-btn:active { transform: scale(0.92); }
 
 /* ---------- Cartes : survol ---------- */
+/* Perf : seules transform et opacity sont animées (composées par le GPU,
+   sans repeindre). L'ombre de survol vit dans ::before et apparaît en
+   opacité ; will-change uniquement pendant le survol pour ne pas créer
+   un calque par carte en permanence. */
 .card, .plan-card, .docs-card {
   --lift: 0px;
   position: relative;
+  isolation: isolate;
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift));
   transition:
-    transform 0.45s var(--ease), border-color 0.3s, box-shadow 0.35s var(--ease),
+    transform 0.45s var(--ease), border-color 0.3s,
     background 0.3s, opacity 0.6s var(--ease);
-  will-change: transform;
 }
 .card:hover, .plan-card:not(.plan-card--locked):hover, .docs-card:hover {
   --lift: -6px;
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift));
-  box-shadow: 0 28px 60px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(var(--accent-rgb), 0.25);
-  transition-duration: 0.2s, 0.3s, 0.35s, 0.3s, 0.6s;
+  transition-duration: 0.2s, 0.3s, 0.3s, 0.6s;
+  will-change: transform;
 }
-.plan-card--locked:hover { transform: none; box-shadow: none; }
+.card::before, .plan-card::before, .docs-card::before {
+  content: "";
+  position: absolute; inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 28px 60px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(var(--accent-rgb), 0.25);
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  pointer-events: none;
+}
+.card:hover::before, .plan-card:not(.plan-card--locked):hover::before, .docs-card:hover::before { opacity: 1; }
+.plan-card--locked:hover { transform: none; }
 
 /* Halo lumineux qui suit la souris */
 .card::after, .plan-card::after, .docs-card::after {
@@ -2179,10 +2194,16 @@ a.dash-now:hover { border-color: var(--accent); }
 .card-icon { transition: transform 0.45s var(--ease), background 0.3s; }
 .card:hover .card-icon { transform: rotate(-8deg) scale(1.12); background: rgba(var(--accent-rgb), 0.2); }
 
-/* Offre mise en avant : lueur qui respire */
+/* Offre mise en avant : lueur qui respire. On anime l'opacité du calque
+   qui porte l'ombre plutôt que box-shadow, qui repeignait la carte à
+   chaque frame, en boucle. */
+.plan-card--featured::before {
+  box-shadow: 0 28px 70px -22px rgba(var(--accent-rgb), 0.8);
+  animation: fx-glow 3.2s ease-in-out 0.6s infinite;
+}
 @keyframes fx-glow {
-  0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 24px 60px -28px rgba(var(--accent-rgb), 0.45); }
-  50%      { box-shadow: 0 0 0 1px var(--accent), 0 28px 70px -22px rgba(var(--accent-rgb), 0.8); }
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
 }
 .plan-ribbon { transition: transform 0.35s var(--ease); }
 .plan-card:hover .plan-ribbon { transform: translateY(-2px) scale(1.05); }
@@ -2236,7 +2257,6 @@ a.dash-now:hover { border-color: var(--accent); }
 .card:not(.reveal), .review:not(.reveal), .sub-card:not(.reveal) {
   animation: fx-rise 0.6s var(--ease) backwards;
 }
-.plan-card--featured { animation: fx-rise 0.6s var(--ease) backwards, fx-glow 3.2s ease-in-out 0.6s infinite; }
 :is(.plan-card, .docs-card, .order-track-card, .stat, .sub-admin-card, .go-status-item, .card, .review, .sub-card):nth-child(2) { animation-delay: 70ms; }
 :is(.plan-card, .docs-card, .order-track-card, .stat, .sub-admin-card, .go-status-item, .card, .review, .sub-card):nth-child(3) { animation-delay: 140ms; }
 :is(.plan-card, .docs-card, .order-track-card, .stat, .sub-admin-card, .go-status-item, .card, .review, .sub-card):nth-child(4) { animation-delay: 210ms; }
@@ -2247,7 +2267,6 @@ a.dash-now:hover { border-color: var(--accent); }
 }
 /* Sous la ligne de flottaison, c'est l'apparition au scroll (.reveal) qui prend le relais. */
 .reveal { animation: none; }
-.plan-card--featured.reveal { animation: fx-glow 3.2s ease-in-out infinite; }
 .reveal:not(.visible) { opacity: 0; transform: translateY(24px); }
 
 @media (prefers-reduced-motion: reduce) {
