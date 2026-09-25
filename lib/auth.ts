@@ -10,7 +10,7 @@ import type { User } from "@/lib/types";
 export const SESSION_COOKIE = "nexoratv_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
 
-function secretKey(): Uint8Array {
+export function secretKey(): Uint8Array {
   const s = process.env.AUTH_SECRET;
   if (!s || s.length < 32) {
     throw new Error(
@@ -85,6 +85,9 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
 
   try {
     const { payload } = await jwtVerify(token, secretKey());
+    // Les jetons de l'appli (lib/app-auth.ts) portent une audience : ils ne
+    // valent pas session sur le site.
+    if (payload.aud) return null;
     const id = Number(payload.sub);
     if (!Number.isInteger(id)) return null;
 
