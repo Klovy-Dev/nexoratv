@@ -270,6 +270,7 @@ export default async function ProfilPage({
                           id: o.id,
                           title: o.title,
                           duration_label: o.duration_label,
+                          screens: sub.screens || o.included_screens || 1,
                           total_cents: offerPriceCents(
                             o,
                             sub.screens ?? o.included_screens,

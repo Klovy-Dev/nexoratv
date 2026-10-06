@@ -14,7 +14,9 @@ export interface RenewOffer {
   id: number;
   title: string;
   duration_label: string;
-  /** prix pour le nombre d'écrans de l'abonnement */
+  /** nombre d'écrans prolongés (ceux de l'abonnement) */
+  screens: number;
+  /** prix pour ce nombre d'écrans */
   total_cents: number;
 }
 
@@ -78,7 +80,8 @@ export default function RenewForm({
               {offers.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.title}
-                  {o.duration_label ? ` (${o.duration_label})` : ""} —{" "}
+                  {o.duration_label ? ` (${o.duration_label})` : ""} ·{" "}
+                  {o.screens} écran{o.screens > 1 ? "s" : ""} —{" "}
                   {formatPrice(o.total_cents)}
                 </option>
               ))}
