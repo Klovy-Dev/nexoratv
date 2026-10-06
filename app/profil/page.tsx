@@ -270,12 +270,23 @@ export default async function ProfilPage({
                           id: o.id,
                           title: o.title,
                           duration_label: o.duration_label,
-                          screens: sub.screens || o.included_screens || 1,
+                          // Offre à écrans réglables : ceux de l'abonnement ;
+                          // sinon le format fixe de l'offre.
+                          screens: o.allow_screens
+                            ? sub.screens || o.included_screens || 1
+                            : o.included_screens || 1,
                           total_cents: offerPriceCents(
                             o,
                             sub.screens ?? o.included_screens,
                           ),
                         }),
+                      )
+                      // Par nombre d'écrans, puis du moins cher au plus cher.
+                      .sort(
+                        (a, b) =>
+                          a.screens - b.screens ||
+                          a.total_cents - b.total_cents ||
+                          a.id - b.id,
                       )}
                   />
                 )}
