@@ -248,6 +248,15 @@ export default async function ProfilPage({
                   )}
                 </div>
 
+                {canRenew && !(sub.provider === "goldenott" && sub.provider_ref) && (
+                  <p className="muted" style={{ fontSize: "0.85rem", marginTop: 14 }}>
+                    Pour prolonger cet abonnement,{" "}
+                    <Link href="/contact" style={{ color: "var(--text)" }}>
+                      contactez le support
+                    </Link>
+                    .
+                  </p>
+                )}
                 {sub.provider === "goldenott" && sub.provider_ref && (
                   <RenewForm
                     subId={sub.id}

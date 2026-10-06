@@ -34,6 +34,7 @@ import SubscriptionForm, {
   type TplOption,
 } from "./SubscriptionForm";
 import ProviderActions from "./ProviderActions";
+import LinkGoldenottForm from "./LinkGoldenottForm";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import CopyButton from "@/components/CopyButton";
 import TableSearch from "@/components/TableSearch";
@@ -45,6 +46,7 @@ const FLASH: Record<string, string> = {
   "1": "Modifications enregistrées.",
   provision: "Abonnement créé sur GoldenOTT et rattaché au client.",
   extend: "Abonnement prolongé sur GoldenOTT.",
+  link: "Abonnement lié à GoldenOTT — le client peut maintenant le prolonger depuis son profil.",
   refund: "Remboursement effectué, abonnement suspendu.",
   sync: "Synchronisation terminée.",
   "sync-all": "Synchronisation globale terminée.",
@@ -515,6 +517,9 @@ async function AdminUserDetail({
 
                   {s.provider === "goldenott" && !catalog.error && (
                     <ProviderActions subId={s.id} userId={target.id} />
+                  )}
+                  {s.provider !== "goldenott" && !catalog.error && (
+                    <LinkGoldenottForm subId={s.id} userId={target.id} />
                   )}
 
                   <div className="table-actions" style={{ marginTop: 12 }}>

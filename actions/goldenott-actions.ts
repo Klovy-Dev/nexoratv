@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { subscriptionById } from "@/lib/data";
-import { GoldenottError, type GoldenottKind } from "@/lib/goldenott";
+import { GoldenottError, getSubscription, type GoldenottKind } from "@/lib/goldenott";
 import {
   extendSubscriptionLocal,
   prepareLineCredentials,
@@ -143,6 +143,74 @@ export async function extendSubscriptionAction(
 
   revalidatePath("/admin");
   redirect(`/admin?user=${userId}&ok=extend`);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Lier un abonnement saisi à la main à son équivalent GoldenOTT      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Rattache une fiche « Manuel » à l'abonnement GoldenOTT existant (type +
+ * ID du panel) : elle devient synchronisable et prolongeable par le client
+ * depuis son profil, sur les mêmes identifiants.
+ */
+export async function linkGoldenottSubscriptionAction(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const subId = Number(formData.get("sub_id")) || 0;
+  const userId = Number(formData.get("user_id")) || 0;
+  const kind = parseKind(formData.get("kind"));
+  const ref = str(formData.get("provider_ref")).replace(/^#/, "");
+  const fail = (msg: string) =>
+    `/admin?user=${userId}&err=${encodeURIComponent(msg)}`;
+
+  const sub = await subscriptionById(subId);
+  let dest = `/admin?user=${userId}&ok=link`;
+
+  if (!sub) {
+    dest = fail("Abonnement introuvable");
+  } else if (sub.provider === "goldenott") {
+    dest = fail("Cet abonnement est déjà lié à GoldenOTT");
+  } else if (!/^\d+$/.test(ref)) {
+    dest = fail("ID GoldenOTT invalide (nombre attendu)");
+  } else {
+    try {
+      const remote = await getSubscription(kind, ref);
+      // Garde-fou contre une faute de frappe dans l'ID : l'identifiant déjà
+      // enregistré doit correspondre à celui du panel.
+      const localCred = (kind === "mag" ? sub.mac : sub.username)?.trim().toLowerCase();
+      const remoteCred = (
+        kind === "mag" ? remote.mac : kind === "code" ? remote.code : remote.username
+      )?.trim().toLowerCase();
+      if (localCred && remoteCred && localCred !== remoteCred) {
+        dest = fail(
+          `L'abonnement GoldenOTT #${ref} correspond à « ${remoteCred} », pas à « ${localCred} »`,
+        );
+      } else {
+        const credential =
+          kind === "mag" ? null : kind === "code" ? remote.code : remote.username;
+        await sql`
+          UPDATE subscriptions SET
+            provider = 'goldenott',
+            provider_kind = ${kind},
+            provider_ref = ${ref},
+            username = COALESCE(NULLIF(username, ''), ${credential ?? ""}),
+            mac = COALESCE(mac, ${kind === "mag" ? remote.mac : null})
+          WHERE id = ${sub.id}
+        `;
+        const linked = await subscriptionById(sub.id);
+        if (linked) await syncSubscriptionLocal(linked, me.email);
+      }
+    } catch (err) {
+      dest = fail(
+        err instanceof GoldenottError
+          ? `GoldenOTT : ${err.message}`
+          : "Abonnement GoldenOTT introuvable",
+      );
+    }
+  }
+
+  revalidatePath("/admin");
+  redirect(dest);
 }
 
 /* ------------------------------------------------------------------ */
