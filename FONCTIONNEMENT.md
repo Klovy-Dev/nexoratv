@@ -77,7 +77,12 @@ pré-remplit le parrainage (voir §7).
    de parrainage disponible, puis ouvre une session **Stripe Checkout** pour
    le montant restant.
 3. Le renouvellement d'un abonnement existant suit le même principe
-   (`createRenewalOrderAction`).
+   (`createRenewalOrderAction`) : bouton « Prolonger cet abonnement » sur
+   chaque carte de `/profil` (`app/profil/RenewForm.tsx`). Le client choisit
+   une offre payante du même type (ligne / MAG / code, essais exclus) et son
+   moyen de paiement (carte, PayPal, Bitcoin). Le prix tient compte du
+   nombre d'écrans de l'abonnement ; à la confirmation du paiement, GoldenOTT
+   prolonge les **mêmes identifiants**.
 
 ### Paiement (Stripe)
 - Webhook `POST /api/stripe/webhook`, événement `checkout.session.completed`.

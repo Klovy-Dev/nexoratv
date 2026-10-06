@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
   hasJoinedCommunity,
+  listOffers,
   ordersForUser,
   purgeExpiredTrialsAndRejected,
   referralInfo,
@@ -13,7 +14,11 @@ import {
 } from "@/lib/data";
 import { appOrigin } from "@/lib/mail";
 import { sweepBitcoinOrders } from "@/lib/bitcoin";
-import { lineM3uUrl } from "@/lib/goldenott";
+import { goldenottConfigured, lineM3uUrl } from "@/lib/goldenott";
+import { isTrialPackage, loadGoldenottCatalog } from "@/lib/goldenott-catalog";
+import { paypalConfigured } from "@/lib/paypal";
+import { bitcoinConfigured } from "@/lib/bitcoin";
+import { ORDERS_DISABLED } from "@/lib/orders-maintenance";
 import {
   daysUntil,
   expiryLabel,
@@ -29,11 +34,12 @@ import DiscordLinkCard from "./DiscordLinkCard";
 import { discordIdForUser } from "@/lib/data";
 import ProfilTabs, { type ProfilTab } from "./ProfilTabs";
 import ContestPanel from "./ContestPanel";
+import RenewForm, { type RenewOffer } from "./RenewForm";
 import { contestPhase } from "@/lib/contest";
 import { cancelOrderAction, resumeOrderPaymentAction } from "@/actions/order-actions";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import SubmitButton from "@/components/SubmitButton";
-import type { Order, ProviderKind } from "@/lib/types";
+import { offerPriceCents, type Order, type ProviderKind } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Mon profil" };
 export const dynamic = "force-dynamic";
@@ -89,6 +95,32 @@ export default async function ProfilPage({
     appOrigin(),
     discordIdForUser(user.id),
   ]);
+  // Prolongation sur les mêmes identifiants GoldenOTT : offres payantes du
+  // même type (ligne / MAG / code), hors essais.
+  const canRenew = !ORDERS_DISABLED && goldenottConfigured();
+  const renewableOffers = canRenew
+    ? await (async () => {
+        const [offers, catalog] = await Promise.all([
+          listOffers(true),
+          loadGoldenottCatalog(),
+        ]);
+        return offers.filter(
+          (o) => !isTrialPackage(catalog, o.goldenott_package_id) && o.price_cents > 0,
+        );
+      })()
+    : [];
+  const renewingSubIds = new Set(
+    orders
+      .filter(
+        (o) =>
+          o.renew_sub_id &&
+          (o.status === "awaiting_payment" || o.status === "pending"),
+      )
+      .map((o) => o.renew_sub_id),
+  );
+  const paypalEnabled = paypalConfigured();
+  const bitcoinEnabled = bitcoinConfigured();
+
   const referralLink = referral ? `${origin}/inscription?ref=${referral.code}` : "";
 
   const visibleOrders = orders.filter(
@@ -215,6 +247,28 @@ export default async function ProfilPage({
                     </div>
                   )}
                 </div>
+
+                {sub.provider === "goldenott" && sub.provider_ref && (
+                  <RenewForm
+                    subId={sub.id}
+                    pending={renewingSubIds.has(sub.id)}
+                    paypalEnabled={paypalEnabled}
+                    bitcoinEnabled={bitcoinEnabled}
+                    offers={renewableOffers
+                      .filter((o) => o.kind === kind)
+                      .map(
+                        (o): RenewOffer => ({
+                          id: o.id,
+                          title: o.title,
+                          duration_label: o.duration_label,
+                          total_cents: offerPriceCents(
+                            o,
+                            sub.screens ?? o.included_screens,
+                          ),
+                        }),
+                      )}
+                  />
+                )}
               </div>
             );
           })}

@@ -324,6 +324,19 @@ export async function createRenewalOrderAction(
   if (!offer || !offer.active || offer.kind !== sub.provider_kind) {
     return { fieldErrors: ["Choisissez une durée de renouvellement valide."] };
   }
+  // Un essai ne sert pas à prolonger : il remettrait l'abonnement en
+  // statut d'essai (purgé à son échéance) pour 0 €.
+  const catalog = await loadGoldenottCatalog();
+  if (isTrialPackage(catalog, offer.goldenott_package_id)) {
+    return { fieldErrors: ["Choisissez une durée de renouvellement valide."] };
+  }
+
+  // Même nombre d'écrans que l'abonnement prolongé, facturés au tarif de l'offre.
+  const screens = sub.screens ?? offer.included_screens;
+  const priceCents = offerPriceCents(offer, screens);
+  if (priceCents <= 0) {
+    return { fieldErrors: ["Choisissez une durée de renouvellement valide."] };
+  }
 
   const existing = (await sql`
     SELECT 1 FROM iptv_orders
@@ -335,8 +348,8 @@ export async function createRenewalOrderAction(
   }
 
   const title = `Renouvellement — ${sub.label}`;
-  const creditApplied = await reserveReferralCredit(user.id, offer.price_cents);
-  const chargeCents = offer.price_cents - creditApplied;
+  const creditApplied = await reserveReferralCredit(user.id, priceCents);
+  const chargeCents = priceCents - creditApplied;
 
   const rows = (await sql`
     INSERT INTO iptv_orders
@@ -345,9 +358,9 @@ export async function createRenewalOrderAction(
        credit_applied_cents, payment_provider)
     VALUES
       (${user.id}, ${offer.id}, ${offer.kind},
-       ${title}, ${offer.price_cents},
+       ${title}, ${priceCents},
        ${offer.goldenott_package_id}, ${offer.goldenott_template_id},
-       ${offer.dns_domain_id}, ${sub.screens ?? offer.included_screens},
+       ${offer.dns_domain_id}, ${screens},
        ${offer.is_adult}, ${subId},
        ${str(formData.get("customer_note")).slice(0, 500)}, 'awaiting_payment',
        ${creditApplied}, ${paymentMethod})
