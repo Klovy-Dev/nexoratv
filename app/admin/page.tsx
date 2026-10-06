@@ -25,6 +25,7 @@ import {
 import EditUserForm from "./EditUserForm";
 import {
   syncAllSubscriptionsAction,
+  linkAllManualSubscriptionsAction,
   syncUserSubscriptionsAction,
 } from "@/actions/goldenott-actions";
 import SubscriptionForm, {
@@ -46,7 +47,7 @@ const FLASH: Record<string, string> = {
   "1": "Modifications enregistrées.",
   provision: "Abonnement créé sur GoldenOTT et rattaché au client.",
   extend: "Abonnement prolongé sur GoldenOTT.",
-  link: "Abonnement lié à GoldenOTT — le client peut maintenant le prolonger depuis son profil.",
+  link: "Liaison GoldenOTT terminée — les clients concernés peuvent prolonger depuis leur profil.",
   refund: "Remboursement effectué, abonnement suspendu.",
   sync: "Synchronisation terminée.",
   "sync-all": "Synchronisation globale terminée.",
@@ -79,6 +80,7 @@ export default async function AdminPage({
           <div className="flash flash-success" style={{ marginBottom: 20 }}>
             {FLASH[okParam] ?? "Opération effectuée."}
             {creditParam && ` Crédit revendeur restant : ${creditParam}.`}
+            {okParam === "link" && ` ${pick("linked") || 0} abonnement(s) lié(s).`}
             {okParam === "sync-all" &&
               ` ${syncedParam ?? 0} synchronisé(s)${failedParam && failedParam !== "0" ? `, ${failedParam} échec(s)` : ""}.`}
           </div>
@@ -210,6 +212,11 @@ async function AdminOverview() {
             <form action={syncAllSubscriptionsAction} className="inline-form">
               <button className="btn btn-ghost btn-sm">
                 ↻ Tout synchroniser
+              </button>
+            </form>
+            <form action={linkAllManualSubscriptionsAction} className="inline-form">
+              <button className="btn btn-ghost btn-sm">
+                Lier les abonnements manuels à GoldenOTT
               </button>
             </form>
           </div>

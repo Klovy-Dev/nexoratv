@@ -522,6 +522,47 @@ export async function getSubscription(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Liste des abonnements du compte revendeur                          */
+/* ------------------------------------------------------------------ */
+
+export interface RemoteSubscriptionRef {
+  id: number;
+  username: string | null;
+  mac: string | null;
+  code: string | null;
+}
+
+/**
+ * Tous les abonnements d'un type (l'API ne filtre pas par identifiant :
+ * on parcourt les pages). Sert à retrouver l'ID GoldenOTT d'une fiche
+ * saisie à la main.
+ */
+export async function listRemoteSubscriptions(
+  kind: GoldenottKind,
+): Promise<RemoteSubscriptionRef[]> {
+  const out: RemoteSubscriptionRef[] = [];
+  // Garde-fou : 50 pages de 100 max.
+  for (let page = 1; page <= 50; page++) {
+    const r = await call<{
+      data?: Record<string, unknown>[];
+      pagination?: { current_page?: number; last_page?: number };
+    }>(`/v1/${KIND_PATH[kind]}?per_page=100&page=${page}`, { method: "GET" });
+
+    for (const d of r.data ?? []) {
+      out.push({
+        id: Number(d.id),
+        username: (d.username as string) ?? null,
+        mac: (d.mac as string) ?? null,
+        code: (d.code as string) ?? null,
+      });
+    }
+    const last = r.pagination?.last_page ?? page;
+    if ((r.data ?? []).length === 0 || page >= last) break;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Prolongation                                                       */
 /* ------------------------------------------------------------------ */
 

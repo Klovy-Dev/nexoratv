@@ -14,6 +14,7 @@ import {
   getSubscription,
   GOLDENOTT_TAG,
   GoldenottError,
+  listRemoteSubscriptions,
   refundSubscription,
   type CreatedSubscription,
   type GoldenottKind,
@@ -476,4 +477,88 @@ export async function syncSubscriptionLocal(
     changed,
     message: changed ? "Abonnement mis à jour." : "Déjà à jour.",
   };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Liaison des fiches saisies à la main                               */
+/* ------------------------------------------------------------------ */
+
+const norm = (v: string | null | undefined) =>
+  (v ?? "").trim().toLowerCase().replace(/-/g, ":");
+
+/**
+ * Retrouve sur GoldenOTT les abonnements « Manuel » (par identifiant de
+ * ligne, adresse MAC ou code) et les rattache : ils deviennent
+ * synchronisables et prolongeables par le client depuis son profil.
+ */
+export async function linkManualSubscriptions(
+  subs: SubscriptionView[],
+  actor: string,
+): Promise<{ linked: number; notFound: string[] }> {
+  const manual = subs.filter((s) => s.provider !== "goldenott");
+  if (manual.length === 0) return { linked: 0, notFound: [] };
+
+  const [lines, mags, codes] = await Promise.all([
+    listRemoteSubscriptions("line"),
+    listRemoteSubscriptions("mag"),
+    listRemoteSubscriptions("code"),
+  ]);
+  const index = new Map<string, { kind: GoldenottKind; id: number }>();
+  for (const r of lines) if (r.username) index.set(`line:${norm(r.username)}`, { kind: "line", id: r.id });
+  for (const r of mags) if (r.mac) index.set(`mag:${norm(r.mac)}`, { kind: "mag", id: r.id });
+  for (const r of codes) if (r.code) index.set(`code:${norm(r.code)}`, { kind: "code", id: r.id });
+
+  // Un abonnement GoldenOTT déjà rattaché à une autre fiche ne l'est pas deux fois.
+  const taken = new Set(
+    (
+      (await sql`
+        SELECT provider_kind, provider_ref FROM subscriptions
+        WHERE provider = 'goldenott' AND provider_ref IS NOT NULL
+      `) as unknown as { provider_kind: string; provider_ref: string }[]
+    ).map((r) => `${r.provider_kind}:${r.provider_ref}`),
+  );
+
+  let linked = 0;
+  const notFound: string[] = [];
+  for (const sub of manual) {
+    const match =
+      (sub.mac && index.get(`mag:${norm(sub.mac)}`)) ||
+      (sub.username &&
+        (index.get(`line:${norm(sub.username)}`) ?? index.get(`code:${norm(sub.username)}`))) ||
+      null;
+    if (!match || taken.has(`${match.kind}:${match.id}`)) {
+      notFound.push(sub.username || sub.mac || sub.label);
+      continue;
+    }
+    taken.add(`${match.kind}:${match.id}`);
+
+    await sql`
+      UPDATE subscriptions SET
+        provider = 'goldenott',
+        provider_kind = ${match.kind},
+        provider_ref = ${String(match.id)}
+      WHERE id = ${sub.id}
+    `;
+    await logGoldenottEvent({
+      actor,
+      action: "sync",
+      kind: match.kind,
+      providerRef: String(match.id),
+      subscriptionId: sub.id,
+      ok: true,
+      message: "fiche manuelle liée à GoldenOTT",
+    });
+    try {
+      await syncSubscriptionLocal(
+        { ...sub, provider: "goldenott", provider_kind: match.kind, provider_ref: String(match.id) },
+        actor,
+      );
+    } catch {
+      /* liée quand même ; la synchro quotidienne reprendra l'échéance */
+    }
+    linked++;
+  }
+
+  revalidateTag(GOLDENOTT_TAG);
+  return { linked, notFound };
 }
