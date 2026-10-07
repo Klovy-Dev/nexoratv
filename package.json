@@ -11,7 +11,7 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.6",
-    "next": "^15.1.6",
+    "next": "~15.5.27",
     "postgres": "^3.4.5",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
