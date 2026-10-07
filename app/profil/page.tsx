@@ -482,6 +482,31 @@ export default async function ProfilPage({
           </div>
         )}
 
+        <div className="community-cta reveal">
+          <p>
+            Rejoins notre communauté pour obtenir de l&apos;aide et suivre les
+            dernières infos NexoraTV.
+          </p>
+          <div className="community-cta-btns">
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-discord"
+            >
+              Rejoindre le Discord
+            </a>
+            <a
+              href={TELEGRAM_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-telegram"
+            >
+              Rejoindre le Telegram
+            </a>
+          </div>
+        </div>
+
         <div className="profile-head reveal">
           <div className="profile-avatar">{initials(user.name)}</div>
           <div style={{ flex: 1, minWidth: 200 }}>
@@ -501,22 +526,6 @@ export default async function ProfilPage({
                 Espace admin
               </Link>
             )}
-            <a
-              href={DISCORD_INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-ghost"
-            >
-              Discord
-            </a>
-            <a
-              href={TELEGRAM_INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-ghost"
-            >
-              Telegram
-            </a>
             <Link href="/commander" className="btn btn-primary">
               Commander
             </Link>

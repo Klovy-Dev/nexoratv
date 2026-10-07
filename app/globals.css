@@ -414,6 +414,21 @@ h3 { font-size: 1.2rem; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* ---------- Profil ---------- */
+.community-cta {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.community-cta p { margin: 0; flex: 1; min-width: 220px; }
+.community-cta-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-discord { background: #5865f2; border-color: #5865f2; color: #fff; }
+.btn-discord:hover { background: #4752c4; border-color: #4752c4; transform: translateY(-2px); }
+.btn-telegram { background: #229ed9; border-color: #229ed9; color: #fff; }
+.btn-telegram:hover { background: #1c88bb; border-color: #1c88bb; transform: translateY(-2px); }
 .profile-head {
   display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
   background: var(--surface);
