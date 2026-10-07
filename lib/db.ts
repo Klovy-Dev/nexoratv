@@ -35,9 +35,13 @@ function connection(): SqlTag {
           "ou définissez la variable dans Vercel.",
       );
     }
+    // Serverless (Vercel) : 1 connexion par instance. Serveur permanent (VPS) :
+    // un vrai pool, pour que les requêtes lancées en parallèle (Promise.all)
+    // ne fassent pas la queue, et des connexions gardées ouvertes plus longtemps.
+    const serverless = Boolean(process.env.VERCEL);
     client = postgres(url, {
-      max: 1,
-      idle_timeout: 20,
+      max: serverless ? 1 : 10,
+      idle_timeout: serverless ? 20 : 240,
       connect_timeout: 15,
       prepare: false, // compatible avec les poolers (pgbouncer / Neon pooled)
     });
