@@ -146,6 +146,11 @@ export default async function OffersAdminPage({
                               >
                                 {o.active ? "Visible" : "Masquée"}
                               </span>
+                              {o.admin_only && (
+                                <span className="badge badge-go" style={{ marginLeft: 6 }}>
+                                  Admin
+                                </span>
+                              )}
                             </td>
                             <td className="table-actions">
                               <Link

@@ -45,7 +45,9 @@ export default async function OrderStepPage({
 
   if (!goldenottConfigured()) redirect("/commander");
   const offer = await offerById(id);
-  if (!offer || !offer.active) redirect("/commander");
+  if (!offer || !offer.active || (offer.admin_only && user.role !== "admin")) {
+    redirect("/commander");
+  }
 
   const pending = (await ordersForUser(user.id)).some(
     (o) =>

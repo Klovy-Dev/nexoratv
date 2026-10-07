@@ -273,10 +273,18 @@ export async function adminStats() {
 
 /* ---------- Offres (self-service) ---------- */
 
-export async function listOffers(activeOnly = false): Promise<Offer[]> {
+/**
+ * `activeOnly` : offres publiées uniquement (côté client). Les offres
+ * réservées aux admins n'y figurent que si `includeAdminOnly`.
+ */
+export async function listOffers(
+  activeOnly = false,
+  includeAdminOnly = false,
+): Promise<Offer[]> {
   const rows = activeOnly
     ? ((await sql`
-        SELECT * FROM iptv_offers WHERE active = true
+        SELECT * FROM iptv_offers
+        WHERE active = true AND (admin_only = false OR ${includeAdminOnly})
         ORDER BY sort ASC, price_cents ASC, id ASC
       `) as unknown as Offer[])
     : ((await sql`

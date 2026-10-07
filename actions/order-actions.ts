@@ -172,7 +172,7 @@ export async function createOrderAction(
   let mac = str(formData.get("mac"));
 
   const offer = await offerById(offerId);
-  if (!offer || !offer.active) {
+  if (!offer || !offer.active || (offer.admin_only && user.role !== "admin")) {
     return { fieldErrors: ["Cette offre n'est plus disponible."] };
   }
   // Exclusion demandée par le client — n'a de sens que si l'offre inclut
@@ -321,7 +321,12 @@ export async function createRenewalOrderAction(
     return { fieldErrors: ["Abonnement introuvable."] };
   }
   const offer = await offerById(offerId);
-  if (!offer || !offer.active || offer.kind !== sub.provider_kind) {
+  if (
+    !offer ||
+    !offer.active ||
+    offer.kind !== sub.provider_kind ||
+    (offer.admin_only && user.role !== "admin")
+  ) {
     return { fieldErrors: ["Choisissez une durée de renouvellement valide."] };
   }
   // Un essai ne sert pas à prolonger : il remettrait l'abonnement en

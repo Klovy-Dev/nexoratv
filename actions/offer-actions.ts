@@ -53,6 +53,7 @@ export async function saveOfferAction(
   const priceCents = priceToCents(str(formData.get("price")));
   const isAdult = formData.get("is_adult") === "on";
   const active = formData.get("active") === "on";
+  const adminOnly = formData.get("admin_only") === "on";
   const sort = Number(formData.get("sort")) || 0;
 
   const includedScreens = Math.min(5, Math.max(1, Number(formData.get("included_screens")) || 1));
@@ -97,7 +98,7 @@ export async function saveOfferAction(
         extra_screen_cents = ${extraScreenCents}, max_screens = ${maxScreens},
         extra_screen_cents_2 = ${extraScreenCents2}, extra_screen_cents_3 = ${extraScreenCents3},
         extra_screen_cents_4 = ${extraScreenCents4}, compare_at_cents = ${compareAtCents},
-        is_adult = ${isAdult}, active = ${active}, sort = ${sort}
+        is_adult = ${isAdult}, active = ${active}, admin_only = ${adminOnly}, sort = ${sort}
       WHERE id = ${offerId}
     `;
   } else {
@@ -107,13 +108,13 @@ export async function saveOfferAction(
          tagline, duration_label, badge, price_cents, max_connections,
          included_screens, allow_screens, extra_screen_cents, max_screens,
          extra_screen_cents_2, extra_screen_cents_3, extra_screen_cents_4, compare_at_cents,
-         is_adult, active, sort)
+         is_adult, active, admin_only, sort)
       VALUES
         (${kind}, ${packageId}, ${templateId}, ${dnsDomainId}, ${title}, ${tagline},
          ${durationLabel}, ${badge}, ${priceCents}, ${includedScreens}, ${includedScreens},
          ${allowScreens}, ${extraScreenCents}, ${maxScreens},
          ${extraScreenCents2}, ${extraScreenCents3}, ${extraScreenCents4}, ${compareAtCents},
-         ${isAdult}, ${active}, ${sort})
+         ${isAdult}, ${active}, ${adminOnly}, ${sort})
     `;
   }
 

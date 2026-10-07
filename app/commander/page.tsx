@@ -43,7 +43,7 @@ export default async function CommanderPage({
 
   const user = await getCurrentUser();
   const configured = goldenottConfigured();
-  const offers = configured ? await listOffers(true) : [];
+  const offers = configured ? await listOffers(true, user?.role === "admin") : [];
   const catalog = configured
     ? await loadGoldenottCatalog()
     : null;

@@ -393,6 +393,14 @@ export default function OfferForm({
             />
             Offre visible sur la page « Commander »
           </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="checkbox"
+              name="admin_only"
+              defaultChecked={editing?.admin_only ?? false}
+            />
+            Réservée aux admins (offre de test, invisible pour les clients)
+          </label>
         </div>
 
         <div className="table-actions">

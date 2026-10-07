@@ -157,6 +157,8 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
   // Prix barré affiché à côté du prix réel (NULL = aucun). Doit correspondre à
   // un prix réellement pratiqué (art. L112-1-1 code de la consommation).
   await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS compare_at_cents INTEGER`;
+  // Offre réservée aux admins (tests) : invisible et non commandable par les clients.
+  await raw`ALTER TABLE iptv_offers ADD COLUMN IF NOT EXISTS admin_only BOOLEAN NOT NULL DEFAULT false`;
 
   // Commandes clients : demande d'un abonnement (nouveau ou renouvellement).
   // L'admin les valide → provisioning GoldenOTT → rattachement au compte.

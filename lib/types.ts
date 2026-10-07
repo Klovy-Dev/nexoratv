@@ -86,6 +86,8 @@ export interface Offer {
   max_connections: number | null;
   is_adult: boolean;
   active: boolean;
+  /** réservée aux admins (tests) : invisible et non commandable par les clients */
+  admin_only: boolean;
   sort: number;
   created_at: string;
 }
