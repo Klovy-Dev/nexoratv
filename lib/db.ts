@@ -348,11 +348,9 @@ async function ensureMigrations(raw: SqlTag): Promise<void> {
     )
   `;
 
-  /* ---------- Communauté (Discord / Telegram) obligatoire après achat ---------- */
+  /* ---------- Communauté (Discord / Telegram) ---------- */
 
-  // Posé quand le client confirme avoir rejoint Discord ou Telegram, sur la
-  // page /rejoindre affichée juste après sa première commande — tant que
-  // c'est NULL, /profil redirige vers /rejoindre (cf. app/profil/page.tsx).
+  // Ancienne étape /rejoindre (supprimée) : colonne conservée, plus lue.
   await raw`ALTER TABLE users ADD COLUMN IF NOT EXISTS community_joined_at TIMESTAMPTZ`;
 
   /* ---------- Sondage client (page /sondage, hors navigation) ---------- */

@@ -668,14 +668,6 @@ export async function discordIdForUser(userId: number): Promise<string | null> {
   return rows[0]?.discord_id ?? null;
 }
 
-/** A-t-il déjà confirmé avoir rejoint Discord/Telegram (cf. /rejoindre) ? */
-export async function hasJoinedCommunity(userId: number): Promise<boolean> {
-  const rows = (await sql`
-    SELECT community_joined_at FROM users WHERE id = ${userId}
-  `) as unknown as { community_joined_at: string | null }[];
-  return rows[0]?.community_joined_at != null;
-}
-
 /** @returns false si ce compte Discord est déjà relié à un autre utilisateur. */
 export async function setDiscordId(
   userId: number,

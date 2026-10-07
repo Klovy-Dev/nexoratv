@@ -53,7 +53,7 @@ export default function BitcoinPayment({
           expired?: boolean;
         };
         if (data.state === "paid" || data.state === "closed") {
-          window.location.href = "/profil?commande=1";
+          window.location.href = "/profil/succes";
         } else if (data.state === "seen") {
           setStatus({ state: "seen", confirmations: data.confirmations ?? 0, txUrl: data.txUrl ?? "" });
         } else if (data.expired) {

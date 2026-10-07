@@ -48,5 +48,5 @@ export async function GET(req: Request): Promise<Response> {
     }
   }
 
-  return NextResponse.redirect(`${site}/profil?commande=1`);
+  return NextResponse.redirect(`${site}/profil/succes`);
 }

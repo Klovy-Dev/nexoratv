@@ -1,9 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
-  hasJoinedCommunity,
   listOffers,
   ordersForUser,
   purgeExpiredTrialsAndRejected,
@@ -32,6 +30,7 @@ import NameForm from "./NameForm";
 import PasswordForm from "./PasswordForm";
 import DiscordLinkCard from "./DiscordLinkCard";
 import { discordIdForUser } from "@/lib/data";
+import { DISCORD_INVITE_URL, TELEGRAM_INVITE_URL } from "@/lib/community-links";
 import ProfilTabs, { type ProfilTab } from "./ProfilTabs";
 import ContestPanel from "./ContestPanel";
 import RenewForm, { type RenewOffer } from "./RenewForm";
@@ -65,17 +64,6 @@ export default async function ProfilPage({
 }) {
   const user = await requireUser();
   const params = await searchParams;
-
-  // Étape obligatoire après achat : tant que le compte n'a pas confirmé
-  // avoir rejoint Discord ou Telegram, /profil redirige vers /rejoindre.
-  if (!(await hasJoinedCommunity(user.id))) {
-    const qs = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (typeof value === "string") qs.set(key, value);
-    }
-    const query = qs.toString();
-    redirect(`/rejoindre?next=${encodeURIComponent(`/profil${query ? `?${query}` : ""}`)}`);
-  }
 
   await sweepBitcoinOrders(user.id);
   await purgeExpiredTrialsAndRejected();
@@ -513,6 +501,22 @@ export default async function ProfilPage({
                 Espace admin
               </Link>
             )}
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+            >
+              Discord
+            </a>
+            <a
+              href={TELEGRAM_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+            >
+              Telegram
+            </a>
             <Link href="/commander" className="btn btn-primary">
               Commander
             </Link>

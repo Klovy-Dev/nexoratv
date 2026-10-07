@@ -50,7 +50,7 @@ export default async function BitcoinPaymentPage({
   } catch {
     apiError = true;
   }
-  if (state.state === "paid") redirect("/profil?commande=1");
+  if (state.state === "paid") redirect("/profil/succes");
 
   const sats = Number(order.btc_amount_sats ?? 0);
   if (!sats) {

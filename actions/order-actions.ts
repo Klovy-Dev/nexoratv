@@ -67,7 +67,7 @@ async function createCheckoutSession(opts: {
       },
     ],
     metadata: { order_id: String(opts.orderId) },
-    success_url: `${site}/profil?commande=1`,
+    success_url: `${site}/profil/succes`,
     cancel_url: `${site}${opts.cancelPath}?annule=1`,
   });
 
@@ -271,7 +271,7 @@ export async function createOrderAction(
       await markTrialUsedByIp(await clientIp(), orderId);
     }
     revalidatePath("/profil");
-    redirect("/profil?commande=1");
+    redirect("/profil/succes");
   }
 
   let checkoutUrl: string;
@@ -372,7 +372,7 @@ export async function createRenewalOrderAction(
   if (chargeCents <= 0) {
     await fulfillPaidOrder(orderId);
     revalidatePath("/profil");
-    redirect("/profil?commande=1");
+    redirect("/profil/succes");
   }
 
   let checkoutUrl: string;
@@ -475,7 +475,7 @@ export async function submitBitcoinTxidAction(
   if (result.state === "error") return { fieldErrors: [result.message] };
   if (result.state === "paid") {
     revalidatePath("/profil");
-    redirect("/profil?commande=1");
+    redirect("/profil/succes");
   }
   revalidatePath(`/profil/bitcoin/${orderId}`);
   return {};
