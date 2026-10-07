@@ -55,7 +55,7 @@ let schemaReady: Promise<void> | null = null;
  * dans `ensureMigrations`. Tant que la base est déjà à cette version, on
  * saute entièrement le bloc DDL au démarrage (≈ 2 requêtes au lieu de 30).
  */
-const SCHEMA_VERSION = 23;
+const SCHEMA_VERSION = 24;
 
 async function readSchemaVersion(raw: SqlTag): Promise<number> {
   try {
